@@ -21,14 +21,10 @@ module Middleware
       }.each do |controller|
         next unless controller.respond_to?(:_process_action_callbacks)
 
-        callbacks = controller._process_action_callbacks
+        controller._process_action_callbacks.each do |callback|
+          next unless callback.filter.is_a?(Proc)
+          next unless callback.filter.source_location&.first&.include?(target_path)
 
-        callbacks_to_remove = callbacks.select do |callback|
-          callback.filter.is_a?(Proc) &&
-            callback.filter.source_location&.first&.include?(target_path)
-        end
-
-        callbacks_to_remove.each do |callback|
           begin
             controller.skip_callback(
               :process_action,

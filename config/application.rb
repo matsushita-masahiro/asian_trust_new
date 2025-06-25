@@ -13,7 +13,7 @@ module MasaHp
 
     # ✅ ミドルウェアを先頭に挿入（順序重要）
     config.middleware.insert_before 0, RemoveAllowBrowserMiddleware
-    config.middleware.insert_before 0, ForceHtmlMiddleware
+    config.middleware.insert_before 0, Middleware::ForceHtmlMiddleware
 
     # ✅ lib 以下を読み込む設定（autoload ではなく eager_load_paths でより確実に）
     config.eager_load_paths << Rails.root.join("lib")

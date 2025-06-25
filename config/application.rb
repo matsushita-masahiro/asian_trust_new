@@ -1,27 +1,28 @@
 require_relative "boot"
-
 require "rails/all"
 
-# Require the gems listed in Gemfile, including any gems
-# you've limited to :test, :development, or :production.
+# ✅ middleware 読み込み
+require_relative "../lib/middleware/force_html_middleware"
+require_relative "../lib/middleware/remove_allow_browser_middleware"
+
 Bundler.require(*Rails.groups)
 
 module MasaHp
   class Application < Rails::Application
-    # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.0
 
-    # Please, add to the `ignore` list any other `lib` subdirectories that do
-    # not contain `.rb` files, or that should not be reloaded or eager loaded.
-    # Common ones are `templates`, `generators`, or `middleware`, for example.
+    # ✅ ミドルウェアを先頭に挿入（順序重要）
+    config.middleware.insert_before 0, RemoveAllowBrowserMiddleware
+    config.middleware.insert_before 0, ForceHtmlMiddleware
+
+    # ✅ lib 以下を読み込む設定（autoload ではなく eager_load_paths でより確実に）
+    config.eager_load_paths << Rails.root.join("lib")
+
+    # lib/assets や lib/tasks などのautoload無効化は任意
     config.autoload_lib(ignore: %w[assets tasks])
 
-    # Configuration for the application, engines, and railties goes here.
-    #
-    # These settings can be overridden in specific environments using the files
-    # in config/environments, which are processed later.
-    #
-    # config.time_zone = "Central Time (US & Canada)"
-    # config.eager_load_paths << Rails.root.join("extras")
+    # 他の設定は必要に応じて
+    # config.time_zone = "Tokyo"
+    # config.i18n.default_locale = :ja
   end
 end

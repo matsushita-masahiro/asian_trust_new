@@ -1,0 +1,41 @@
+.carousel {
+  margin-top: 56px; // ナビバー高さ分（Bootstrap標準）
+}
+
+
+.carousel-caption {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: auto !important;
+  padding: 0 !important;
+  transform: translate(-50%, -50%) !important;
+  text-align: center !important;
+  color: #fff !important;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8) !important;
+  z-index: 10;
+  text-shadow: 8px 8px 20px rgba(0, 0, 0, 1.0); // ← 倍の強さに調整
+
+  h5 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: bold;
+    margin-bottom: 1rem;
+    white-space: nowrap;
+  }
+
+  p {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    white-space: nowrap;
+  }
+}
+
+// .carousel-caption::before {
+//   content: "";
+//   position: absolute;
+//   top: 0; left: 0; right: 0; bottom: 0;
+//   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+//   z-index: -1;
+// }
+

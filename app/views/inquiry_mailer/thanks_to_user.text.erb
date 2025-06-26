@@ -1,0 +1,16 @@
+<!-- app/views/inquiry_mailer/thanks_to_user.text.erb -->
+<%= @inquiry.name %> 様
+
+このたびはお問い合わせありがとうございます。
+以下の内容で受け付けました：
+
+--------------------
+お名前: <%= @inquiry.name %>
+メール: <%= @inquiry.email %>
+電話番号: <%= @inquiry.phone %>
+
+内容:
+<%= @inquiry.message %>
+--------------------
+
+担当者より順次ご連絡いたします。

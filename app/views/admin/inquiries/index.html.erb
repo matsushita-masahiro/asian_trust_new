@@ -1,0 +1,23 @@
+<!-- app/views/admin/inquiries/index.html.erb -->
+<h1>お問い合わせ一覧</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>名前</th>
+      <th>メール</th>
+      <th>送信日時</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @inquiries.each do |inquiry| %>
+      <tr>
+        <td><%= inquiry.name %></td>
+        <td><%= inquiry.email %></td>
+        <td><%= inquiry.created_at.strftime("%Y/%m/%d %H:%M") %></td>
+        <td><%= link_to "詳細", admin_inquiry_path(inquiry), class: "btn btn-sm btn-outline-primary" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

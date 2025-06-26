@@ -1,10 +1,24 @@
 Rails.application.routes.draw do
+  
+
   root "home#index"
   
   get 'terms', to: 'home#terms', as: :terms
   get 'privacy', to: 'home#privacy', as: :privacy
   get 'law', to: 'home#law', as: :law
-  get 'inquiry',  to: 'home#inquiry',  as: :inquiry
+
+  # config/routes.rb
+  resources :inquiries, only: [:new, :create]
+  
+  namespace :admin do
+    get "inquiries/index"
+    get "inquiries/show"
+    resources :inquiries, only: [:index, :show] do
+      resources :answers, only: [:new, :create, :edit, :update, :destroy]
+    end
+  end
+
+
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

@@ -1,0 +1,27 @@
+<div class="container py-5 px-4 px-md-5" style="margin-top: 100px;">
+  <h3 class="mb-4">お問い合わせ</h3>
+
+  <%= form_with model: @inquiry, url: inquiries_path, local: true, html: { class: "needs-validation", novalidate: true } do |f| %>
+    <div class="mb-3">
+      <%= f.label :name, "お名前", class: "form-label" %>
+      <%= f.text_field :name, class: "form-control", required: true %>
+    </div>
+
+    <div class="mb-3">
+      <%= f.label :email, "メールアドレス", class: "form-label" %>
+      <%= f.email_field :email, class: "form-control", required: true %>
+    </div>
+
+    <div class="mb-3">
+      <%= f.label :phone, "電話番号（任意）", class: "form-label" %>
+      <%= f.telephone_field :phone, class: "form-control" %>
+    </div>
+
+    <div class="mb-3">
+      <%= f.label :message, "お問い合わせ内容", class: "form-label" %>
+      <%= f.text_area :message, rows: 6, class: "form-control", required: true %>
+    </div>
+
+    <%= f.submit "送信する", class: "btn btn-primary" %>
+  <% end %>
+</div>

@@ -1,0 +1,9 @@
+<!-- app/views/inquiry_mailer/notify_admin.text.erb -->
+■新しいお問い合わせ
+----------------------------------
+お名前: <%= @inquiry.name %>
+メール: <%= @inquiry.email %>
+電話番号: <%= @inquiry.phone %>
+
+内容:
+<%= @inquiry.message %>

@@ -1,0 +1,21 @@
+.flash-message {
+  margin-top: 80px; // ナビバーと被らないように調整
+  z-index: 999;
+  position: relative;
+}
+
+
+
+.notice {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.alert {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px;
+  border-radius: 5px;
+}

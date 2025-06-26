@@ -87,4 +87,19 @@ Rails.application.configure do
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  
+  # config/environments/production.rb
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address:              'mail1038.onamae.ne.jp',
+    port:                 465,
+    user_name:            ENV['ONAMAE_MAIL_USER'],
+    password:             ENV['ONAMAE_MAIL_PASSWORD'],
+    authentication:       :login,
+    ssl:                  true,
+    tls:                  true,
+    enable_starttls_auto: false,
+  }
+  config.action_mailer.default_url_options = { host: 'www.msworks.tokyo' }
+  
 end

@@ -5,6 +5,7 @@
 @use "works";
 @use "fadein";
 @use "features";
+@use "concept";
 
 body {
   font-family: "メイリオ", "Meiryo", sans-serif !important;
@@ -27,7 +28,7 @@ section {
 #terms {
   margin-top: 100px;
 
-  h1 {
+  h2.title {
     text-align: center;
     padding-bottom: 50px;
   }

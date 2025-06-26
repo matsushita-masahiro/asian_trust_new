@@ -18,4 +18,14 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+  
+  # config/routes.rb
+  # https 
+    constraints(host: 'msworks.tokyo') do
+      get '(*path)', to: redirect { |params, req|
+        "https://www.msworks.tokyo/#{params[:path]}"
+      }
+    end
+
+  
 end

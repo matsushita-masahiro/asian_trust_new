@@ -9,4 +9,34 @@ footer a:hover {
 }
 
 
+// 利用規約等の左右余白
+
+.extra-padding {
+  padding-left: 10rem !important;
+  padding-right: 10rem !important;
+
+  @media (max-width: 768px) {
+    padding-left: 3rem !important;
+    padding-right: 3rem !important;
+  }
+}
+
+
+@media (max-width: 768px) {
+  #law .title {
+    font-size: 20px;
+  }
+  
+  #terms .title {
+    font-size: 20px;
+  }
+  
+  #privacy .title {
+    font-size: 20px;
+  }
+  
+}
+
+
+
 

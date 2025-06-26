@@ -18,7 +18,7 @@ document.addEventListener("turbo:load", () => {
     });
   
     fadeElems.forEach((el, i) => {
-      el.dataset.delay = i * 200; // ← 200ms刻みで遅延
+      el.dataset.delay = i * 100; // ← 200ms刻みで遅延
       observer.observe(el);
     });
   });

@@ -1,4 +1,11 @@
 #works {
+  
+  position: relative;
+  scroll-margin-top: 300px; // ← ✅ ここで調整（ナビバーの高さ分）
+
+  .works-title {
+    margin-bottom: 50px;
+  }
   .work-card {
     background-color: white;
     padding: 16px;

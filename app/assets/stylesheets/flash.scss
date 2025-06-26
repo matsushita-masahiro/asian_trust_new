@@ -1,8 +1,13 @@
 .flash-message {
-  margin-top: 80px; // ナビバーと被らないように調整
-  z-index: 999;
-  position: relative;
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  padding: 0 15px;
+  text-align: center;
 }
+
 
 
 

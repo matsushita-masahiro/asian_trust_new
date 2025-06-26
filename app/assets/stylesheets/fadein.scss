@@ -19,21 +19,23 @@
 }
 
 .carousel-fade .carousel-item {
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  display: block; // display: block を維持
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  opacity: 0;
-  transition: opacity 1.5s ease-in-out;
+  height: 100%; // 追加推奨：高さが親に合ってない場合
   z-index: 0;
-  display: block; // important: don't use display: none;
 }
 
 .carousel-fade .carousel-item.active,
-.carousel-fade .carousel-item-next.carousel-item-start,
-.carousel-fade .carousel-item-prev.carousel-item-end {
+.carousel-fade .carousel-item-next.carousel-item-left,
+.carousel-fade .carousel-item-prev.carousel-item-right {
   opacity: 1;
   z-index: 1;
+  position: relative; // activeだけrelativeに戻す
 }
 
 .carousel-inner {

@@ -1,50 +1,91 @@
-.carousel {
-  margin-top: 56px; // ナビバー高さ分（Bootstrap標準）
+#custom-slider {
+  position: relative;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+
+  .slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    opacity: 0;
+    transition: opacity 5s ease-in-out;
+    z-index: 0;
+    text-align: center;
+
+    &.active {
+      opacity: 1;
+      z-index: 1;
+      position: relative;
+    }
+
+    img {
+      width: 100vw;          // 横幅いっぱい
+      height: 66vh;          // 画面高さの2/3
+      object-fit: cover;     // トリミングしてバランス調整
+      display: block;
+      margin: 0 auto;
+      max-width: none;
+    }
+
+    .caption {
+      position: absolute;
+      bottom: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+
+      h2 {
+        font-size: clamp(2rem, 5vw, 4rem);
+        font-weight: bold;
+        margin-bottom: 1rem;
+        white-space: nowrap;
+      }
+
+      p {
+        font-size: clamp(1rem, 3vw, 1.8rem);
+        white-space: nowrap;
+      }
+    }
+  }
 }
 
-
-
-.carousel-caption {
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  right: auto !important;
-  bottom: auto !important;
-  width: auto !important;
-  padding: 0 !important;
-  transform: translate(-50%, -50%) !important;
-  text-align: center !important;
-  color: #fff !important;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8) !important;
-  z-index: 10;
-  text-shadow: 8px 8px 20px rgba(0, 0, 0, 1.0); // ← 倍の強さに調整
-
-  h5 {
-    font-size: clamp(2.5rem, 5vw, 4rem);
-    font-weight: bold;
-    margin-bottom: 1rem;
-    white-space: nowrap;
-  }
-
-  p {
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    white-space: nowrap;
-  }
-}
-
-
+// モバイル時のフォントサイズ調整（任意）
 @media (max-width: 576px) {
-  .carousel-caption {
-    padding: 0 1rem;
-
-    h5 {
-      font-size: 1.4rem;
+  #custom-slider .slide .caption {
+    h2 {
+      font-size: 1.6rem;
     }
 
     p {
       font-size: 1.1rem;
     }
   }
+}
+
+#slider-dots {
+  .dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin: 0 5px;
+    background-color: #ccc;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    &.active {
+      background-color: #b47c4d; // アクティブ色
+    }
+  }
+}
+
+#slider-dots {
+  background-color: #f8f9fa; // ← SERVICEセクションと同じ色に
+  padding: 12px 0;           // 少し余裕を持たせる場合
 }
 
 

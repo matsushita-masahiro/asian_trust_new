@@ -1,44 +1,24 @@
-<section id="features" class="bg-light text-center">
+<section id="features" class="bg-light text-center py-5">
   <div class="container">
     <h2 class="mb-5 fadein">SERVICE</h2>
     <div class="row">
-      <div class="col-md-4 fadein delay-1">
-        <img src="/images/result.png" alt="実績豊富" class="mb-3" style="width: 64px; height: auto;">
-        <h4 class="mt-3">実績豊富</h4>
-        <p class="w-100">10以上のサブスクリプション</p>
-        <p class="w-100">LPやダッシュボードを制作</p>
-      </div>
-      <div class="col-md-4 fadein delay-2">
-        <img src="/images/res.png" alt="即レス・納期厳守" class="mb-4" style="width: 64px; height: auto;">
-        <h4 class="mt-4">即レス・納期厳守</h4>
-        <p class="w-100">平均レスポンス1時間以内</p>
-        <p class="w-100">最短即日納品も対応</p>
-      </div>
-      <div class="col-md-4 fadein delay-3">
-        <img src="/images/stripe.png" alt="Stripe / PayPal対応" class="mb-3" style="width: 64px; height: auto;">
-        <h4 class="mt-3">Stripe / PayPal対応</h4>
-        <p class="w-100">月額課金・売上連携など</p>
-        <p class="w-100">ビジネス仕様に強い構成</p>
-      </div>
+      <% features = [
+        { image: 'result.png', title: '実績豊富', desc: ['10以上のサブスクリプション', 'LPやダッシュボードを制作'] },
+        { image: 'res.png', title: '即レス・納期厳守', desc: ['平均レスポンス1時間以内', '最短即日納品も対応'] },
+        { image: 'stripe.png', title: 'Stripe / PayPal対応', desc: ['月額課金・売上連携など', 'ビジネス仕様に強い構成'] }
+      ] %>
+
+      <% features.each_with_index do |feature, i| %>
+        <div class="col-md-4 fadein delay-<%= i + 1 %>">
+          <div class="feature-card d-flex flex-column align-items-center">
+            <img src="/images/<%= feature[:image] %>" alt="<%= feature[:title] %>" class="mb-3" style="width: 64px; height: auto;">
+            <h4 class="mt-2 mb-2 hover-effect fw-normal"><%= feature[:title] %></h4>
+            <% feature[:desc].each do |line| %>
+              <p class="w-100 text-muted"><%= line %></p>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
     </div>
   </div>
 </section>
-
-<style>
-#features p {
-  max-width: 220px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-@media (max-width: 1000px) {
-  #features p {
-    font-size: 14px !important;
-  }
-  
-  #features h4 {
-    font-size: 20px !important;
-  }  
-}
-</style>
-

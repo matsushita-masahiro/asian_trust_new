@@ -1,0 +1,30 @@
+#features {
+  p {
+    max-width: 220px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 16px;
+  }
+
+  h4.hover-effect {
+    display: inline-block;
+    transition: all 0.3s ease;
+    position: relative;
+    font-weight: 600;
+  }
+
+  h4.hover-effect:hover {
+    transform: translateY(-3px) scale(1.05);
+    color: #b47c4d;
+  }
+
+  @media (max-width: 1000px) {
+    p {
+      font-size: 14px !important;
+    }
+
+    h4 {
+      font-size: 20px !important;
+    }
+  }
+}

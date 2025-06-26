@@ -1,0 +1,32 @@
+<div id="carouselExample" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
+  <div class="carousel-inner">
+    <div class="carousel-item active">
+      <img src="<%= asset_path('top1.jpg') %>" class="d-block w-100" alt="画像1" loading="lazy">
+      <div class="carousel-caption d-flex flex-column justify-content-center text-center">
+        <h2>Web制作ポートフォリオ</h2>
+        <p>Stripe / PayPal サブスクリプション対応</p>
+      </div>
+    </div>
+    <div class="carousel-item">
+      <img src="<%= asset_path('top2.jpg') %>" class="d-block w-100" alt="画像2" loading="lazy">
+      <div class="carousel-caption d-flex flex-column justify-content-center text-center">
+        <h2>モバイル対応</h2>
+        <p>ユーザーフレンドリーなUI設計</p>
+      </div>
+    </div>
+    <div class="carousel-item">
+      <img src="<%= asset_path('top3.jpg') %>" class="d-block w-100" alt="画像3" loading="lazy">
+      <div class="carousel-caption d-flex flex-column justify-content-center text-center">
+        <h2>管理画面ダッシュボード</h2>
+        <p>顧客支払管理機能</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+  </button>
+</div>

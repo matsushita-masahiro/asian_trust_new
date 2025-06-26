@@ -1,21 +1,22 @@
-<section id="works" class="bg-light text-center">
+<section id="works" class="bg-light text-center py-5">
   <div class="container">
-    <h2 class="mb-5 fadein">WORKS</h2>
-    <div class="row g-4">
+    <h2 class="fadein mb-2">WORKS</h2>
+    <div class="row justify-content-center g-4">
       <% works = [
-        { image: 'top1.jpg', title: 'Railsアプリ制作' },
-        { image: 'top2.jpg', title: 'Stripe/paypal決済実装' },
-        { image: 'top3.jpg', title: 'オンライン講座サブスク' },
-        { image: 'top2.jpg', title: 'Zoom連携サブスク' },
-        { image: 'top1.jpg', title: '決済特化アプリ' },
-        { image: 'top3.jpg', title: 'エステ予約システム' }
+        { image: 'top1.jpg', title: 'Railsアプリ制作', desc: '管理機能・認証・非同期などを組み込んだ実践的なRailsアプリを開発' },
+        { image: 'top2.jpg', title: 'Stripe/paypal決済実装', desc: '定期課金や一回払いなど、決済処理を安全かつスムーズに実装' },
+        { image: 'top3.jpg', title: 'オンライン講座サブスク', desc: 'Zoom連携・動画配信・ユーザー管理まで対応可能な講座管理アプリ' },
+        { image: 'top2.jpg', title: 'Zoom連携サブスク', desc: '支払い済みユーザーのみZoomリンク表示などの制限機能も実装' },
+        { image: 'top1.jpg', title: '決済特化アプリ', desc: 'ユーザー管理・売上分析・自動請求など決済に特化した業務支援ツール' },
+        { image: 'top3.jpg', title: 'エステ予約システム', desc: '予約・顧客管理・決済を一元化したサロン向けWebアプリ' }
       ] %>
 
       <% works.each_with_index do |work, i| %>
         <div class="col-12 col-sm-6 col-lg-4 fadein delay-<%= i + 1 %>">
-          <div class="work-card">
-            <img src="<%= asset_path(work[:image]) %>" class="img-fluid rounded shadow-sm" alt="<%= work[:title] %>">
-            <div class="work-title mt-2"><%= work[:title] %></div>
+          <div class="work-card bg-white p-3 rounded shadow-sm h-100 d-flex flex-column">
+            <img src="<%= asset_path(work[:image]) %>" class="img-fluid mb-3 rounded" alt="<%= work[:title] %>">
+            <h5 class="fw-semibold mb-2"><%= work[:title] %></h5>
+            <p class="text-start text-muted m-0 small"><%= work[:desc] %></p>
           </div>
         </div>
       <% end %>

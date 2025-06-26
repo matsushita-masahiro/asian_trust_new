@@ -1,32 +1,24 @@
-<div id="carouselExample" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
-  <div class="carousel-inner">
-    <div class="carousel-item active">
-      <img src="<%= asset_path('top1.jpg') %>" class="d-block w-100" alt="画像1"loading="eager">
-      <div class="carousel-caption d-flex flex-column justify-content-center text-center">
-        <h2>Web制作ポートフォリオ</h2>
-        <p>Stripe / PayPal サブスクリプション対応</p>
-      </div>
-    </div>
-    <div class="carousel-item">
-      <img src="<%= asset_path('top2.jpg') %>" class="d-block w-100" alt="画像2" loading="eager">
-      <div class="carousel-caption d-flex flex-column justify-content-center text-center">
-        <h2>モバイル対応</h2>
-        <p>ユーザーフレンドリーなUI設計</p>
-      </div>
-    </div>
-    <div class="carousel-item">
-      <img src="<%= asset_path('top3.jpg') %>" class="d-block w-100" alt="画像3" loading="eager">
-      <div class="carousel-caption d-flex flex-column justify-content-center text-center">
-        <h2>管理画面ダッシュボード</h2>
-        <p>顧客支払管理機能</p>
-      </div>
-    </div>
-  </div>
+<div id="custom-slider" class="slider">
+  <% slides = [
+    { image: 'top1.jpg', title: 'Web制作ポートフォリオ', desc: 'Stripe / PayPal サブスクリプション対応' },
+    { image: 'top2.jpg', title: 'モバイル対応', desc: 'ユーザーフレンドリーなUI設計' },
+    { image: 'top3.jpg', title: '管理画面ダッシュボード', desc: '顧客支払管理機能' }
+  ] %>
 
-  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
-    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-  </button>
-  <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
-    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-  </button>
+  <% slides.each_with_index do |slide, i| %>
+    <div class="slide <%= 'active' if i == 0 %>">
+      <img src="<%= asset_path(slide[:image]) %>" class="slider-image" alt="スライド画像">
+      <div class="caption">
+        <h3><%= slide[:title] %></h3>
+        <p><%= slide[:desc] %></p>
+      </div>
+    </div>
+  <% end %>
 </div>
+
+<div id="slider-dots" class="text-center">
+  <% slides.each_with_index do |_, i| %>
+    <span class="dot <%= 'active' if i == 0 %>" data-index="<%= i %>"></span>
+  <% end %>
+</div>
+

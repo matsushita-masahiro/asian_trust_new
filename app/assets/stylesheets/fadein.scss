@@ -11,47 +11,47 @@
   transform: translateY(0);
 }
 
-/* ✨ 順番付き遅延（delay-1 〜 delay-6） */
+/* ✨ 順番付き遅延（delay-1 ～ delay-6） */
 @for $i from 1 through 6 {
   .fadein.delay-#{$i} {
-    transition-delay: #{($i - 1) * 0.3}s; // 0s, 0.3s, 0.6s, ...
+    transition-delay: #{($i - 1) * 0.3}s;
   }
+}
+
+/* ✨ Bootstrap Carousel Smooth FadeIn / FadeOut */
+.carousel-fade .carousel-inner {
+  position: relative;
+  background-color: #000; // 白背景が見えてしまうなら
 }
 
 .carousel-fade .carousel-item {
   opacity: 0;
   transition: opacity 1.5s ease-in-out;
-  display: block; // display: block を維持
+  display: block;
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%; // 追加推奨：高さが親に合ってない場合
+  height: 100%;
   z-index: 0;
 }
 
-.carousel-fade .carousel-item.active,
+/* 表示中のアイテムにだけ透過解除・上に重ねる */
+.carousel-fade .carousel-item.active {
+  opacity: 1;
+  z-index: 1;
+  position: relative;
+}
+
+/* 前後アニメーション中も同様の効果にする */
 .carousel-fade .carousel-item-next.carousel-item-left,
 .carousel-fade .carousel-item-prev.carousel-item-right {
   opacity: 1;
   z-index: 1;
-  position: relative; // activeだけrelativeに戻す
-}
-
-.carousel-inner {
   position: relative;
 }
 
-.carousel-item {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+.carousel-item img {
+  transition: opacity 1.5s ease-in-out;
 }
-
-
-
-// .carousel-inner {
-  // background-color: #000; // or #111 if white flashが出るとき
-// }
 

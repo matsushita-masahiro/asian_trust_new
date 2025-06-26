@@ -1,0 +1,29 @@
+#works {
+  .work-card {
+    background-color: white;
+    padding: 16px;
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+    overflow: hidden; // 角丸と相性よく
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      background-color: #decdb2bd !important; // ← 上書き
+    }
+
+    img {
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .work-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .work-description {
+      font-size: 0.95rem;
+      color: #444;
+    }
+  }
+}

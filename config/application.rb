@@ -18,6 +18,7 @@ module MasaHp
     # ✅ lib 以下を読み込む設定（autoload ではなく eager_load_paths でより確実に）
     config.eager_load_paths << Rails.root.join("lib")
 
+
     # lib/assets や lib/tasks などのautoload無効化は任意
     config.autoload_lib(ignore: %w[assets tasks])
 

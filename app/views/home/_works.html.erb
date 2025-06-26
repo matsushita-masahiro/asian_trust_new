@@ -1,0 +1,24 @@
+<section id="works" class="bg-light text-center">
+  <div class="container">
+    <h2 class="mb-5 fadein">WORKS</h2>
+    <div class="row g-4">
+      <% works = [
+        { image: 'top1.jpg', title: 'Railsアプリ制作' },
+        { image: 'top2.jpg', title: 'Stripe/paypal決済実装' },
+        { image: 'top3.jpg', title: 'オンライン講座サブスク' },
+        { image: 'top2.jpg', title: 'Zoom連携サブスク' },
+        { image: 'top1.jpg', title: '決済特化アプリ' },
+        { image: 'top3.jpg', title: 'エステ予約システム' }
+      ] %>
+
+      <% works.each_with_index do |work, i| %>
+        <div class="col-12 col-sm-6 col-lg-4 fadein delay-<%= i + 1 %>">
+          <div class="work-card">
+            <img src="<%= asset_path(work[:image]) %>" class="img-fluid rounded shadow-sm" alt="<%= work[:title] %>">
+            <div class="work-title mt-2"><%= work[:title] %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

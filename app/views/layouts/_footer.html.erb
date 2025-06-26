@@ -1,0 +1,22 @@
+<footer class="bg-dark text-light py-4 mt-5">
+  <div class="container text-center">
+    <ul class="list-inline mb-2">
+      <li class="list-inline-item">
+        <%= link_to "利用規約", terms_path, class: "text-light text-decoration-none" %>
+      </li>
+      <li class="list-inline-item">|</li>
+      <li class="list-inline-item">
+        <%= link_to "プライバシーポリシー", privacy_path, class: "text-light text-decoration-none" %>
+      </li>
+      <li class="list-inline-item">|</li>
+      <li class="list-inline-item">
+        <%= link_to "特定商取引法に基づく表記", law_path, class: "text-light text-decoration-none" %>
+      </li>
+      <li class="list-inline-item">|</li>
+      <li class="list-inline-item">
+        <%= link_to "お問い合わせ", inquiry_path, class: "text-light text-decoration-none" %>
+      </li>
+    </ul>
+    <p class="mb-0 small">© <%= Time.current.year %> MS works. All rights reserved.</p>
+  </div>
+</footer>

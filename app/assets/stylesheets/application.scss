@@ -2,4 +2,42 @@
 
 @use "main";
 @use "slider";
+@use "works";
+@use "fadein";
+
+body {
+  font-family: "メイリオ", "Meiryo", sans-serif !important;
+  font-weight: 500;
+  line-height: 1.8;
+  letter-spacing: 0.03em;
+}
+
+section {
+  padding: 100px 0;
+}
+
+/* スライダーには余白を入れない */
+#slider {
+  margin-top: 0;
+}
+
+#law,
+#privacy,
+#terms {
+  margin-top: 100px;
+
+  h1 {
+    text-align: center;
+    padding-bottom: 50px;
+  }
+}
+
+@media (max-width: 576px) {
+  #law table {
+    font-size: 0.8rem;
+  }
+}
+
+
+
 

@@ -1,0 +1,51 @@
+/* ✨ Fadein 基本 */
+.fadein {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 1s ease, transform 1s ease;
+}
+
+/* ✨ 表示時 */
+.fadein.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ✨ 順番付き遅延（delay-1 〜 delay-6） */
+@for $i from 1 through 6 {
+  .fadein.delay-#{$i} {
+    transition-delay: #{($i - 1) * 0.3}s; // 0s, 0.3s, 0.6s, ...
+  }
+}
+
+.carousel-fade .carousel-item {
+  opacity: 0;
+  transition: opacity 5s ease-in-out;
+  z-index: 0;
+  display: block; // Bootstrapはfade用に必要
+}
+
+.carousel-fade .carousel-item.active,
+.carousel-fade .carousel-item-next.carousel-item-start,
+.carousel-fade .carousel-item-prev.carousel-item-end {
+  opacity: 1;
+  z-index: 1;
+}
+
+.carousel-inner {
+  position: relative;
+}
+
+.carousel-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+
+
+// .carousel-inner {
+  // background-color: #000; // or #111 if white flashが出るとき
+// }
+

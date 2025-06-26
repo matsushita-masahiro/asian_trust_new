@@ -7,7 +7,7 @@ window.bootstrap = bootstrap // ✅ これを追加するだけ！
 console.log("JavaScript is working!");
 
 import "slider" // ✅ importmap では "./slider" ではなく "slider"
-
+import "fadein"
 
 
 

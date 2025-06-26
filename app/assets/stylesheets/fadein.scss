@@ -19,10 +19,14 @@
 }
 
 .carousel-fade .carousel-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
   opacity: 0;
-  transition: opacity 5s ease-in-out;
+  transition: opacity 1.5s ease-in-out;
   z-index: 0;
-  display: block; // Bootstrapはfade用に必要
+  display: block; // important: don't use display: none;
 }
 
 .carousel-fade .carousel-item.active,

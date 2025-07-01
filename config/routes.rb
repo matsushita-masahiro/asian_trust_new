@@ -11,8 +11,6 @@ Rails.application.routes.draw do
   resources :inquiries, only: [:new, :create]
   
   namespace :admin do
-    get "inquiries/index"
-    get "inquiries/show"
     resources :inquiries, only: [:index, :show] do
       resources :answers, only: [:new, :create, :edit, :update, :destroy]
     end

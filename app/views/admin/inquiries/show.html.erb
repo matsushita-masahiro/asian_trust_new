@@ -1,21 +1,22 @@
-<h2>お問い合わせ詳細</h2>
-<p><strong>名前:</strong> <%= @inquiry.name %></p>
-<p><strong>メール:</strong> <%= @inquiry.email %></p>
-<p><strong>内容:</strong> <%= @inquiry.message %></p>
-
-<hr>
-<h3>回答一覧</h3>
-
-<%= link_to '新規回答を追加', new_admin_inquiry_answer_path(@inquiry), class: "btn btn-outline-primary mb-3" %>
-
-<% @inquiry.answers.each do |answer| %>
-  <div class="card mb-3">
-    <div class="card-body">
-      <p class="card-text"><%= simple_format(answer.content) %></p>
-      <p class="text-muted"><%= answer.created_at.strftime("%Y/%m/%d %H:%M") %></p>
-      <%= link_to '編集', edit_admin_inquiry_answer_path(@inquiry, answer), class: "btn btn-sm btn-secondary" %>
-      <%= link_to '削除', admin_inquiry_answer_path(@inquiry, answer), method: :delete, data: { confirm: "削除してよろしいですか？" }, class: "btn btn-sm btn-danger" %>
+<section id="inquiry">
+  <h2>お問い合わせ詳細</h2>
+  <hr>
+  <p><strong>名前:</strong> <%= @inquiry.name %></p>
+  <p><strong>メール:</strong> <%= @inquiry.email %></p>
+  <p><strong>内容:</strong> <%= @inquiry.message %></p>
+  
+  <hr>
+  <h3>回答一覧</h3>
+  
+  <%= link_to '新規回答を追加', new_admin_inquiry_answer_path(@inquiry), class: "btn btn-outline-primary mb-3" %>
+  
+  <% @inquiry.answers.each do |answer| %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <p class="card-text"><%= simple_format(answer.content) %></p>
+        <p class="text-muted"><%= answer.created_at.strftime("%Y/%m/%d %H:%M") %></p>
+      </div>
     </div>
-  </div>
-<% end %>
+  <% end %>
+</section>
 

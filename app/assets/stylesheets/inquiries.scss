@@ -1,0 +1,16 @@
+#inquiries, #inquiry, #answer {
+    padding: 100px;
+}
+
+@media (max-width: 768px) {
+    #inquiries, #inquiry, #answer {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 500px) {
+    #inquiries, #inquiry, #answer {
+      font-size: 10px;
+    }
+}
+

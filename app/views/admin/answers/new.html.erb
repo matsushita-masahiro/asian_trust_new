@@ -1,6 +1,6 @@
-<div class="container mt-5">
+<div id="answer" class="container mt-5">
   <h2>新規回答を追加</h2>
-
+  <hr>
   <%= form_with(model: [@inquiry, @answer], url: admin_inquiry_answers_path(@inquiry), local: true) do |f| %>
     <div class="mb-3">
       <%= f.label :content, "回答内容" %>

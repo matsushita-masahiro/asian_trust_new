@@ -1,22 +1,28 @@
-<section id="inquiry">
-  <h2>お問い合わせ詳細</h2>
-  <hr>
-  <p><strong>名前:</strong> <%= @inquiry.name %></p>
-  <p><strong>メール:</strong> <%= @inquiry.email %></p>
-  <p><strong>内容:</strong> <%= @inquiry.message %></p>
-  
-  <hr>
-  <h3>回答一覧</h3>
-  
-  <%= link_to '新規回答を追加', new_admin_inquiry_answer_path(@inquiry), class: "btn btn-outline-primary mb-3" %>
-  
+<section id="inquiry" class="container my-5">
+
+  <!-- ▼ お問い合わせ詳細（上部固定） -->
+  <div class="bg-white sticky-top py-3 px-2 mb-4 border-bottom" style="top: 60px; z-index: 1020;">
+    <div class="d-flex justify-content-between align-items-start">
+      <h2>お問い合わせ詳細</h2>
+      <%= link_to '新規回答を追加', new_admin_inquiry_answer_path(@inquiry), class: "btn btn-outline-primary" %>
+    </div>
+    <hr>
+    <p><strong>名前:</strong> <%= @inquiry.name %></p>
+    <p><strong>メール:</strong> <%= @inquiry.email %></p>
+    <p><strong>内容:</strong> <%= @inquiry.message %></p>
+    <p><strong>問い合わせ日時:</strong> <%= @inquiry.created_at.in_time_zone('Asia/Tokyo').strftime("%Y/%m/%d %H:%M") %></p>
+  </div>
+
+  <!-- ▼ 回答一覧 -->
+  <h3 class="mb-3">📝 回答一覧</h3>
+
   <% @inquiry.answers.each do |answer| %>
     <div class="card mb-3">
       <div class="card-body">
         <p class="card-text"><%= simple_format(answer.content) %></p>
-        <p class="text-muted"><%= answer.created_at.strftime("%Y/%m/%d %H:%M") %></p>
+        <p class="text-muted"><%= answer.created_at.in_time_zone('Asia/Tokyo').strftime("%Y/%m/%d %H:%M") %></p>
       </div>
     </div>
   <% end %>
-</section>
 
+</section>

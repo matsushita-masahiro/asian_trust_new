@@ -7,7 +7,7 @@ require_relative "../lib/middleware/remove_allow_browser_middleware"
 
 Bundler.require(*Rails.groups)
 
-module MasaHp
+module AsianTrust
   class Application < Rails::Application
     config.load_defaults 8.0
 
@@ -17,6 +17,10 @@ module MasaHp
 
     # ✅ lib 以下を読み込む設定（autoload ではなく eager_load_paths でより確実に）
     config.eager_load_paths << Rails.root.join("lib")
+    
+    config.time_zone = 'Asia/Tokyo'
+    config.active_record.default_timezone = :utc
+
 
 
     # lib/assets や lib/tasks などのautoload無効化は任意

@@ -1,0 +1,10 @@
+<div class="container py-5 pt-5 mt-5">
+  <h2 class="mb-4">🛠 管理者メニュー</h2>
+
+  <div class="list-group">
+    <%= link_to "1. 代理店管理", admin_user_path(User.find_by(level: 0)), class: "list-group-item list-group-item-action" %>
+    <%= link_to "2. 商品管理", admin_products_path, class: "list-group-item list-group-item-action" %>
+    <%= link_to "3. お問い合わせ一覧", admin_inquiries_path, class: "list-group-item list-group-item-action" %>
+    <%# 今後メニューを追加するならここに %>
+  </div>
+</div>

@@ -17,6 +17,6 @@
         <%= link_to "お問い合わせ", new_inquiry_path, class: "text-light text-decoration-none" %>
       </li>
     </ul>
-    <p class="mb-0 small">© <%= Time.current.year %> MS works. All rights reserved.</p>
+    <p class="mb-0 small">© <%= Time.current.year %> <%= ENV['COMPANY_NAME'] %>. All rights reserved.</p>
   </div>
 </footer>

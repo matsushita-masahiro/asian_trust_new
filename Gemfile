@@ -69,3 +69,7 @@ gem "cssbundling-rails", "~> 1.4"
 
 gem 'dotenv-rails', groups: [:development, :test]
 
+gem 'devise'
+gem 'seed-fu'
+
+

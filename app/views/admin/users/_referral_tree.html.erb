@@ -1,0 +1,19 @@
+<ul class="list-group ms-3">
+  <% referrals.each_with_index do |user, i| %>
+    <li class="list-group-item">
+      <span class="me-2 text-muted">#<%= i + 1 %>.</span>
+
+      <% if user.referrals.any? %>
+        <!-- 下位がいる: リンク付き + success色 -->
+        <strong>
+          <%= link_to "#{user.name}（#{user.level_label}）", admin_user_path(user), class: "text-success text-decoration-none" %>
+        </strong><br>
+      <% else %>
+        <!-- 下位がいない: リンクなし -->
+        <strong><%= "#{user.name}（#{user.level_label}）" %></strong><br>
+      <% end %>
+
+      📧 <%= user.email %>
+    </li>
+  <% end %>
+</ul>

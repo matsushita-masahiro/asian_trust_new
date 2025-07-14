@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  product: one
+  agent_level: 1
+  price: 1
+
+two:
+  product: two
+  agent_level: 1
+  price: 1

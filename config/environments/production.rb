@@ -93,8 +93,8 @@ Rails.application.configure do
   config.action_mailer.smtp_settings = {
     address:              'mail1038.onamae.ne.jp',
     port:                 465,
-    user_name:            ENV['ONAMAE_MAIL_USER'],
-    password:             ENV['ONAMAE_MAIL_PASSWORD'],
+    user_name:            ENV['ADMIN_MAIL'],
+    password:             ENV['ADMIN_MAIL_PASSWORD'],
     authentication:       :login,
     ssl:                  true,
     tls:                  true,

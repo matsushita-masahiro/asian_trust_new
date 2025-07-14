@@ -1,5 +1,17 @@
 Rails.application.routes.draw do
   
+  namespace :webhooks do
+    post 'lstep', to: 'lstep#create'
+  end
+  
+  devise_for :users, controllers: {
+    sessions: 'users/sessions',
+    registrations: 'users/registrations',
+    passwords: 'users/passwords',
+    confirmations: 'users/confirmations',
+    unlocks: 'users/unlocks'
+  }
+  
 
   root "home#index"
   
@@ -11,11 +23,16 @@ Rails.application.routes.draw do
   resources :inquiries, only: [:new, :create]
   
   namespace :admin do
-    get '/', to: 'base#index'
+    resources :products, only: [:index, :edit, :update]
+    root to: 'dashboard#index'  # /admin をダッシュボードに
+    get "users/show"
+    resources :users, only: [:index, :show]
     resources :inquiries, only: [:index, :show] do
       resources :answers, only: [:new, :create, :edit, :update, :destroy]
     end
   end
+  
+
 
 
 

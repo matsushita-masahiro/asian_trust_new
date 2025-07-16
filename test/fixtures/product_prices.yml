@@ -2,10 +2,10 @@
 
 one:
   product: one
-  agent_level: 1
+  level: one
   price: 1
 
 two:
   product: two
-  agent_level: 1
+  level: two
   price: 1

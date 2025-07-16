@@ -1,0 +1,9 @@
+<div class="text-end mb-3">
+  <%= form_with url: request.path, method: :get, local: true do %>
+    <%= select_tag :month, options_for_select(month_options, @selected_month),
+        class: "form-select d-inline-block w-auto", onchange: "this.form.submit();" %>
+  
+  <%# ✅ user_id を hidden で送信 %>
+    <%= hidden_field_tag :user_id, @user.id if defined?(@user) %>
+  <% end %>
+</div>

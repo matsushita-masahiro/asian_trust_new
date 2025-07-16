@@ -1,24 +1,35 @@
-<div class="container pt-5 mt-5 px-4">
-  <h2 class="mb-4">✏️ 商品編集</h2>
+<div class="container py-5 mt-5">
+  <div class="card shadow">
+    <div class="card-body">
+      <h2 class="mb-4">🧪 商品編集</h2>
 
-  <%= form_with model: [:admin, @product], local: true do |form| %>
-    <div class="mb-3">
-      <%= form.label :name, '商品名' %>
-      <%= form.text_field :name, class: 'form-control' %>
+      <%= form_with(model: [:admin, @product], local: true) do |form| %>
+        <div class="mb-4">
+          <%= form.label :name, "商品名", class: "form-label fw-bold" %>
+          <%= form.text_field :name, class: "form-control" %>
+        </div>
+
+        <div class="mb-4">
+          <%= form.label :base_price, "基本価格（円）", class: "form-label fw-bold" %>
+          <%= form.number_field :base_price, class: "form-control" %>
+        </div>
+
+        <div class="mb-4">
+          <%= form.label :unit_quantity, "販売数量", class: "form-label fw-bold" %>
+          <%= form.number_field :unit_quantity, step: 0.1, class: "form-control", placeholder: "例: 2.0" %>
+        </div>
+
+        <div class="mb-4">
+          <%= form.label :unit_label, "販売単位", class: "form-label fw-bold" %>
+          <%= form.text_field :unit_label, class: "form-control", placeholder: "例: cc, 回, 箱" %>
+        </div>
+
+        <%= render partial: 'level_prices', locals: { product: @product, form: form } %>
+
+        <div class="text-end mt-4">
+          <%= form.submit "更新", class: "btn btn-primary px-4" %>
+        </div>
+      <% end %>
     </div>
-
-    <div class="mb-3">
-      <%= form.label :base_price, '基本金額（円）' %>
-      <%= form.number_field :base_price, class: 'form-control' %>
-    </div>
-
-    <div class="mb-3 form-check">
-      <%= form.check_box :is_active, class: 'form-check-input' %>
-      <%= form.label :is_active, '有効にする', class: 'form-check-label' %>
-    </div>
-
-    <%= form.submit '更新する', class: 'btn btn-success' %>
-  <% end %>
-
-  <%= link_to '一覧に戻る', admin_products_path, class: 'btn btn-secondary mt-3' %>
+  </div>
 </div>

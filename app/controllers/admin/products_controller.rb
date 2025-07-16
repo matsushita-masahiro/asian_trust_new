@@ -18,7 +18,12 @@ class Admin::ProductsController < Admin::BaseController
 
   private
 
-  def product_params
-    params.require(:product).permit(:name, :base_price, :is_active)
-  end
+    def product_params
+      params.require(:product).permit(
+        :name, :base_price,
+        product_prices_attributes: [:id, :level_id, :price, :_destroy]
+      )
+    end
+    
+    
 end

@@ -7,3 +7,17 @@
         padding: 100px 20px;
     }
 }
+
+// admin/users/index/show
+
+.referral-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 1rem;
+
+  &:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+  }
+}

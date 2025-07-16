@@ -1,0 +1,25 @@
+<h5 class="mt-5 mb-3">💰 <strong>代理店レベル別価格</strong></h5>
+<div class="table-responsive">
+  <table class="table table-bordered table-hover table-striped align-middle">
+    <thead class="table-light">
+      <tr>
+        <th style="width: 30%">レベル名</th>
+        <th>販売価格（円）</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% Level.all.each do |level| %>
+        <% price_record = product.product_prices.find { |pp| pp.level_id == level.id } || product.product_prices.build(level: level) %>
+        <tr>
+          <td class="fw-semibold"><%= level.name %></td>
+          <td>
+            <%= form.fields_for :product_prices, price_record do |pp_form| %>
+              <%= pp_form.hidden_field :level_id %>
+              <%= pp_form.number_field :price, class: "form-control", placeholder: "例: 45000", style: "min-width: 120px;" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

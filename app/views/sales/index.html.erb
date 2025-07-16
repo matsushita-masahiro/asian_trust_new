@@ -1,0 +1,79 @@
+<div id="sales-index">
+  <div class="container mt-5 pt-5">
+  
+    <!-- 年月度プルダウン（固定） -->
+    <div class="sticky-top bg-white z-index-sticky month-selector-wrapper">
+      <%= render 'shared/month_selector' %>
+    </div>
+  
+    <!-- ヘッダー -->
+    <div class="bg-light p-3 rounded shadow-sm mb-4">
+      <h4 class="mb-2 fw-bold text-dark"><%= @user.name %>の売上明細</h4>
+      <div class="text-muted fs-6">
+        📅 （<%= @selected_month %>）販売履歴
+      </div>
+    </div>
+  
+    <% if @purchases.any? %>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-nowrap">
+          <thead class="table-secondary text-white">
+            <tr>
+              <th>販売店</th>
+              <th>購入者名</th>
+              <th>商品名</th>
+              <th class="text-end">単価（円）</th>
+              <th class="text-end">数量</th>
+              <th class="text-end">合計（円）</th>
+              <th class="text-end">ボーナス（円）</th>
+              <th>メール</th>
+              <th>電話番号</th>
+              <th>住所</th>
+              <th>購入日時</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% total_sum = 0 %>
+            <% total_bonus = 0 %>
+  
+            <% @purchases.each do |purchase| %>
+              <% total = purchase.product.base_price * purchase.quantity %>
+              <% bonus = @user.bonus_for_purchase(purchase) %>
+              <% total_sum += total %>
+              <% total_bonus += bonus %>
+              <tr>
+                <td class="fw-bold"><%= purchase.user.name %></td>
+                <td><%= purchase.customer&.name || "-" %></td>
+                <td><%= purchase.product.name %></td>
+                <td class="text-end"><%= number_with_delimiter(purchase.product.base_price) %></td>
+                <td class="text-end"><%= purchase.quantity %></td>
+                <td class="text-end text-danger fw-bold"><%= number_with_delimiter(total) %></td>
+                <td class="text-end text-success fw-bold"><%= number_with_delimiter(bonus) %></td>
+                <td><%= purchase.customer&.email || "-" %></td>
+                <td><%= purchase.customer&.phone || "-" %></td>
+                <td><%= purchase.customer&.address || "-" %></td>
+                <td><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
+              </tr>
+            <% end %>
+  
+            <!-- 合計行 -->
+            <tr class="table-primary fw-bold text-end">
+              <td colspan="5" class="text-end">合計</td>
+              <td class="text-end text-danger"><%= number_with_delimiter(total_sum) %></td>
+              <td class="text-end text-success"><%= number_with_delimiter(total_bonus) %></td>
+              <td colspan="4"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-muted">今月の売上明細はありません。</p>
+    <% end %>
+  
+    <!-- 戻るボタン -->
+    <div class="mt-4 mb-5 text-center">
+      <%= link_to "⬅ 戻る", request.referer || user_path(@user), class: "btn btn-outline-secondary btn-lg px-4" %>
+    </div>
+  </div>
+
+</div>

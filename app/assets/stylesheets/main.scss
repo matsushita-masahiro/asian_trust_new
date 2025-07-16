@@ -38,5 +38,73 @@ footer a:hover {
 }
 
 
+// mypage user/showの上部分を固定
+
+#user-show {
+  .hover-pointer:hover {
+      background-color: #f8f9fa;
+      cursor: pointer;
+    }
+  
+    .text-purple {
+      color: #8e44ad;
+    }
+  
+    .sticky-top {
+      position: sticky;
+      top: 60px; /* ← ここを0から60pxなどに変更 */
+      z-index: 1030;
+      background-color: white;
+    }
+}
+
+
+#mypage {
+  .hover-pointer:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+  }
+
+  .text-purple {
+    color: #d63384;
+  }
+
+  .month-selector-wrapper {
+    top: 56px; /* navbar高さ */
+    z-index: 1020;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .user-info-wrapper {
+    top: 110px; /* selectorの下 */
+    z-index: 1010;
+  }
+
+  .sticky-top {
+    position: sticky;
+  }
+
+  .z-index-sticky {
+    z-index: 1030;
+  }
+  
+}
+
+#sales-index {
+  .month-selector-wrapper {
+    position: sticky;
+    top: 56px; /* ナビバーの高さ */
+    z-index: 1020;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    background-color: white;
+  }
+
+  .z-index-sticky {
+    z-index: 1030;
+  }
+}
+
 
 

@@ -1,6 +1,4 @@
-
 # lib/middleware/force_html_middleware.rb
-
 module Middleware
   class ForceHtmlMiddleware
     def initialize(app)
@@ -8,9 +6,10 @@ module Middleware
     end
 
     def call(env)
-      env["HTTP_ACCEPT"] = "text/html" if env["HTTP_ACCEPT"].to_s !~ /html/
+      if env['HTTP_ACCEPT']&.include?('text/vnd.turbo-stream.html')
+        env['HTTP_ACCEPT'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      end
       @app.call(env)
     end
   end
 end
-

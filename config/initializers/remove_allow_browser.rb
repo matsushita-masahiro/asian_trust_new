@@ -1,29 +1,28 @@
-Rails.application.config.after_initialize do
+# config/initializers/remove_allow_browser.rb
+
+Rails.application.config.to_prepare do
   target_file = 'action_controller/metal/allow_browser.rb'
 
-  ObjectSpace.each_object(Class).select { |klass|
-    klass < ActionController::Base
-  }.each do |controller|
+  ObjectSpace.each_object(Class).select { |klass| klass < ActionController::Base }.each do |controller|
     next unless controller.respond_to?(:_process_action_callbacks)
 
-    removed = false
+    old_callbacks = controller._process_action_callbacks
 
-    controller._process_action_callbacks.each do |callback|
-      next unless callback.filter.is_a?(Proc)
-      next unless callback.filter.source_location&.first&.include?(target_file)
+    filtered_callbacks = old_callbacks.reject do |cb|
+      cb.filter.is_a?(Proc) &&
+      cb.filter.source_location&.first&.include?(target_file)
+    end
 
+    controller.reset_callbacks(:process_action)
+
+    filtered_callbacks.each do |cb|
       begin
-        controller.skip_callback(
-          :process_action,
-          callback.kind,
-          callback.filter
-        )
-        removed = true
+        controller.set_callback(:process_action, cb.kind, cb.filter, **cb.options)
       rescue => e
-        Rails.logger.debug("⚠️ skip_callback failed in #{controller.name}: #{e.class} #{e.message}")
+        Rails.logger.debug "⚠️ set_callback failed in #{controller.name}: #{e.class} #{e.message}"
       end
     end
 
-    puts "🧹 Removed AllowBrowser from #{controller.name}" if removed
+    Rails.logger.debug "✅ Reset callbacks for #{controller.name}"
   end
 end

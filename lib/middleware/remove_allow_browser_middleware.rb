@@ -1,5 +1,3 @@
-# lib/middleware/remove_allow_browser_middleware.rb
-
 module Middleware
   class RemoveAllowBrowserMiddleware
     def initialize(app)
@@ -14,25 +12,25 @@ module Middleware
     private
 
     def disable_allow_browser
-      target_path = 'action_controller/metal/allow_browser.rb'
+      allow_browser_path = "action_controller/metal/allow_browser.rb"
 
-      ObjectSpace.each_object(Class).select { |klass|
-        klass < ActionController::Base
-      }.each do |controller|
+      ObjectSpace.each_object(Class).select { |klass| klass < ActionController::Base }.each do |controller|
         next unless controller.respond_to?(:_process_action_callbacks)
 
         controller._process_action_callbacks.each do |callback|
           next unless callback.filter.is_a?(Proc)
-          next unless callback.filter.source_location&.first&.include?(target_path)
 
-          begin
-            controller.skip_callback(
-              :process_action,
-              callback.kind,
-              callback.filter
-            )
-          rescue => e
-            Rails.logger.debug("⚠️ AllowBrowser callback skip failed: #{e.class} #{e.message}")
+          if callback.filter.source_location&.first&.include?(allow_browser_path)
+            begin
+              controller.skip_callback(
+                :process_action,
+                callback.kind,
+                callback.filter
+              )
+              Rails.logger.debug("✅ Removed AllowBrowser filter from #{controller.name}")
+            rescue => e
+              Rails.logger.warn("⚠️ Failed to remove AllowBrowser from #{controller.name}: #{e.class} #{e.message}")
+            end
           end
         end
       end

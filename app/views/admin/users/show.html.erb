@@ -5,21 +5,45 @@
 
   <!-- ユーザー情報 -->
   <div class="card shadow mb-4">
-    <div class="card-body d-flex justify-content-between" style="background-color: #dee2e6;">
-      <div>
-        <h3 class="card-title"><%= @user.name %></h3>
-        <p class="mb-1"><strong>📧 メール:</strong> <%= @user.email %></p>
-        <p class="mb-1"><strong>🧯 レベル:</strong> <%= @user.level_label %></p>
-        <p class="mb-0"><strong>🆔 LステップID:</strong> <code><%= @user.lstep_user_id.presence || "未登録" %></code></p>
-      </div>
-      <div class="text-end">
-        <p class="mb-1">合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
-        <p>選択月の売上合計：<strong><%= number_with_delimiter(@total_sales_amount) %></strong> 円</p>
+    <div class="card-body" style="background-color: #dee2e6;">
+      <!-- デスクトップ表示 -->
+      <div class="d-none d-md-flex justify-content-between">
+        <div>
+          <h3 class="card-title"><%= @user.name %></h3>
+          <p class="mb-1"><strong>📧 メール:</strong> <span class="text-break"><%= @user.email %></span></p>
+          <p class="mb-1"><strong>🧯 レベル:</strong> <%= @user.level_label %></p>
+          <p class="mb-0"><strong>🆔 LステップID:</strong> <code><%= @user.lstep_user_id.presence || "未登録" %></code></p>
+        </div>
+        <div class="text-end">
+          <p class="mb-1">合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
+          <p>選択月の売上合計：<strong><%= number_with_delimiter(@total_sales_amount) %></strong> 円</p>
 
-        <% unless @user.id == 1 %>
-          <p class="mb-0"><%= @selected_month %>のボーナス：<strong class="text-success"><%= number_with_delimiter(@user.bonus_in_month(@selected_month).to_i) %></strong> 円</p>
-          <%= link_to "売上明細を見る", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm mt-2" %>
-        <% end %>
+          <% unless @user.id == 1 %>
+            <p class="mb-0"><%= @selected_month %>のボーナス：<strong class="text-success"><%= number_with_delimiter(@user.bonus_in_month(@selected_month).to_i) %></strong> 円</p>
+            <%= link_to "売上明細を見る", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm mt-2" %>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- モバイル表示 -->
+      <div class="d-md-none">
+        <h3 class="card-title text-center mb-3"><%= @user.name %></h3>
+        
+        <div class="mb-3">
+          <p class="mb-1"><strong>📧 メール:</strong> <span class="text-break"><%= @user.email %></span></p>
+          <p class="mb-1"><strong>🧯 レベル:</strong> <%= @user.level_label %></p>
+          <p class="mb-0"><strong>🆔 LステップID:</strong> <code><%= @user.lstep_user_id.presence || "未登録" %></code></p>
+        </div>
+        
+        <div class="text-center">
+          <p class="mb-1">合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
+          <p class="mb-2">選択月の売上合計：<strong><%= number_with_delimiter(@total_sales_amount) %></strong> 円</p>
+
+          <% unless @user.id == 1 %>
+            <p class="mb-2"><%= @selected_month %>のボーナス：<strong class="text-success"><%= number_with_delimiter(@user.bonus_in_month(@selected_month).to_i) %></strong> 円</p>
+            <%= link_to "売上明細を見る", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
+          <% end %>
+        </div>
       </div>
     </div>
   </div>
@@ -57,24 +81,55 @@
         <ul class="list-group ms-3">
           <% @user.referrals.each_with_index do |user, i| %>
             <% stats = @referral_stats[user.id] || { sales: 0, bonus: 0 } %>
-            <li class="list-group-item d-flex justify-content-between align-items-center hover-pointer"
+            <li class="list-group-item hover-pointer"
                 onclick="window.location.href='<%= admin_user_path(user, month: @selected_month) %>'">
-              <div>
-                <span class="me-2 text-muted">#<%= i + 1 %>.</span>
-                <strong class="text-success text-decoration-none">
-                  <%= user.name %>
-                </strong><br>
-                📧 <%= user.email %><br>
-                🆔 <code><%= user.lstep_user_id.presence || "未登録" %></code>
+              
+              <!-- デスクトップ表示 -->
+              <div class="d-none d-md-block">
+                <div class="row align-items-start">
+                  <div class="col-md-7">
+                    <span class="me-2 text-muted">#<%= i + 1 %>.</span>
+                    <strong class="text-success text-decoration-none">
+                      <%= user.name %>
+                    </strong><br>
+                    <div class="text-break">📧 <%= user.email %></div>
+                    🆔 <code><%= user.lstep_user_id.presence || "未登録" %></code>
+                  </div>
+                  <div class="col-md-5 text-end">
+                    <p class="mb-1 text-muted">
+                      売上（<%= @selected_month %>）：<strong><%= number_with_delimiter(stats[:sales]) %></strong> 円
+                    </p>
+                    <p class="mb-2 text-muted">
+                      ボーナス（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(user.bonus_in_month(@selected_month)) %></strong> 円
+                    </p>
+                    <%= link_to "売上明細を見る", sales_path(user_id: user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+                  </div>
+                </div>
               </div>
-              <div class="text-end">
-                <p class="mb-1 text-muted">
-                  売上（<%= @selected_month %>）：<strong><%= number_with_delimiter(stats[:sales]) %></strong> 円
-                </p>
-                <p class="mb-2 text-muted">
-                  ボーナス（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(user.bonus_in_month(@selected_month)) %></strong> 円
-                </p>
-                <%= link_to "売上明細を見る", sales_path(user_id: user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+
+              <!-- モバイル表示 -->
+              <div class="d-md-none">
+                <div class="text-center mb-2">
+                  <span class="text-muted">#<%= i + 1 %>.</span>
+                  <strong class="text-success text-decoration-none">
+                    <%= user.name %>
+                  </strong>
+                </div>
+                
+                <div class="mb-2">
+                  <p class="mb-1 small text-break">📧 <%= user.email %></p>
+                  <p class="mb-0 small">🆔 <code><%= user.lstep_user_id.presence || "未登録" %></code></p>
+                </div>
+                
+                <div class="text-center mb-2">
+                  <p class="mb-1 text-muted small">
+                    売上（<%= @selected_month %>）：<strong><%= number_with_delimiter(stats[:sales]) %></strong> 円
+                  </p>
+                  <p class="mb-2 text-muted small">
+                    ボーナス（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(user.bonus_in_month(@selected_month)) %></strong> 円
+                  </p>
+                  <%= link_to "売上明細を見る", sales_path(user_id: user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+                </div>
               </div>
             </li>
           <% end %>

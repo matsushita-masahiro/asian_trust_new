@@ -28,6 +28,6 @@ module AsianTrust
 
     # 他の設定は必要に応じて
     # config.time_zone = "Tokyo"
-    # config.i18n.default_locale = :ja
+    config.i18n.default_locale = :ja
   end
 end

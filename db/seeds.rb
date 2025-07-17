@@ -1,12 +1,17 @@
-
-
 puts "🔄 Seeding started..."
 
-# 外部キー制約を一時無効化（SQLite対策）
-ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
-User.delete_all
-ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='users'")
-ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
+adapter = ActiveRecord::Base.connection.adapter_name
+
+# SQLite環境のみ、外部キー制約を一時無効化
+if adapter == "SQLite"
+  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
+  User.delete_all
+  ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='users'")
+  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
+else
+  # PostgreSQL など他の環境では普通に削除
+  User.delete_all
+end
 
 user_id_seq = 1
 lstep_id_seq = 1
@@ -86,7 +91,7 @@ end
 
 # サロン・病院
 advisors.each_with_index do |parent, i|
-  ["サロン", "病院"].each_with_index do |type, idx|
+  ["サロン", "病院"].each_with_index do |type, _idx|
     User.create!(
       id: user_id_seq,
       name: "#{type}#{i + 1}",
@@ -110,14 +115,14 @@ end
     email: "tokuyaku1_advisor#{i + 1}@example.com",
     password: "password",
     level_id: levels["アドバイザー"].id,
-    referred_by_id: special_agents[0].id,  # 特約代理店1
+    referred_by_id: special_agents[0].id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
   )
   user_id_seq += 1
   lstep_id_seq += 1
 
-  salon = User.create!(
+  User.create!(
     id: user_id_seq,
     name: "特約1-サロン#{i + 1}",
     email: "tokuyaku1_salon#{i + 1}@example.com",
@@ -133,13 +138,13 @@ end
 
 # --- 追加パターン (2) ---
 2.times do |i|
-  salon = User.create!(
+  User.create!(
     id: user_id_seq,
     name: "特約2-サロン#{i + 1}",
     email: "tokuyaku2_salon#{i + 1}@example.com",
     password: "password",
     level_id: levels["サロン"].id,
-    referred_by_id: special_agents[1].id,  # 特約代理店2
+    referred_by_id: special_agents[1].id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
   )
@@ -155,7 +160,7 @@ end
     email: "tokuyaku3_advisor#{i + 1}_1@example.com",
     password: "password",
     level_id: levels["アドバイザー"].id,
-    referred_by_id: special_agents[2].id,  # 特約代理店3
+    referred_by_id: special_agents[2].id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
   )
@@ -175,7 +180,7 @@ end
   user_id_seq += 1
   lstep_id_seq += 1
 
-  salon = User.create!(
+  User.create!(
     id: user_id_seq,
     name: "特約3-サロン#{i + 1}",
     email: "tokuyaku3_salon#{i + 1}@example.com",
@@ -188,6 +193,5 @@ end
   user_id_seq += 1
   lstep_id_seq += 1
 end
-
 
 puts "✅ Seeding completed!"

@@ -1,4 +1,4 @@
-puts "🔄 Seeding started..."
+puts "🔄 Seeding started......"
 
 adapter = ActiveRecord::Base.connection.adapter_name
 

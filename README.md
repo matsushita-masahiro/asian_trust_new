@@ -5,7 +5,7 @@
   
   
   購入
-  curl -X POST https://asiantrust-e236e749fb27.herokuapp.com/lstep/purchase \
+  curl -X POST https://asiantrust-e236e749fb27.herokuapp.com/webhooks/lstep/purchase \
   -H "Content-Type: application/json" \
   -H "X-LSTEP-SECRET: test_token_123" \
   -d '{

@@ -19,7 +19,7 @@
             <p>本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
             <p>下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
             <p>合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
-            <p>ボーナス：<strong class="text-success"><%= number_with_delimiter(@user.current_month_bonus.to_i) %></strong>円</p>
+            <p>ボーナス：<strong class="text-success"><%= number_with_delimiter(@user.bonus_in_month(@selected_month).to_i) %></strong>円</p>
           </div>
         </div>
       </div>
@@ -46,7 +46,7 @@
                       <p class="mb-1 text-break">📧 <%= ref_user.email %></p>
                       <p class="mb-1">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
                       <p class="mb-1">売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</p>
-                      <p class="mb-0">ボーナス：<%= number_with_delimiter(ref_user.current_month_bonus.to_i) %>円</p>
+                      <p class="mb-0">ボーナス：<%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %>円</p>
                     </div>
                     <div class="col-md-4 text-end">
                       <%= link_to "売上明細", sales_path(user_id: ref_user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
@@ -67,7 +67,7 @@
                   
                   <div class="text-center mb-2">
                     <p class="mb-1 small">売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</p>
-                    <p class="mb-2 small">ボーナス：<%= number_with_delimiter(ref_user.current_month_bonus.to_i) %>円</p>
+                    <p class="mb-2 small">ボーナス：<%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %>円</p>
                     <%= link_to "売上明細", sales_path(user_id: ref_user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
                   </div>
                 </div>

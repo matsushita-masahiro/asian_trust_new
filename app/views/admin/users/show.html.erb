@@ -1,0 +1,216 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+        <div class="d-flex align-items-center">
+          <h4 class="text-primary me-3"><%= @user.name.present? ? @user.name : @user.email %></h4>
+          <%= form_with url: admin_user_path(@user), method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
+            <label class="form-label me-2 mb-0">対象月:</label>
+            <%= f.month_field :month, value: @selected_month, class: "form-control", style: "width: 180px;", onchange: "document.getElementById('month-form').submit();" %>
+          <% end %>
+        </div>
+        <div>
+          <%= link_to "代理店一覧に戻る", admin_users_path, class: "btn btn-outline-secondary me-2" %>
+          <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 基本情報 -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">基本情報</h5>
+        </div>
+        <div class="card-body">
+          <table class="table table-borderless">
+            <tr>
+              <th width="30%">ID:</th>
+              <td><%= @user.id %></td>
+            </tr>
+            <tr>
+              <th>LステップID:</th>
+              <td>
+                <% if @user.lstep_user_id.present? %>
+                  <span class="badge bg-info"><%= @user.lstep_user_id %></span>
+                <% else %>
+                  <span class="text-muted">未設定</span>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>メールアドレス:</th>
+              <td><%= @user.email %></td>
+            </tr>
+            <tr>
+              <th>登録日:</th>
+              <td><%= @user.created_at.strftime("%Y年%m月%d日 %H:%M") %></td>
+            </tr>
+            <tr>
+              <th>紹介者:</th>
+              <td>
+                <% if @user.referrer %>
+                  <%= link_to (@user.referrer.name.present? ? @user.referrer.name : @user.referrer.email), admin_user_path(@user.referrer, month: @selected_month), class: "text-decoration-none" %>
+                <% else %>
+                  <span class="text-muted">なし</span>
+                <% end %>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">統計情報</h5>
+        </div>
+        <div class="card-body">
+          <table class="table table-borderless">
+            <tr>
+              <th width="40%">直接紹介数:</th>
+              <td><span class="badge bg-primary fs-6"><%= @referrals.count %></span></td>
+            </tr>
+            <tr>
+              <th>総紹介数:</th>
+              <td><span class="badge bg-info fs-6"><%= @user.descendants.count %></span></td>
+            </tr>
+            <tr>
+              <th>当月売上:</th>
+              <td><span class="text-success fw-bold">¥<%= number_with_delimiter(@total_sales_amount) %></span></td>
+            </tr>
+            <tr>
+              <th>自身の購入:</th>
+              <td><span class="text-primary">¥<%= number_with_delimiter(@purchases.joins(:product).sum('products.base_price * purchases.quantity')) %></span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 紹介チェーン -->
+  <% if @referrer_chain.any? %>
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">紹介チェーン</h5>
+          </div>
+          <div class="card-body">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <% @referrer_chain.reverse.each_with_index do |ancestor, index| %>
+                  <li class="breadcrumb-item">
+                    <%= link_to (ancestor.name.present? ? ancestor.name : ancestor.email), admin_user_path(ancestor, month: @selected_month), class: "text-decoration-none" %>
+                  </li>
+                <% end %>
+                <li class="breadcrumb-item active" aria-current="page"><%= @user.name.present? ? @user.name : @user.email %></li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- 直接紹介した代理店 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">直接紹介した代理店 (<%= @referrals.count %>名)</h5>
+        </div>
+        <div class="card-body">
+          <% if @referrals.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>メールアドレス</th>
+                    <th>登録日</th>
+                    <th>当月売上</th>
+                    <th>当月ボーナス</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @referrals.each do |referral| %>
+                    <tr>
+                      <td><%= referral.id %></td>
+                      <td><%= referral.email %></td>
+                      <td><%= referral.created_at.strftime("%Y/%m/%d") %></td>
+                      <td>
+                        <% stats = @referral_stats[referral.id] || { sales: 0, bonus: 0 } %>
+                        <span class="text-success">¥<%= number_with_delimiter(stats[:sales]) %></span>
+                      </td>
+                      <td>
+                        <span class="text-warning">¥<%= number_with_delimiter(stats[:bonus]) %></span>
+                      </td>
+                      <td>
+                        <%= link_to "詳細", admin_user_path(referral, month: @selected_month), class: "btn btn-sm btn-outline-primary" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">まだ誰も紹介していません</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 購入履歴 -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">当月の購入履歴</h5>
+        </div>
+        <div class="card-body">
+          <% if @purchases.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>購入日</th>
+                    <th>購入者</th>
+                    <th>商品名</th>
+                    <th>数量</th>
+                    <th>単価</th>
+                    <th>合計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @purchases.includes(:product, :user).each do |purchase| %>
+                    <tr>
+                      <td><%= purchase.purchased_at.strftime("%Y/%m/%d") %></td>
+                      <td><%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %></td>
+                      <td><%= purchase.product.name %></td>
+                      <td><%= purchase.quantity %></td>
+                      <td>¥<%= number_with_delimiter(purchase.product.base_price) %></td>
+                      <td class="text-success">¥<%= number_with_delimiter(purchase.product.base_price * purchase.quantity) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">当月の購入履歴はありません</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

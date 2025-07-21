@@ -1,0 +1,136 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">管理画面ダッシュボード</h2>
+        <div class="text-muted">
+          <%= Date.current.strftime("%Y年%m月%d日") %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- 統計カード -->
+    <div class="col-md-3 mb-4">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">総ユーザー数</h6>
+              <h3 class="mb-0"><%= User.count %></h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-users fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">今月の登録</h6>
+              <h3 class="mb-0"><%= User.where(created_at: Date.current.beginning_of_month..Date.current.end_of_month).count %></h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-user-plus fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">今日のアクセス</h6>
+              <h3 class="mb-0">-</h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-chart-line fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+      <div class="card bg-warning text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">システム状態</h6>
+              <h3 class="mb-0">正常</h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-server fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- 最近のユーザー -->
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">最近登録されたユーザー</h5>
+        </div>
+        <div class="card-body">
+          <% if User.exists? %>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>メールアドレス</th>
+                    <th>登録日</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% User.order(created_at: :desc).limit(5).each do |user| %>
+                    <tr>
+                      <td><%= user.id %></td>
+                      <td><%= user.email %></td>
+                      <td><%= user.created_at.strftime("%m/%d %H:%M") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+            <div class="text-center mt-3">
+              <%= link_to "すべてのユーザーを見る", admin_users_path, class: "btn btn-outline-primary btn-sm" %>
+            </div>
+          <% else %>
+            <p class="text-muted text-center">まだユーザーが登録されていません</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- クイックアクション -->
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">クイックアクション</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <%= link_to "ユーザー管理", admin_users_path, class: "btn btn-outline-primary" %>
+            <%= link_to "お問い合わせ管理", admin_inquiries_path, class: "btn btn-outline-info" %>
+            <%= link_to "商品管理", admin_products_path, class: "btn btn-outline-success" %>
+            <%= link_to "代理店管理", admin_users_path, class: "btn btn-outline-warning" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

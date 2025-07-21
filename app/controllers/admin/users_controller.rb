@@ -1,7 +1,11 @@
 # app/controllers/admin/users_controller.rb
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user
-  before_action :set_selected_month_range
+  before_action :set_user, only: [:show]
+  before_action :set_selected_month_range, only: [:show]
+
+  def index
+    @users = User.includes(:referrer, :referrals).order(:id)
+  end
 
   def show
     @referrer_chain = @user.ancestors

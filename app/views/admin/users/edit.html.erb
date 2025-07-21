@@ -1,0 +1,134 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+        <h4 class="text-danger">ユーザー編集（要注意）</h4>
+        <div>
+          <%= link_to "戻る", admin_user_path(@user), class: "btn btn-outline-secondary me-2" %>
+          <%= link_to "代理店一覧", admin_users_path, class: "btn btn-outline-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">基本情報の編集</h5>
+        </div>
+        <div class="card-body">
+          <%= form_with model: [:admin, @user], local: true, class: "row g-3" do |f| %>
+            <% if @user.errors.any? %>
+              <div class="col-12">
+                <div class="alert alert-danger">
+                  <h6>エラーが発生しました:</h6>
+                  <ul class="mb-0">
+                    <% @user.errors.full_messages.each do |message| %>
+                      <li><%= message %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              </div>
+            <% end %>
+
+            <div class="col-md-6">
+              <%= f.label :name, "名前", class: "form-label" %>
+              <%= f.text_field :name, class: "form-control", placeholder: "名前を入力" %>
+            </div>
+
+            <div class="col-md-6">
+              <%= f.label :email, "メールアドレス", class: "form-label" %>
+              <%= f.email_field :email, class: "form-control", placeholder: "メールアドレスを入力" %>
+            </div>
+
+            <div class="col-md-6">
+              <%= f.label :lstep_user_id, "LステップID", class: "form-label" %>
+              <%= f.text_field :lstep_user_id, class: "form-control", placeholder: "LステップIDを入力" %>
+            </div>
+
+            <div class="col-md-6">
+              <%= f.label :level_id, "会員レベル", class: "form-label" %>
+              <%= f.select :level_id, 
+                    options_from_collection_for_select(@levels, :id, :name, @user.level_id), 
+                    { prompt: "レベルを選択してください" }, 
+                    { class: "form-select" } %>
+            </div>
+
+            <div class="col-12">
+              <%= f.label :referred_by_id, "紹介者", class: "form-label" %>
+              <%= f.select :referred_by_id, 
+                    options_from_collection_for_select(@users, :id, :display_name, @user.referred_by_id), 
+                    { prompt: "紹介者を選択してください（任意）" }, 
+                    { class: "form-select" } %>
+              <div class="form-text">紹介者を変更する場合は慎重に行ってください。</div>
+            </div>
+
+            <div class="col-12">
+              <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span class="text-danger fw-bold">注意: ユーザー情報の変更は慎重に行ってください。特に紹介者やレベルの変更は、ボーナス計算に影響する可能性があります。</span>
+              </div>
+              <hr>
+              <div class="d-flex justify-content-end gap-2">
+                <%= link_to "キャンセル", admin_user_path(@user), class: "btn btn-secondary" %>
+                <%= f.submit "更新", class: "btn btn-danger", 
+                    data: { 
+                      confirm: "本当に変更しても大丈夫ですか？\n\nこの操作により以下の影響が発生する可能性があります：\n・ボーナス計算の変更\n・紹介関係の変更\n・統計データへの影響\n\n変更を続行しますか？" 
+                    } %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">現在の情報</h5>
+        </div>
+        <div class="card-body">
+          <table class="table table-borderless table-sm">
+            <tr>
+              <th width="40%">ID:</th>
+              <td><%= @user.id %></td>
+            </tr>
+            <tr>
+              <th>現在の名前:</th>
+              <td><%= @user.name.present? ? @user.name : "未設定" %></td>
+            </tr>
+            <tr>
+              <th>現在のメール:</th>
+              <td><%= @user.email %></td>
+            </tr>
+            <tr>
+              <th>現在のレベル:</th>
+              <td>
+                <% if @user.level %>
+                  <span class="badge bg-info"><%= @user.level.name %></span>
+                <% else %>
+                  <span class="text-muted">未設定</span>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>現在の紹介者:</th>
+              <td>
+                <% if @user.referrer %>
+                  <%= @user.referrer.display_name %>
+                <% else %>
+                  <span class="text-muted">なし</span>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>登録日:</th>
+              <td><%= @user.created_at.strftime("%Y年%m月%d日") %></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -10,6 +10,7 @@
           <% end %>
         </div>
         <div class="mobile-nav-buttons">
+          <%= link_to "ユーザー編集", edit_admin_user_path(@user), class: "btn btn-outline-warning me-2" %>
           <%= link_to "代理店一覧に戻る", admin_users_path, class: "btn btn-outline-secondary me-2" %>
           <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
         </div>

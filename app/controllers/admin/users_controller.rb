@@ -1,6 +1,6 @@
 # app/controllers/admin/users_controller.rb
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [:show]
+  before_action :set_user, only: [:show, :edit, :update]
   before_action :set_selected_month_range, only: [:show, :all_users]
 
   def index
@@ -86,6 +86,19 @@ class Admin::UsersController < Admin::BaseController
     end
   end
 
+  def edit
+    @levels = Level.all.order(:value)
+    @users = User.where.not(id: @user.id).order(:name, :email)
+  end
+
+  def update
+    if @user.update(user_params)
+      redirect_to admin_user_path(@user), notice: 'ユーザー情報が更新されました。'
+    else
+      render :edit
+    end
+  end
+
   private
 
   def set_user
@@ -97,5 +110,9 @@ class Admin::UsersController < Admin::BaseController
     @selected_month = selected_month
     @selected_month_start = Date.strptime(selected_month, "%Y-%m").beginning_of_month
     @selected_month_end   = Date.strptime(selected_month, "%Y-%m").end_of_month
+  end
+
+  def user_params
+    params.require(:user).permit(:name, :email, :lstep_user_id, :level_id, :referred_by_id)
   end
 end

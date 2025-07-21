@@ -1,0 +1,256 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+        <h2 class="text-primary">購入情報作成</h2>
+        <div>
+          <%= link_to "購入履歴一覧に戻る", admin_purchases_path, class: "btn btn-outline-secondary me-2" %>
+          <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">新しい購入情報の入力</h5>
+        </div>
+        <div class="card-body">
+          <%= form_with model: [:admin, @purchase], local: true, class: "needs-validation", novalidate: true do |form| %>
+            <% if @purchase.errors.any? %>
+              <div class="alert alert-danger">
+                <h6>エラーが発生しました:</h6>
+                <ul class="mb-0">
+                  <% @purchase.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <!-- 販売店選択 -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= form.label :user_id, "販売店", class: "form-label" %>
+                  <%= form.select :user_id, 
+                      options_from_collection_for_select(@users, :id, :display_name, @purchase.user_id),
+                      { prompt: "販売店を選択してください" },
+                      { class: "form-select", required: true } %>
+                  <div class="invalid-feedback">
+                    販売店を選択してください。
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= form.label :customer_name, "顧客名", class: "form-label" %>
+                  <%= form.text_field :customer_name, 
+                      class: "form-control", 
+                      required: true,
+                      placeholder: "顧客名を入力してください" %>
+                  <div class="invalid-feedback">
+                    顧客名を入力してください。
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 商品選択 -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= form.label :product_id, "商品", class: "form-label" %>
+                  <%= form.select :product_id, 
+                      options_from_collection_for_select(@products, :id, :name, @purchase.product_id),
+                      { prompt: "商品を選択してください" },
+                      { class: "form-select", required: true, id: "product_select" } %>
+                  <div class="invalid-feedback">
+                    商品を選択してください。
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= form.label :purchased_at, "購入日時", class: "form-label" %>
+                  <%= form.datetime_local_field :purchased_at, 
+                      class: "form-control", 
+                      required: true,
+                      value: @purchase.purchased_at&.strftime('%Y-%m-%dT%H:%M') || Time.current.strftime('%Y-%m-%dT%H:%M') %>
+                  <div class="invalid-feedback">
+                    購入日時を入力してください。
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 数量・単価 -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= form.label :quantity, "数量", class: "form-label" %>
+                  <%= form.number_field :quantity, 
+                      class: "form-control form-control-lg", 
+                      min: 1, 
+                      required: true,
+                      id: "quantity_input",
+                      placeholder: "数量を入力" %>
+                  <div class="invalid-feedback">
+                    数量は1以上で入力してください。
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= form.label :unit_price, "単価", class: "form-label" %>
+                  <div class="input-group">
+                    <span class="input-group-text">¥</span>
+                    <%= form.number_field :unit_price, 
+                        class: "form-control form-control-lg", 
+                        min: 0, 
+                        required: true,
+                        id: "unit_price_input",
+                        placeholder: "単価を入力" %>
+                  </div>
+                  <div class="invalid-feedback">
+                    単価は0以上で入力してください。
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 計算結果表示 -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <div class="card border-success">
+                  <div class="card-body text-center">
+                    <h6 class="card-title text-muted">合計金額</h6>
+                    <h3 class="text-success mb-0" id="total_amount">¥0</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <%= link_to "キャンセル", admin_purchases_path, class: "btn btn-secondary me-md-2" %>
+              <%= form.submit "作成する", class: "btn btn-success btn-lg" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // リアルタイム計算
+  function updateTotal() {
+    const quantity = document.getElementById('quantity_input').value || 0;
+    const unitPrice = document.getElementById('unit_price_input').value || 0;
+    const total = quantity * unitPrice;
+    
+    document.getElementById('total_amount').textContent = 
+      '¥' + total.toLocaleString();
+  }
+
+  // 商品選択時に単価を自動入力
+  function loadProductPrice() {
+    const productSelect = document.getElementById('product_select');
+    const unitPriceInput = document.getElementById('unit_price_input');
+    
+    if (!productSelect.value) {
+      unitPriceInput.value = '';
+      updateTotal();
+      return;
+    }
+    
+    // 商品価格情報を取得
+    fetch(`/admin/products/${productSelect.value}/price_info`)
+      .then(response => response.json())
+      .then(data => {
+        unitPriceInput.value = data.base_price || 0;
+        updateTotal();
+      })
+      .catch(error => {
+        console.error('価格情報の取得に失敗しました:', error);
+      });
+  }
+
+  // 入力フィールドにイベントリスナーを追加
+  document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantity_input');
+    const unitPriceInput = document.getElementById('unit_price_input');
+    const productSelect = document.getElementById('product_select');
+    
+    if (quantityInput && unitPriceInput) {
+      quantityInput.addEventListener('input', updateTotal);
+      unitPriceInput.addEventListener('input', updateTotal);
+    }
+    
+    // 商品選択時に価格を自動入力
+    if (productSelect) {
+      productSelect.addEventListener('change', loadProductPrice);
+    }
+    
+    // Bootstrap validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      });
+    });
+  });
+</script>
+
+<style>
+  .card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+  
+  .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .form-control-lg {
+    font-size: 1.1rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .input-group-text {
+    font-weight: bold;
+    background-color: #e9ecef;
+  }
+  
+  .border-success {
+    border-color: #198754 !important;
+  }
+  
+  .form-select {
+    font-size: 1rem;
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 768px) {
+    .d-flex.justify-content-between {
+      flex-direction: column;
+      align-items: flex-start !important;
+    }
+    
+    .me-2 {
+      margin-bottom: 0.5rem;
+      margin-right: 0 !important;
+    }
+    
+    .row.mb-3 {
+      margin-bottom: 1rem !important;
+    }
+  }
+</style>

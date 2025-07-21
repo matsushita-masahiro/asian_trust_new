@@ -1,35 +1,39 @@
-<div class="hierarchy-level level-<%= level %>">
-  <div class="user-node">
-    <div class="user-name">
-      <%= user.name.present? ? user.name : user.email %>
-      <% if user.level %>
-        <span class="badge bg-secondary ms-2"><%= user.level.name %></span>
-      <% end %>
-      <% if user.lstep_user_id.present? %>
-        <span class="badge bg-info ms-1"><%= user.lstep_user_id %></span>
-      <% end %>
-    </div>
-    
-    <div class="user-stats">
-      <% stats = @user_stats[user.id] %>
-      <div class="row">
-        <div class="col-6">
-          <strong><%= @current_month_name %>:</strong><br>
-          売上 <span class="<%= stats[:current][:sales] > 0 ? 'sales-positive' : 'sales-zero' %>">¥<%= number_with_delimiter(stats[:current][:sales]) %></span><br>
-          ボーナス <span class="<%= stats[:current][:bonus] > 0 ? 'bonus-positive' : 'bonus-zero' %>">¥<%= number_with_delimiter(stats[:current][:bonus]) %></span>
-        </div>
-        <div class="col-6">
-          <strong><%= @last_month_name %>:</strong><br>
-          売上 <span class="<%= stats[:last][:sales] > 0 ? 'sales-positive' : 'sales-zero' %>">¥<%= number_with_delimiter(stats[:last][:sales]) %></span><br>
-          ボーナス <span class="<%= stats[:last][:bonus] > 0 ? 'bonus-positive' : 'bonus-zero' %>">¥<%= number_with_delimiter(stats[:last][:bonus]) %></span>
+<div class="hierarchy-row level-<%= level %>">
+  <%= link_to admin_user_path(user), class: "user-node-link" do %>
+    <div class="user-node">
+      <div class="user-name">
+        <%= user.name.present? ? user.name : user.email %>
+        <% if user.level %>
+          <span class="badge bg-secondary ms-2"><%= user.level.name %></span>
+        <% end %>
+        <% if user.lstep_user_id.present? %>
+          <span class="badge bg-info ms-1"><%= user.lstep_user_id %></span>
+        <% end %>
+      </div>
+      
+      <div class="user-stats">
+        <% stats = @user_stats[user.id] %>
+        <div class="row">
+          <div class="col-6">
+            <strong><%= @current_month_name %>:</strong><br>
+            売上 <span class="<%= stats[:current][:sales] > 0 ? 'sales-positive' : 'sales-zero' %>">¥<%= number_with_delimiter(stats[:current][:sales]) %></span><br>
+            ボーナス <span class="<%= stats[:current][:bonus] > 0 ? 'bonus-positive' : 'bonus-zero' %>">¥<%= number_with_delimiter(stats[:current][:bonus]) %></span>
+          </div>
+          <div class="col-6">
+            <strong><%= @last_month_name %>:</strong><br>
+            売上 <span class="<%= stats[:last][:sales] > 0 ? 'sales-positive' : 'sales-zero' %>">¥<%= number_with_delimiter(stats[:last][:sales]) %></span><br>
+            ボーナス <span class="<%= stats[:last][:bonus] > 0 ? 'bonus-positive' : 'bonus-zero' %>">¥<%= number_with_delimiter(stats[:last][:bonus]) %></span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-<% if user.referrals.any? %>
-  <% user.referrals.order(:id).each do |child| %>
-    <%= render 'user_hierarchy_node', user: child, level: level + 1 %>
   <% end %>
-<% end %>
+  
+  <% if user.referrals.any? %>
+    <div class="children-container">
+      <% user.referrals.order(:id).each do |child| %>
+        <%= render 'user_hierarchy_node', user: child, level: level + 1 %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

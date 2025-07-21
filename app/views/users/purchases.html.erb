@@ -1,0 +1,132 @@
+<div id="purchases-index">
+  <div class="container mt-5 pt-5">
+  
+    <!-- 年月度プルダウン（固定） -->
+    <div class="sticky-top bg-white z-index-sticky month-selector-wrapper">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <%= link_to "ユーザー詳細に戻る", user_path(@user, month: @selected_month), 
+              class: "btn btn-outline-secondary btn-sm" %>
+        </div>
+        
+        <div>
+          <%= form_with url: purchases_user_path(@user), method: :get, local: true do %>
+            <%= select_tag :month, options_for_select(@month_options, @selected_month),
+                class: "form-select d-inline-block w-auto", onchange: "this.form.submit();" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  
+    <!-- ヘッダー -->
+    <div class="bg-light p-3 rounded shadow-sm mb-4">
+      <h4 class="mb-2 fw-bold text-dark"><%= @user.name %>の販売履歴</h4>
+      <div class="text-muted fs-6">
+        📅 （<%= @selected_month_name %>）販売実績
+      </div>
+    </div>
+  
+    <% if @purchases.any? %>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-nowrap">
+          <thead class="table-secondary text-white">
+            <tr>
+              <th>購入者名</th>
+              <th>商品名</th>
+              <th class="text-end">単価（円）</th>
+              <th class="text-end">数量</th>
+              <th class="text-end">合計（円）</th>
+              <th class="text-end">ボーナス（円）</th>
+              <th>メール</th>
+              <th>電話番号</th>
+              <th>住所</th>
+              <th>購入日時</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% total_sum = 0 %>
+            <% total_bonus = 0 %>
+  
+            <% @purchases.each do |purchase| %>
+              <% total = purchase.total_price %>
+              <% bonus = @user.bonus_for_purchase(purchase) %>
+              <% total_sum += total %>
+              <% total_bonus += bonus %>
+              <tr>
+                <td><%= purchase.customer&.name || "-" %></td>
+                <td><%= purchase.product.name %></td>
+                <td class="text-end"><%= number_with_delimiter(purchase.unit_price) %></td>
+                <td class="text-end"><%= purchase.quantity %></td>
+                <td class="text-end text-danger fw-bold"><%= number_with_delimiter(total) %></td>
+                <td class="text-end text-success fw-bold"><%= number_with_delimiter(bonus) %></td>
+                <td><%= purchase.customer&.email || "-" %></td>
+                <td><%= purchase.customer&.phone || "-" %></td>
+                <td><%= purchase.customer&.address || "-" %></td>
+                <td><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
+              </tr>
+            <% end %>
+  
+            <!-- 合計行 -->
+            <tr class="table-primary fw-bold text-end">
+              <td colspan="5" class="text-end">合計</td>
+              <td class="text-end text-danger"><%= number_with_delimiter(total_sum) %></td>
+              <td class="text-end text-success"><%= number_with_delimiter(total_bonus) %></td>
+              <td colspan="4"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-muted">この月の販売履歴はありません。</p>
+    <% end %>
+  
+
+  </div>
+
+</div>
+
+<style>
+  .z-index-sticky {
+    z-index: 1030;
+  }
+  
+  .month-selector-wrapper {
+    padding: 1rem 0;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+  }
+  
+  .table th {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  
+  .table td {
+    font-size: 0.9rem;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 768px) {
+    .d-flex.justify-content-between {
+      flex-direction: column;
+      align-items: flex-start !important;
+    }
+    
+    .d-flex.justify-content-between > div:first-child {
+      margin-bottom: 0.5rem;
+    }
+    
+    .table-responsive {
+      font-size: 0.8rem;
+    }
+    
+    .container {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+  }
+</style>

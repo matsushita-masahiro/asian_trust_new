@@ -55,7 +55,7 @@
           <h5 class="card-title mb-0">代理店階層構造図</h5>
         </div>
         <div class="card-body">
-          <div class="hierarchy-container-horizontal">
+          <div class="hierarchy-container-vertical">
             <% @root_users.each do |root_user| %>
               <%= render 'user_hierarchy_node', user: root_user, level: 0 %>
             <% end %>
@@ -67,33 +67,61 @@
 </div>
 
 <style>
-  .hierarchy-container-horizontal {
+  .hierarchy-container-vertical {
     font-family: 'Courier New', monospace;
     padding: 20px;
     background-color: #f8f9fa;
     border-radius: 8px;
-    overflow-x: auto;
-    white-space: nowrap;
+    overflow: auto;
     min-height: 400px;
   }
   
-  .hierarchy-level {
-    display: inline-block;
-    vertical-align: top;
-    margin-right: 30px;
-    white-space: normal;
+  .hierarchy-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    position: relative;
+  }
+  
+  .hierarchy-row.level-0 {
+    margin-bottom: 30px;
   }
   
   .user-node {
-    margin: 8px 0;
     padding: 10px 15px;
     background: white;
     border-radius: 8px;
     border-left: 4px solid #007bff;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    display: block;
     width: 280px;
     position: relative;
+    flex-shrink: 0;
+  }
+  
+  .children-container {
+    margin-left: 30px;
+    flex: 1;
+    position: relative;
+  }
+  
+  .children-container::before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+  }
+  
+  .children-container .hierarchy-row::before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: 50%;
+    width: 15px;
+    height: 2px;
+    background-color: #dee2e6;
   }
   
   .user-name {
@@ -126,20 +154,27 @@
   .level-6 .user-node { border-left-color: #6f42c1; }
   .level-7 .user-node { border-left-color: #e83e8c; }
   
-  /* 接続線 */
-  .hierarchy-level:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    right: -30px;
-    top: 50%;
-    width: 20px;
-    height: 2px;
-    background-color: #adb5bd;
-    z-index: 1;
+  /* リンクスタイル */
+  .user-node-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: all 0.2s ease;
   }
   
-  .hierarchy-level {
-    position: relative;
+  .user-node-link:hover {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .user-node-link:hover .user-node {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    cursor: pointer;
+  }
+  
+  .user-node-link .user-node {
+    transition: all 0.2s ease;
   }
   
   .sales-positive { color: #28a745; font-weight: bold; }
@@ -153,8 +188,25 @@
       width: 250px;
     }
     
-    .hierarchy-level {
-      margin-right: 20px;
+    .children-container {
+      margin-left: 20px;
+    }
+    
+    .hierarchy-row {
+      flex-direction: column;
+    }
+    
+    .children-container {
+      margin-left: 0;
+      margin-top: 15px;
+    }
+    
+    .children-container::before {
+      display: none;
+    }
+    
+    .children-container .hierarchy-row::before {
+      display: none;
     }
   }
 </style>

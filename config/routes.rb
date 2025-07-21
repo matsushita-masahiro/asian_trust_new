@@ -27,8 +27,13 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: 'dashboard#index'  # /admin → ダッシュボード
     resources :sales, only: [:index]
-    resources :products, only: [:index, :edit, :update]
+    resources :products, only: [:index, :edit, :update] do
+      member do
+        get :price_info
+      end
+    end
     resources :bonuses, only: [:index]
+    resources :purchases, only: [:index, :edit, :update, :new, :create]
 
     resources :users, only: [:index, :show] do
       resources :bonuses, only: [:index], controller: 'users/bonuses'
@@ -43,7 +48,11 @@ Rails.application.routes.draw do
 
   # 一般ユーザー用マイページ
   get 'mypage', to: 'users#mypage', as: :mypage
-  resources :users, only: [:show]  # /users/:id → 下位ユーザー詳細
+  resources :users, only: [:show] do  # /users/:id → 下位ユーザー詳細
+    member do
+      get :purchases  # /users/:id/purchases → 販売履歴
+    end
+  end
   resources :sales, only: [:index]
 
   # ヘルスチェック

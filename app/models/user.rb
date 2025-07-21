@@ -27,6 +27,10 @@ class User < ApplicationRecord
     level&.name
   end
 
+  def display_name
+    name.present? ? "#{name} (#{email})" : email
+  end
+
   def ancestors
     result = []
     current = referrer

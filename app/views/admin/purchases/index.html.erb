@@ -1,0 +1,247 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+        <h4 class="text-primary">購入履歴管理</h4>
+        <div class="d-flex align-items-center">
+          <%= form_with url: admin_purchases_path, method: :get, local: true, class: "d-flex align-items-center me-3" do |form| %>
+            <label class="form-label me-2 mb-0">対象月:</label>
+            <%= form.select :month, options_for_select(@month_options, @selected_month), 
+                           {}, 
+                           { class: "form-select me-2", style: "width: auto;", onchange: "this.form.submit();" } %>
+          <% end %>
+          <%= link_to "購入情報作成", new_admin_purchase_path, class: "btn btn-success me-2" %>
+          <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統計情報 -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title"><%= @selected_month_name %></h6>
+          <h5 class="mb-0">購入件数</h5>
+          <h3 class="mb-0"><%= number_with_delimiter(@total_count) %>件</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title"><%= @selected_month_name %></h6>
+          <h5 class="mb-0">総売上金額</h5>
+          <h3 class="mb-0">¥<%= number_with_delimiter(@total_amount) %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title">平均購入金額</h6>
+          <h3 class="mb-0">
+            <% if @total_count > 0 %>
+              ¥<%= number_with_delimiter(@total_amount / @total_count) %>
+            <% else %>
+              ¥0
+            <% end %>
+          </h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title">購入ユーザー数</h6>
+          <h3 class="mb-0"><%= @purchases.map(&:user_id).uniq.count %>人</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 購入履歴テーブル -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><%= @selected_month_name %>の購入履歴一覧</h5>
+        </div>
+        <div class="card-body">
+          <% if @purchases.any? %>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                  <tr>
+                    <th>購入日時</th>
+                    <th>顧客名</th>
+                    <th>商品名</th>
+                    <th>数量</th>
+                    <th>単価</th>
+                    <th>合計金額</th>
+                    <th>販売店</th>
+                    <th>販売店レベル</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @purchases.each do |purchase| %>
+                    <tr class="clickable-row" data-href="<%= edit_admin_purchase_path(purchase) %>" style="cursor: pointer;">
+                      <td>
+                        <div class="fw-bold">
+                          <%= purchase.purchased_at.strftime('%Y/%m/%d') %>
+                        </div>
+                        <small class="text-muted">
+                          <%= purchase.purchased_at.strftime('%H:%M') %>
+                        </small>
+                      </td>
+                      <td>
+                        <div class="fw-bold">
+                          <%= purchase.customer.name %>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="fw-bold">
+                          <%= purchase.product.name %>
+                        </div>
+                        <small class="text-muted">
+                          <%= purchase.product.display_unit %>
+                        </small>
+                      </td>
+                      <td class="text-center">
+                        <span class="badge bg-secondary">
+                          <%= number_with_delimiter(purchase.quantity) %>
+                        </span>
+                      </td>
+                      <td class="text-end">
+                        ¥<%= number_with_delimiter(purchase.unit_price) %>
+                      </td>
+                      <td class="text-end">
+                        <div class="fw-bold text-success">
+                          ¥<%= number_with_delimiter(purchase.total_price) %>
+                        </div>
+                      </td>
+                      <td>
+                        <%= link_to admin_user_path(purchase.user), class: "text-decoration-none" do %>
+                          <div class="fw-bold">
+                            <%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %>
+                          </div>
+                          <% if purchase.user.lstep_user_id.present? %>
+                            <small class="text-muted">
+                              ID: <%= purchase.user.lstep_user_id %>
+                            </small>
+                          <% end %>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if purchase.user.level %>
+                          <span class="badge bg-info">
+                            <%= purchase.user.level.name %>
+                          </span>
+                        <% else %>
+                          <span class="badge bg-secondary">未設定</span>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <div class="mb-3">
+                <i class="fas fa-shopping-cart fa-3x text-muted"></i>
+              </div>
+              <h5 class="text-muted">
+                <%= @selected_month_name %>の購入履歴はありません
+              </h5>
+              <p class="text-muted">
+                他の月を選択して確認してください。
+              </p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .table th {
+    border-top: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  
+  .table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+  }
+  
+  .card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+  
+  .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .badge {
+    font-size: 0.75rem;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+  }
+  
+  .clickable-row:hover {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 768px) {
+    .d-flex.justify-content-between {
+      flex-direction: column;
+      align-items: flex-start !important;
+    }
+    
+    .d-flex.align-items-center.me-3 {
+      margin-top: 1rem;
+      margin-right: 0 !important;
+    }
+    
+    .table-responsive {
+      font-size: 0.8rem;
+    }
+    
+    .card-body {
+      padding: 1rem 0.5rem;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // クリック可能な行にイベントリスナーを追加
+    const clickableRows = document.querySelectorAll('.clickable-row');
+    
+    clickableRows.forEach(row => {
+      row.addEventListener('click', function(e) {
+        // リンクがクリックされた場合は行のクリックを無効にする
+        if (e.target.closest('a')) {
+          return;
+        }
+        
+        const href = this.getAttribute('data-href');
+        if (href) {
+          window.location.href = href;
+        }
+      });
+    });
+  });
+</script>

@@ -1,0 +1,160 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+        <h2 class="text-primary">全ユーザー階層図</h2>
+        <div>
+          <%= link_to "ユーザー管理に戻る", admin_users_path, class: "btn btn-outline-secondary me-2" %>
+          <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統計情報 -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title">総ユーザー数</h6>
+          <h3 class="mb-0"><%= @all_users.count %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title"><%= @current_month_name %>総売上</h6>
+          <h3 class="mb-0">¥<%= number_with_delimiter(@user_stats.values.sum { |stats| stats[:current][:sales] }) %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title"><%= @last_month_name %>総売上</h6>
+          <h3 class="mb-0">¥<%= number_with_delimiter(@user_stats.values.sum { |stats| stats[:last][:sales] }) %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title"><%= @current_month_name %>総ボーナス</h6>
+          <h3 class="mb-0">¥<%= number_with_delimiter(@user_stats.values.sum { |stats| stats[:current][:bonus] }) %></h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 階層図 -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">代理店階層構造図</h5>
+        </div>
+        <div class="card-body">
+          <div class="hierarchy-container-horizontal">
+            <% @root_users.each do |root_user| %>
+              <%= render 'user_hierarchy_node', user: root_user, level: 0 %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hierarchy-container-horizontal {
+    font-family: 'Courier New', monospace;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    overflow-x: auto;
+    white-space: nowrap;
+    min-height: 400px;
+  }
+  
+  .hierarchy-level {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 30px;
+    white-space: normal;
+  }
+  
+  .user-node {
+    margin: 8px 0;
+    padding: 10px 15px;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    display: block;
+    width: 280px;
+    position: relative;
+  }
+  
+  .user-name {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  
+  .user-stats {
+    font-size: 11px;
+    color: #6c757d;
+  }
+  
+  .user-stats .row {
+    margin: 0;
+  }
+  
+  .user-stats .col-6 {
+    padding: 2px 4px;
+  }
+  
+  /* レベル別の色分け */
+  .level-0 .user-node { border-left-color: #dc3545; }
+  .level-1 .user-node { border-left-color: #fd7e14; }
+  .level-2 .user-node { border-left-color: #ffc107; }
+  .level-3 .user-node { border-left-color: #28a745; }
+  .level-4 .user-node { border-left-color: #20c997; }
+  .level-5 .user-node { border-left-color: #17a2b8; }
+  .level-6 .user-node { border-left-color: #6f42c1; }
+  .level-7 .user-node { border-left-color: #e83e8c; }
+  
+  /* 接続線 */
+  .hierarchy-level:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    width: 20px;
+    height: 2px;
+    background-color: #adb5bd;
+    z-index: 1;
+  }
+  
+  .hierarchy-level {
+    position: relative;
+  }
+  
+  .sales-positive { color: #28a745; font-weight: bold; }
+  .sales-zero { color: #6c757d; }
+  .bonus-positive { color: #17a2b8; font-weight: bold; }
+  .bonus-zero { color: #6c757d; }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 768px) {
+    .user-node {
+      width: 250px;
+    }
+    
+    .hierarchy-level {
+      margin-right: 20px;
+    }
+  }
+</style>

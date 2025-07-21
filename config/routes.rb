@@ -32,6 +32,9 @@ Rails.application.routes.draw do
 
     resources :users, only: [:index, :show] do
       resources :bonuses, only: [:index], controller: 'users/bonuses'
+      collection do
+        get :all_users
+      end
     end
     resources :inquiries, only: [:index, :show] do
       resources :answers, only: [:new, :create, :edit, :update, :destroy]

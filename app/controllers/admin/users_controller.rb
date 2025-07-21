@@ -1,10 +1,51 @@
 # app/controllers/admin/users_controller.rb
 class Admin::UsersController < Admin::BaseController
   before_action :set_user, only: [:show]
-  before_action :set_selected_month_range, only: [:show]
+  before_action :set_selected_month_range, only: [:show, :all_users]
 
   def index
     @users = User.includes(:referrer, :referrals).order(:id)
+  end
+
+  def all_users
+    # 全ユーザーの階層構造を構築
+    @all_users = User.includes(:referrer, :referrals, :level, :purchases => :product).order(:id)
+    
+    # ルートユーザー（紹介者がいないユーザー）を取得
+    @root_users = @all_users.select { |user| user.referrer.nil? }
+    
+    # 今月と先月の期間を動的に設定
+    @current_month = Date.current.beginning_of_month
+    @last_month = @current_month - 1.month
+    
+    current_month_start = @current_month
+    current_month_end = @current_month.end_of_month
+    last_month_start = @last_month
+    last_month_end = @last_month.end_of_month
+    
+    # 表示用の月名
+    @current_month_name = @current_month.strftime("%m月")
+    @last_month_name = @last_month.strftime("%m月")
+    
+    # 各ユーザーの売上とボーナスを計算（今月と先月）
+    @user_stats = {}
+    
+    @all_users.each do |user|
+      # 今月の売上とボーナス
+      current_purchases = user.purchases.where(purchased_at: current_month_start..current_month_end)
+      current_sales = current_purchases.joins(:product).sum('products.base_price * purchases.quantity')
+      current_bonus = user.respond_to?(:bonus_in_period) ? user.bonus_in_period(current_month_start, current_month_end) : 0
+      
+      # 先月の売上とボーナス
+      last_purchases = user.purchases.where(purchased_at: last_month_start..last_month_end)
+      last_sales = last_purchases.joins(:product).sum('products.base_price * purchases.quantity')
+      last_bonus = user.respond_to?(:bonus_in_period) ? user.bonus_in_period(last_month_start, last_month_end) : 0
+      
+      @user_stats[user.id] = {
+        current: { sales: current_sales, bonus: current_bonus },
+        last: { sales: last_sales, bonus: last_bonus }
+      }
+    end
   end
 
   def show

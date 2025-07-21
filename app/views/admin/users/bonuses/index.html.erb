@@ -94,20 +94,20 @@
         <div class="card-body">
           <% if @purchases_with_descendants.any? %>
             <div class="table-responsive">
-              <table class="table table-bordered table-hover align-middle">
+              <table class="table table-bordered table-hover align-middle text-nowrap">
                 <thead class="table-light">
                   <tr>
-                    <th>販売店</th>
-                    <th>購入者名</th>
-                    <th>商品名</th>
-                    <th class="text-end">単価（円）</th>
-                    <th class="text-end">数量</th>
-                    <th class="text-end">合計（円）</th>
-                    <th class="text-end">ボーナス（円）</th>
-                    <th>メール</th>
-                    <th>電話番号</th>
-                    <th>住所</th>
-                    <th>購入日時</th>
+                    <th class="text-nowrap">販売店</th>
+                    <th class="text-nowrap">購入者名</th>
+                    <th class="text-nowrap">商品名</th>
+                    <th class="text-end text-nowrap">単価（円）</th>
+                    <th class="text-end text-nowrap">数量</th>
+                    <th class="text-end text-nowrap">合計（円）</th>
+                    <th class="text-end text-nowrap">ボーナス（円）</th>
+                    <th class="text-nowrap">メール</th>
+                    <th class="text-nowrap">電話番号</th>
+                    <th class="text-nowrap">住所</th>
+                    <th class="text-nowrap">購入日時</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -120,27 +120,27 @@
                     <% total_sum += total %>
                     <% total_bonus_sum += bonus %>
                     <tr>
-                      <td class="fw-bold">
+                      <td class="fw-bold text-nowrap">
                         <%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %>
                       </td>
-                      <td><%= purchase.customer&.name || "-" %></td>
-                      <td><%= purchase.product.name %></td>
-                      <td class="text-end"><%= number_with_delimiter(purchase.product.base_price) %></td>
-                      <td class="text-end"><%= purchase.quantity %></td>
-                      <td class="text-end text-primary fw-bold"><%= number_with_delimiter(total) %></td>
-                      <td class="text-end text-success fw-bold"><%= number_with_delimiter(bonus) %></td>
-                      <td><%= purchase.customer&.email || "-" %></td>
-                      <td><%= purchase.customer&.phone || "-" %></td>
-                      <td><%= purchase.customer&.address || "-" %></td>
-                      <td><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
+                      <td class="text-nowrap"><%= purchase.customer&.name || "-" %></td>
+                      <td class="text-nowrap"><%= purchase.product.name %></td>
+                      <td class="text-end text-nowrap"><%= number_with_delimiter(purchase.product.base_price) %></td>
+                      <td class="text-end text-nowrap"><%= purchase.quantity %></td>
+                      <td class="text-end text-primary fw-bold text-nowrap"><%= number_with_delimiter(total) %></td>
+                      <td class="text-end text-success fw-bold text-nowrap"><%= number_with_delimiter(bonus) %></td>
+                      <td class="text-nowrap"><%= purchase.customer&.email || "-" %></td>
+                      <td class="text-nowrap"><%= purchase.customer&.phone || "-" %></td>
+                      <td class="text-nowrap"><%= purchase.customer&.address || "-" %></td>
+                      <td class="text-nowrap"><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
                     </tr>
                   <% end %>
 
                   <!-- 合計行 -->
                   <tr class="table-primary fw-bold">
-                    <td colspan="5" class="text-end">合計</td>
-                    <td class="text-end text-primary"><%= number_with_delimiter(total_sum) %></td>
-                    <td class="text-end text-success"><%= number_with_delimiter(total_bonus_sum) %></td>
+                    <td colspan="5" class="text-end text-nowrap">合計</td>
+                    <td class="text-end text-primary text-nowrap"><%= number_with_delimiter(total_sum) %></td>
+                    <td class="text-end text-success text-nowrap"><%= number_with_delimiter(total_bonus_sum) %></td>
                     <td colspan="4"></td>
                   </tr>
                 </tbody>

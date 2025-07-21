@@ -25,3 +25,22 @@
     </tbody>
   </table>
 </section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // クリック可能な行にイベントリスナーを追加
+    const clickableRows = document.querySelectorAll('.clickable-row');
+    
+    clickableRows.forEach(function(row) {
+      row.addEventListener('click', function() {
+        const href = this.getAttribute('data-href');
+        if (href) {
+          window.location.href = href;
+        }
+      });
+      
+      // マウスオーバー時にカーソルをポインターに変更
+      row.style.cursor = 'pointer';
+    });
+  });
+</script>

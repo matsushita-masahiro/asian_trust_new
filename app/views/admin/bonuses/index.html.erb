@@ -1,0 +1,118 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 100px;">
+        <div class="d-flex align-items-center">
+          <h4 class="text-primary me-3">支払いボーナス一覧</h4>
+          <%= form_with url: admin_bonuses_path, method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
+            <label class="form-label me-2 mb-0">対象月:</label>
+            <%= f.month_field :month, value: @selected_month, class: "form-control", style: "width: 180px;", onchange: "document.getElementById('month-form').submit();" %>
+          <% end %>
+        </div>
+        <div>
+          <%= link_to "ダッシュボードに戻る", admin_root_path, class: "btn btn-outline-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統計情報 -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">支払い対象者数</h6>
+              <h3 class="mb-0"><%= @bonus_data.count %></h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-users fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">総支払いボーナス</h6>
+              <h3 class="mb-0">¥<%= number_with_delimiter(@bonus_data.sum { |data| data[:bonus_amount] }) %></h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-yen-sign fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ボーナス一覧テーブル -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">支払いボーナス詳細 (<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>)</h5>
+        </div>
+        <div class="card-body">
+          <% if @bonus_data.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>代理店名</th>
+                    <th>LステップID</th>
+                    <th>レベル</th>
+                    <th>直接紹介数</th>
+                    <th>支払いボーナス額</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @bonus_data.each do |data| %>
+                    <% user = data[:user] %>
+                    <% bonus_amount = data[:bonus_amount] %>
+                    <tr>
+                      <td>
+                        <strong><%= user.name.present? ? user.name : user.email %></strong>
+                      </td>
+                      <td>
+                        <% if user.lstep_user_id.present? %>
+                          <span class="badge bg-info"><%= user.lstep_user_id %></span>
+                        <% else %>
+                          <span class="text-muted">未設定</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <span class="badge bg-primary"><%= user.level&.name || "未設定" %></span>
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary"><%= user.referrals.count %></span>
+                      </td>
+                      <td>
+                        <span class="text-success fw-bold fs-5">¥<%= number_with_delimiter(bonus_amount) %></span>
+                      </td>
+                      <td>
+                        <%= link_to "詳細", admin_user_bonuses_path(user, month: @selected_month), class: "btn btn-sm btn-outline-primary" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">支払い対象のボーナスがありません</h5>
+              <p class="text-muted">選択した月（<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>）には支払うべきボーナスがありません。</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

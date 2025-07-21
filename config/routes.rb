@@ -28,8 +28,11 @@ Rails.application.routes.draw do
     root to: 'dashboard#index'  # /admin → ダッシュボード
     resources :sales, only: [:index]
     resources :products, only: [:index, :edit, :update]
+    resources :bonuses, only: [:index]
 
-    resources :users, only: [:index, :show]
+    resources :users, only: [:index, :show] do
+      resources :bonuses, only: [:index], controller: 'users/bonuses'
+    end
     resources :inquiries, only: [:index, :show] do
       resources :answers, only: [:new, :create, :edit, :update, :destroy]
     end

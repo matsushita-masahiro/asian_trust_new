@@ -86,9 +86,9 @@
         </div>
         <div class="card-body">
           <% if User.exists? %>
-            <div class="table-responsive">
+            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
               <table class="table table-sm">
-                <thead>
+                <thead class="sticky-top bg-light">
                   <tr>
                     <th>ID</th>
                     <th>メールアドレス</th>
@@ -96,7 +96,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <% User.order(created_at: :desc).limit(5).each do |user| %>
+                  <% User.order(created_at: :desc).each do |user| %>
                     <tr>
                       <td><%= user.id %></td>
                       <td><%= user.email %></td>
@@ -105,9 +105,6 @@
                   <% end %>
                 </tbody>
               </table>
-            </div>
-            <div class="text-center mt-3">
-              <%= link_to "すべてのユーザーを見る", admin_users_path, class: "btn btn-outline-primary btn-sm" %>
             </div>
           <% else %>
             <p class="text-muted text-center">まだユーザーが登録されていません</p>
@@ -127,7 +124,7 @@
             <%= link_to "ユーザー管理", admin_users_path, class: "btn btn-outline-primary" %>
             <%= link_to "お問い合わせ管理", admin_inquiries_path, class: "btn btn-outline-info" %>
             <%= link_to "商品管理", admin_products_path, class: "btn btn-outline-success" %>
-            <%= link_to "代理店管理", admin_users_path, class: "btn btn-outline-warning" %>
+            <%= link_to "支払いボーナス一覧", admin_bonuses_path, class: "btn btn-outline-warning" %>
           </div>
         </div>
       </div>

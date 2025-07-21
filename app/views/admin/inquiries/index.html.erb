@@ -27,11 +27,14 @@
 </section>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // クリック可能な行にイベントリスナーを追加
+  // Turbo対応のイベントリスナー
+  function initializeClickableRows() {
     const clickableRows = document.querySelectorAll('.clickable-row');
     
     clickableRows.forEach(function(row) {
+      // 既にイベントリスナーが追加されている場合はスキップ
+      if (row.dataset.initialized) return;
+      
       row.addEventListener('click', function() {
         const href = this.getAttribute('data-href');
         if (href) {
@@ -41,6 +44,22 @@
       
       // マウスオーバー時にカーソルをポインターに変更
       row.style.cursor = 'pointer';
+      
+      // 初期化済みマークを付ける
+      row.dataset.initialized = 'true';
     });
-  });
+  }
+
+  // 複数のイベントに対応
+  document.addEventListener('DOMContentLoaded', initializeClickableRows);
+  document.addEventListener('turbo:load', initializeClickableRows);
+  document.addEventListener('turbo:render', initializeClickableRows);
+  
+  // 即座に実行（既にDOMが読み込まれている場合）
+  if (document.readyState === 'loading') {
+    // まだ読み込み中
+  } else {
+    // 既に読み込み完了
+    initializeClickableRows();
+  }
 </script>

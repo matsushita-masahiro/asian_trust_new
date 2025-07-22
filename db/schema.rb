@@ -10,7 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_22_144405) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_22_223219) do
+  create_table "access_logs", force: :cascade do |t|
+    t.string "ip_address"
+    t.string "path"
+    t.string "user_agent"
+    t.integer "user_id"
+    t.datetime "accessed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["accessed_at"], name: "index_access_logs_on_accessed_at"
+    t.index ["path", "accessed_at"], name: "index_access_logs_on_path_and_accessed_at"
+    t.index ["user_id"], name: "index_access_logs_on_user_id"
+  end
+
   create_table "answers", force: :cascade do |t|
     t.integer "inquiry_id", null: false
     t.text "content"
@@ -117,6 +130,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_22_144405) do
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
   end
 
+  add_foreign_key "access_logs", "users"
   add_foreign_key "answers", "inquiries"
   add_foreign_key "product_prices", "levels"
   add_foreign_key "product_prices", "products"

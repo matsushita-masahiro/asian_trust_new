@@ -1,6 +1,6 @@
 # app/controllers/admin/users_controller.rb
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [:show, :edit, :update]
+  before_action :set_user, only: [:show, :edit, :update, :deactivate, :suspend, :reactivate]
   before_action :set_selected_month_range, only: [:show, :all_users]
 
   def index
@@ -97,6 +97,24 @@ class Admin::UsersController < Admin::BaseController
     else
       render :edit
     end
+  end
+
+  def deactivate
+    @user = User.find(params[:id])
+    @user.update!(status: 'inactive')
+    redirect_to admin_user_path(@user), notice: 'ユーザーを退会処理しました。'
+  end
+
+  def suspend
+    @user = User.find(params[:id])
+    @user.update!(status: 'suspended')
+    redirect_to admin_user_path(@user), notice: 'ユーザーを停止処分にしました。'
+  end
+
+  def reactivate
+    @user = User.find(params[:id])
+    @user.update!(status: 'active')
+    redirect_to admin_user_path(@user), notice: 'ユーザーを再アクティブ化しました。'
   end
 
   private

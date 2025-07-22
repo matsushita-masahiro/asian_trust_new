@@ -70,28 +70,98 @@
           <h5 class="card-title mb-0">統計情報</h5>
         </div>
         <div class="card-body">
-          <table class="table table-borderless">
-            <tr>
-              <th width="40%">直接紹介数:</th>
-              <td><span class="badge bg-primary fs-6"><%= @referrals.count %></span></td>
-            </tr>
-            <tr>
-              <th>総紹介数:</th>
-              <td><span class="badge bg-info fs-6"><%= @user.descendants.count %></span></td>
-            </tr>
-            <tr>
-              <th>当月売上:</th>
-              <td><span class="text-success fw-bold">¥<%= number_with_delimiter(@total_sales_amount) %></span></td>
-            </tr>
-            <tr>
-              <th>自身の購入:</th>
-              <td><span class="text-primary">¥<%= number_with_delimiter(@purchases.joins(:product).sum('products.base_price * purchases.quantity')) %></span></td>
-            </tr>
-          </table>
+          <div class="row g-3">
+            <!-- 直接紹介数 -->
+            <div class="col-6">
+              <div class="stats-card bg-primary bg-gradient text-white rounded-3 p-3 text-center">
+                <div class="stats-icon mb-2">
+                  <i class="fas fa-users fa-2x"></i>
+                </div>
+                <div class="stats-number display-6 fw-bold"><%= @referrals.count %></div>
+                <div class="stats-label small">直接紹介数</div>
+              </div>
+            </div>
+            
+            <!-- 総紹介数 -->
+            <div class="col-6">
+              <div class="stats-card bg-info bg-gradient text-white rounded-3 p-3 text-center">
+                <div class="stats-icon mb-2">
+                  <i class="fas fa-network-wired fa-2x"></i>
+                </div>
+                <div class="stats-number display-6 fw-bold"><%= @user.descendants.count %></div>
+                <div class="stats-label small">総紹介数</div>
+              </div>
+            </div>
+            
+            <!-- 当月売上 -->
+            <div class="col-6">
+              <div class="stats-card bg-success bg-gradient text-white rounded-3 p-3 text-center">
+                <div class="stats-icon mb-2">
+                  <i class="fas fa-yen-sign fa-2x"></i>
+                </div>
+                <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@total_sales_amount) %></div>
+                <div class="stats-label small">当月売上</div>
+              </div>
+            </div>
+            
+            <!-- ボーナス -->
+            <div class="col-6">
+              <div class="stats-card bg-warning bg-gradient text-white rounded-3 p-3 text-center">
+                <div class="stats-icon mb-2">
+                  <i class="fas fa-gift fa-2x"></i>
+                </div>
+                <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@user.bonus_in_month(@selected_month)) %></div>
+                <div class="stats-label small">ボーナス</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- 統計情報カード用のカスタムスタイル -->
+  <style>
+    .stats-card {
+      transition: all 0.3s ease;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .stats-icon {
+      opacity: 0.8;
+    }
+    
+    .stats-number {
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .stats-label {
+      font-weight: 500;
+      opacity: 0.9;
+    }
+    
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+      .stats-card {
+        margin-bottom: 1rem;
+      }
+      
+      .stats-number {
+        font-size: 1.5rem !important;
+      }
+      
+      .stats-icon i {
+        font-size: 1.5rem !important;
+      }
+    }
+  </style>
 
   <!-- 紹介チェーン -->
   <% if @referrer_chain.any? %>

@@ -37,6 +37,11 @@ Rails.application.routes.draw do
 
     resources :users, only: [:index, :show, :edit, :update] do
       resources :bonuses, only: [:index], controller: 'users/bonuses'
+      member do
+        patch :deactivate
+        patch :suspend
+        patch :reactivate
+      end
       collection do
         get :all_users
       end

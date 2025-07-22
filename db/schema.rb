@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_16_172911) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_22_144405) do
   create_table "answers", force: :cascade do |t|
     t.integer "inquiry_id", null: false
     t.text "content"
@@ -106,12 +106,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_16_172911) do
     t.datetime "updated_at", null: false
     t.integer "level_id"
     t.boolean "admin"
+    t.string "status", default: "active", null: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["level_id"], name: "index_users_on_level_id"
     t.index ["lstep_user_id"], name: "index_users_on_lstep_user_id", unique: true
     t.index ["referred_by_id"], name: "index_users_on_referred_by_id"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["status"], name: "index_users_on_status"
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
   end
 

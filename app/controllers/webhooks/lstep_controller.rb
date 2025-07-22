@@ -16,8 +16,9 @@ class Webhooks::LstepController < ApplicationController
       password_confirmation: password,
       lstep_user_id: data["user_id"],
       referred_by_id: referrer&.id,
-      level: data["level"],
-      confirmed_at: Time.current
+      level_id: data["level_id"],
+      confirmed_at: Time.current,
+      status: 'active'
     )
 
     if user.save

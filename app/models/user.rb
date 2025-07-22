@@ -13,7 +13,19 @@ class User < ApplicationRecord
   belongs_to :level
   has_many :purchases
 
+  # ステータス管理
+  enum :status, {
+    active: 'active',       # アクティブ（通常状態）
+    inactive: 'inactive',   # 退会
+    suspended: 'suspended'  # 停止処分
+  }
+
   BONUS_ELIGIBLE_LEVELS = %w[特約代理店 代理店 アドバイザー].freeze
+
+  # スコープ
+  scope :active_users, -> { where(status: 'active') }
+  scope :inactive_users, -> { where(status: 'inactive') }
+  scope :suspended_users, -> { where(status: 'suspended') }
 
   def can_introduce?(other_level_value)
     level&.value.present? && level.value <= other_level_value

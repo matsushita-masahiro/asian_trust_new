@@ -18,4 +18,18 @@
     "customer_phone": "08099999999",
     "customer_address": "川崎市高津区溝口1-1"
   }'
+
+
+
+  curl -X POST http://127.0.0.1:3000/webhooks/lstep \
+  -H "Content-Type: application/json" \
+  -H "X-LSTEP-SECRET: test_token_123" \
+  -d '{
+    "name": "新しいアドバイザー",
+    "email": "new_advisor@example.com",
+    "user_id": "lstep_0060",
+    "referrer_id": "lstep_0057",
+    "level_id": 4
+  }'
+  
   

@@ -113,6 +113,19 @@
               </td>
             </tr>
             <tr>
+              <th>現在のステータス:</th>
+              <td>
+                <% case @user.status %>
+                <% when 'active' %>
+                  <span class="badge bg-success">アクティブ</span>
+                <% when 'inactive' %>
+                  <span class="badge bg-secondary">退会</span>
+                <% when 'suspended' %>
+                  <span class="badge bg-danger">停止処分</span>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
               <th>現在の紹介者:</th>
               <td>
                 <% if @user.referrer %>
@@ -127,6 +140,54 @@
               <td><%= @user.created_at.strftime("%Y年%m月%d日") %></td>
             </tr>
           </table>
+        </div>
+      </div>
+
+      <!-- ステータス変更カード -->
+      <div class="card mt-3">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ステータス変更
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-danger">
+            <small><strong>注意:</strong> これらの操作は慎重に行ってください。ユーザーのアクセス権限に影響します。</small>
+          </div>
+          
+          <% if @user.active? %>
+            <div class="d-grid gap-2">
+              <%= link_to deactivate_admin_user_path(@user), 
+                    method: :patch, 
+                    class: "btn btn-outline-secondary",
+                    data: { 
+                      confirm: "#{@user.display_name}を退会処理しますか？\n\nこの操作により：\n・ログインできなくなります\n・ボーナス計算から除外されます\n・紹介関係は維持されます\n\n実行しますか？" 
+                    } do %>
+                <i class="fas fa-user-times me-2"></i>退会処理
+              <% end %>
+              
+              <%= link_to suspend_admin_user_path(@user), 
+                    method: :patch, 
+                    class: "btn btn-outline-danger",
+                    data: { 
+                      confirm: "#{@user.display_name}を停止処分にしますか？\n\nこの操作により：\n・ログインできなくなります\n・ボーナス計算から除外されます\n・アカウントが一時停止されます\n\n実行しますか？" 
+                    } do %>
+                <i class="fas fa-ban me-2"></i>停止処分
+              <% end %>
+            </div>
+          <% else %>
+            <div class="d-grid">
+              <%= link_to reactivate_admin_user_path(@user), 
+                    method: :patch, 
+                    class: "btn btn-outline-success",
+                    data: { 
+                      confirm: "#{@user.display_name}を再アクティブ化しますか？\n\nこの操作により：\n・再度ログインできるようになります\n・ボーナス計算に含まれます\n・通常のアクセス権限が復活します\n\n実行しますか？" 
+                    } do %>
+                <i class="fas fa-user-check me-2"></i>再アクティブ化
+              <% end %>
+            </div>
+          <% end %>
         </div>
       </div>
     </div>

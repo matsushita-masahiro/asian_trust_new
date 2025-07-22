@@ -6,7 +6,7 @@ class AccessLog < ApplicationRecord
   scope :this_month, -> { where(accessed_at: 1.month.ago..Time.current) }
   
   # 管理画面以外のアクセスのみ
-  scope :user_access, -> { where.not(path: /^\/admin/) }
+  scope :user_access, -> { where.not("path LIKE ?", "/admin%") }
   
   def self.log_access(request, user = nil)
     # 静的ファイルやAPIは除外

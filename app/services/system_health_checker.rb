@@ -88,25 +88,36 @@ class SystemHealthChecker
 
   def check_recent_errors
     begin
-      # 過去24時間のエラーログをチェック（Railsログから）
-      log_file = Rails.root.join('log', "#{Rails.env}.log")
-      
-      if File.exist?(log_file)
-        recent_errors = count_recent_errors(log_file)
+      # Heroku環境では永続的なログファイルが存在しないため、
+      # 代替手段でエラー監視を行う
+      if heroku_environment?
+        # Herokuログは外部サービス（Papertrail等）で監視することを推奨
+        @details[:error_logs] = { 
+          status: :normal, 
+          message: "Heroku環境: ログ監視は外部サービスで実施" 
+        }
+        return :normal
+      else
+        # 通常環境でのログファイルチェック
+        log_file = Rails.root.join('log', "#{Rails.env}.log")
         
-        if recent_errors > 100
-          @details[:error_logs] = { status: :error, message: "過去24時間で#{recent_errors}件のエラーが発生" }
-          return :error
-        elsif recent_errors > 10
-          @details[:error_logs] = { status: :warning, message: "過去24時間で#{recent_errors}件のエラーが発生" }
-          return :warning
+        if File.exist?(log_file)
+          recent_errors = count_recent_errors(log_file)
+          
+          if recent_errors > 100
+            @details[:error_logs] = { status: :error, message: "過去24時間で#{recent_errors}件のエラーが発生" }
+            return :error
+          elsif recent_errors > 10
+            @details[:error_logs] = { status: :warning, message: "過去24時間で#{recent_errors}件のエラーが発生" }
+            return :warning
+          else
+            @details[:error_logs] = { status: :normal, message: "エラーログ正常 (#{recent_errors}件)" }
+            return :normal
+          end
         else
-          @details[:error_logs] = { status: :normal, message: "エラーログ正常 (#{recent_errors}件)" }
+          @details[:error_logs] = { status: :normal, message: "ログファイル未使用環境" }
           return :normal
         end
-      else
-        @details[:error_logs] = { status: :warning, message: "ログファイルが見つかりません" }
-        :warning
       end
     rescue => e
       @details[:error_logs] = { status: :warning, message: "エラーログチェック失敗: #{e.message}" }
@@ -246,5 +257,12 @@ class SystemHealthChecker
   # 詳細情報取得
   def self.detailed_status
     new.check_all
+  end
+
+  private
+
+  # Heroku環境かどうかを判定
+  def heroku_environment?
+    ENV['DYNO'].present? || ENV['HEROKU_APP_NAME'].present?
   end
 end

@@ -3,7 +3,6 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
   
   before_action :set_selected_month
-  after_action :log_access
 
   private
 
@@ -14,13 +13,15 @@ class ApplicationController < ActionController::Base
   end
 
   def log_access
-    # 管理画面以外のアクセスのみ記録
-    return if request.path.start_with?('/admin/')
+    # 何もしない（ログイン成功時のコールバックで処理）
+  end
+
+  # Deviseのログイン成功時のコールバック
+  def after_sign_in_path_for(resource)
+    # ログイン成功時にアクセスログを記録
+    AccessLog.log_access(request, resource)
     
-    # 現在のユーザーを取得（Deviseを使用している場合）
-    current_user_for_log = respond_to?(:current_user) ? current_user : nil
-    
-    # アクセスログを記録
-    AccessLog.log_access(request, current_user_for_log)
+    # 元のリダイレクト先を返す
+    stored_location_for(resource) || root_path
   end
 end

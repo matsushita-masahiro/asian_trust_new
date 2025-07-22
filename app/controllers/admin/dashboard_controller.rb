@@ -12,22 +12,36 @@ class Admin::DashboardController < Admin::BaseController
   def get_today_access_count
     # production.logから今日のアクセス数を取得
     log_file = Rails.root.join('log', "#{Rails.env}.log")
+    
+    Rails.logger.info "=== アクセス数カウント開始 ==="
+    Rails.logger.info "ログファイル: #{log_file}"
+    Rails.logger.info "ファイル存在: #{File.exist?(log_file)}"
+    
     return 0 unless File.exist?(log_file)
 
+    # 今日の日付（UTC）
     today = Date.current.strftime("%Y-%m-%d")
+    # 昨日の日付も含める（タイムゾーンの違いを考慮）
+    yesterday = (Date.current - 1.day).strftime("%Y-%m-%d")
+    
+    Rails.logger.info "検索対象日付: #{today}, #{yesterday}"
+    
     count = 0
     debug_lines = []
+    total_lines = 0
     
     begin
-      # ログファイルを逆順で読み込み（最新のログから）
-      lines = File.readlines(log_file).reverse
-      
-      lines.each do |line|
-        # 今日の日付が含まれていない場合はスキップ
-        next unless line.include?(today)
+      File.foreach(log_file) do |line|
+        total_lines += 1
         
-        # デバッグ用に最初の10行を保存
-        debug_lines << line.strip if debug_lines.size < 10
+        # 今日または昨日の日付が含まれているかチェック
+        date_match = line.include?(today) || line.include?(yesterday)
+        next unless date_match
+        
+        # デバッグ用に最初の5行を保存
+        if debug_lines.size < 5
+          debug_lines << line.strip[0..100] # 最初の100文字のみ
+        end
         
         # Started GETを含み、管理画面以外のアクセスをカウント
         if line.include?("Started GET") && !line.include?("/admin/")
@@ -37,19 +51,24 @@ class Admin::DashboardController < Admin::BaseController
                  line.include?("/assets/") ||
                  line.include?("/rails/active_storage/")
             count += 1
+            Rails.logger.info "カウント対象: #{line.strip[0..150]}"
           end
         end
-        
-        # 今日より古い日付に到達したら終了
-        break if count > 0 && !line.include?(today)
       end
       
       # デバッグ情報をログに出力
+      Rails.logger.info "=== アクセス数カウント結果 ==="
+      Rails.logger.info "総行数: #{total_lines}"
       Rails.logger.info "今日のアクセス数: #{count}"
-      Rails.logger.info "デバッグ用ログサンプル: #{debug_lines.first(3).join(' | ')}"
+      Rails.logger.info "デバッグ用ログサンプル:"
+      debug_lines.each_with_index do |line, i|
+        Rails.logger.info "  #{i+1}: #{line}"
+      end
+      Rails.logger.info "=== カウント終了 ==="
       
     rescue => e
       Rails.logger.error "アクセス数取得エラー: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
       return 0
     end
     

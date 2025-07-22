@@ -1,0 +1,185 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">システム状態詳細</h2>
+        <div>
+          <%= link_to "手動更新", check_admin_system_health_path, 
+              method: :post, 
+              class: "btn btn-outline-primary me-2",
+              data: { confirm: "システム状態を再チェックしますか？" } %>
+          <%= link_to "ダッシュボードに戻る", admin_root_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全体ステータス -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <% 
+        overall_class = case @system_health[:status]
+                       when :normal then 'alert-success'
+                       when :warning then 'alert-warning'
+                       when :error then 'alert-danger'
+                       else 'alert-secondary'
+                       end
+        
+        overall_icon = case @system_health[:status]
+                      when :normal then 'fa-check-circle text-success'
+                      when :warning then 'fa-exclamation-triangle text-warning'
+                      when :error then 'fa-times-circle text-danger'
+                      else 'fa-question-circle text-secondary'
+                      end
+      %>
+      
+      <div class="alert <%= overall_class %> d-flex align-items-center">
+        <i class="fas <%= overall_icon %> fa-2x me-3"></i>
+        <div>
+          <h4 class="alert-heading mb-1"><%= @system_health[:message] %></h4>
+          <p class="mb-0">
+            最終チェック: <%= @system_health[:checked_at]&.strftime("%Y年%m月%d日 %H:%M:%S") %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 詳細チェック結果 -->
+  <div class="row">
+    <% @system_health[:details].each do |check_name, result| %>
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+              <%= case check_name
+                  when :database then 'データベース接続'
+                  when :data_integrity then 'データ整合性'
+                  when :error_logs then 'エラーログ'
+                  when :background_jobs then 'バックグラウンドジョブ'
+                  when :disk_space then 'ディスク容量'
+                  when :memory_usage then 'メモリ使用量'
+                  else check_name.to_s.humanize
+                  end %>
+            </h5>
+            <% 
+              badge_class = case result[:status]
+                           when :normal then 'bg-success'
+                           when :warning then 'bg-warning'
+                           when :error then 'bg-danger'
+                           else 'bg-secondary'
+                           end
+              
+              status_text = case result[:status]
+                           when :normal then '正常'
+                           when :warning then '警告'
+                           when :error then 'エラー'
+                           else '不明'
+                           end
+            %>
+            <span class="badge <%= badge_class %>"><%= status_text %></span>
+          </div>
+          <div class="card-body">
+            <p class="card-text"><%= result[:message] %></p>
+            
+            <!-- 追加情報がある場合 -->
+            <% if result[:details] %>
+              <small class="text-muted">
+                <% result[:details].each do |key, value| %>
+                  <div><strong><%= key.to_s.humanize %>:</strong> <%= value %></div>
+                <% end %>
+              </small>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- 推奨アクション -->
+  <% if @system_health[:status] != :normal %>
+    <div class="row">
+      <div class="col-12">
+        <div class="card border-warning">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-lightbulb me-2"></i>推奨アクション
+            </h5>
+          </div>
+          <div class="card-body">
+            <% if @system_health[:status] == :error %>
+              <div class="alert alert-danger">
+                <h6>緊急対応が必要です</h6>
+                <ul class="mb-0">
+                  <% @system_health[:details].each do |check_name, result| %>
+                    <% if result[:status] == :error %>
+                      <li><%= result[:message] %> - 即座に対応してください</li>
+                    <% end %>
+                  <% end %>
+                </ul>
+              </div>
+            <% elsif @system_health[:status] == :warning %>
+              <div class="alert alert-warning">
+                <h6>注意が必要です</h6>
+                <ul class="mb-0">
+                  <% @system_health[:details].each do |check_name, result| %>
+                    <% if result[:status] == :warning %>
+                      <li><%= result[:message] %> - 監視を継続してください</li>
+                    <% end %>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<!-- 自動更新スクリプト -->
+<script>
+  // <%= @refresh_interval %>秒間隔で自動更新
+  setTimeout(function() {
+    location.reload();
+  }, <%= @refresh_interval * 1000 %>);
+  
+  // 更新カウントダウン表示
+  let countdown = <%= @refresh_interval %>;
+  const updateCountdown = () => {
+    const elements = document.querySelectorAll('.countdown');
+    elements.forEach(el => el.textContent = countdown);
+    countdown--;
+    if (countdown < 0) countdown = <%= @refresh_interval %>;
+  };
+  
+  setInterval(updateCountdown, 1000);
+</script>
+
+<style>
+  .system-status-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .system-status-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  
+  .alert {
+    border-left: 4px solid;
+  }
+  
+  .alert-success {
+    border-left-color: #28a745;
+  }
+  
+  .alert-warning {
+    border-left-color: #ffc107;
+  }
+  
+  .alert-danger {
+    border-left-color: #dc3545;
+  }
+</style>

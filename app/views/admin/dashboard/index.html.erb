@@ -61,15 +61,42 @@
     </div>
 
     <div class="col-md-3 mb-4">
-      <div class="card bg-warning text-white">
+      <% 
+        status_class = case @system_health[:status]
+                      when :normal then 'bg-success'
+                      when :warning then 'bg-warning' 
+                      when :error then 'bg-danger'
+                      else 'bg-secondary'
+                      end
+        
+        status_icon = case @system_health[:status]
+                     when :normal then 'fa-check-circle'
+                     when :warning then 'fa-exclamation-triangle'
+                     when :error then 'fa-times-circle'
+                     else 'fa-question-circle'
+                     end
+        
+        status_text = case @system_health[:status]
+                     when :normal then '正常'
+                     when :warning then '警告'
+                     when :error then 'エラー'
+                     else '不明'
+                     end
+      %>
+      
+      <div class="card <%= status_class %> text-white system-status-card" 
+           onclick="showSystemHealthDetails()">
         <div class="card-body">
           <div class="d-flex justify-content-between">
             <div>
               <h6 class="card-title">システム状態</h6>
-              <h3 class="mb-0">正常</h3>
+              <h3 class="mb-0"><%= status_text %></h3>
+              <small class="opacity-75">
+                <%= @system_health[:checked_at]&.strftime("%H:%M更新") %>
+              </small>
             </div>
             <div class="align-self-center">
-              <i class="fas fa-server fa-2x opacity-75"></i>
+              <i class="fas <%= status_icon %> fa-2x opacity-75"></i>
             </div>
           </div>
         </div>
@@ -133,3 +160,122 @@
     </div>
   </div>
 </div>
+
+<!-- システム状態詳細モーダル -->
+<div class="modal fade" id="systemHealthModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">システム状態詳細</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="systemHealthDetails">
+        <div class="text-center">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">読み込み中...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showSystemHealthDetails() {
+  // モーダルを表示
+  const modal = new bootstrap.Modal(document.getElementById('systemHealthModal'));
+  modal.show();
+  
+  // システム状態の詳細情報を表示
+  const details = <%= raw @system_health.to_json %>;
+  
+  let html = '<div class="row">';
+  
+  // 全体ステータス
+  const statusBadge = details.status === 'normal' ? 'bg-success' : 
+                     details.status === 'warning' ? 'bg-warning' : 'bg-danger';
+  
+  html += `
+    <div class="col-12 mb-3">
+      <div class="alert alert-${details.status === 'normal' ? 'success' : details.status === 'warning' ? 'warning' : 'danger'}">
+        <h6><span class="badge ${statusBadge}">${details.status === 'normal' ? '正常' : details.status === 'warning' ? '警告' : 'エラー'}</span> ${details.message}</h6>
+        <small>最終チェック: ${new Date(details.checked_at).toLocaleString('ja-JP')}</small>
+      </div>
+    </div>
+  `;
+  
+  // 各チェック項目の詳細
+  if (details.details) {
+    Object.keys(details.details).forEach(key => {
+      const item = details.details[key];
+      const itemName = {
+        'database': 'データベース接続',
+        'data_integrity': 'データ整合性',
+        'error_logs': 'エラーログ',
+        'background_jobs': 'バックグラウンドジョブ',
+        'disk_space': 'ディスク容量',
+        'memory_usage': 'メモリ使用量'
+      }[key] || key;
+      
+      const itemBadge = item.status === 'normal' ? 'bg-success' : 
+                       item.status === 'warning' ? 'bg-warning' : 'bg-danger';
+      
+      const itemStatus = item.status === 'normal' ? '正常' : 
+                        item.status === 'warning' ? '警告' : 'エラー';
+      
+      html += `
+        <div class="col-md-6 mb-3">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between">
+              <span>${itemName}</span>
+              <span class="badge ${itemBadge}">${itemStatus}</span>
+            </div>
+            <div class="card-body">
+              <p class="card-text">${item.message}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  html += '</div>';
+  
+  // 警告の場合は推奨アクションを表示
+  if (details.status === 'warning' || details.status === 'error') {
+    html += `
+      <div class="alert alert-info mt-3">
+        <h6><i class="fas fa-lightbulb"></i> 推奨アクション</h6>
+        <ul class="mb-0">
+    `;
+    
+    if (details.details) {
+      Object.keys(details.details).forEach(key => {
+        const item = details.details[key];
+        if (item.status === 'warning' || item.status === 'error') {
+          html += `<li>${item.message} - 確認が必要です</li>`;
+        }
+      });
+    }
+    
+    html += `
+        </ul>
+      </div>
+    `;
+  }
+  
+  document.getElementById('systemHealthDetails').innerHTML = html;
+}
+</script>
+
+<style>
+.system-status-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.system-status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>

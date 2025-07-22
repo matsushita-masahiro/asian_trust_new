@@ -49,6 +49,12 @@ Rails.application.routes.draw do
     resources :inquiries, only: [:index, :show] do
       resources :answers, only: [:new, :create, :edit, :update, :destroy]
     end
+    
+    # システム状態管理
+    resource :system_health, only: [:show], controller: 'system_health' do
+      post :check
+      get :api_status
+    end
   end
 
   # 一般ユーザー用マイページ
@@ -63,10 +69,12 @@ Rails.application.routes.draw do
   # ヘルスチェック
   get "up", to: "rails/health#show", as: :rails_health_check
 
-  # HTTPS強制リダイレクト（www.msworks.tokyo）
-  constraints(host: 'msworks.tokyo') do
-    get '(*path)', to: redirect { |params, req|
-      "https://www.msworks.tokyo/#{params[:path]}"
-    }
-  end
+  # HTTPS強制リダイレクト（本番環境のみ）
+  # Herokuでは自動的にHTTPS対応されるため、通常は不要
+  # 独自ドメインを使用する場合のみ有効化
+  # constraints(host: 'your-custom-domain.com') do
+  #   get '(*path)', to: redirect { |params, req|
+  #     "https://your-custom-domain.com/#{params[:path]}"
+  #   }
+  # end
 end

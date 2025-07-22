@@ -14,6 +14,7 @@ class User < ApplicationRecord
   has_many :purchases
 
   # ステータス管理
+  attribute :status, :string, default: 'active'
   enum :status, {
     active: 'active',       # アクティブ（通常状態）
     inactive: 'inactive',   # 退会

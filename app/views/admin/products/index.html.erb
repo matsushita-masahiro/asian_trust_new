@@ -1,5 +1,8 @@
 <div class="container pt-5 mt-5 px-4">
-  <h2 class="mb-4">🧾 商品一覧</h2>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>🧾 商品一覧</h2>
+    <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
+  </div>
 
   <ul class="list-group">
     <% @products.each do |product| %>

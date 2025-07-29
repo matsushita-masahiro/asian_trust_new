@@ -1,0 +1,145 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">📋 請求先情報詳細</h2>
+        <div>
+          <%= link_to "編集", edit_admin_invoice_recipient_path(@invoice_recipient), class: "btn btn-warning me-2" %>
+          <%= link_to "一覧に戻る", admin_invoice_recipients_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">請求先情報</h5>
+        </div>
+        <div class="card-body">
+          <table class="table table-borderless">
+            <tr>
+              <th width="30%">ID:</th>
+              <td><%= @invoice_recipient.id %></td>
+            </tr>
+            <tr>
+              <th>対象ユーザー:</th>
+              <td>
+                <%= link_to admin_user_path(@invoice_recipient.user), class: "text-decoration-none" do %>
+                  <%= @invoice_recipient.user.name.presence || @invoice_recipient.user.email %>
+                  <i class="fas fa-external-link-alt fa-sm ms-1"></i>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>会社名:</th>
+              <td><%= @invoice_recipient.name %></td>
+            </tr>
+            <tr>
+              <th>部署:</th>
+              <td><%= @invoice_recipient.department.presence || "未設定" %></td>
+            </tr>
+            <tr>
+              <th>メールアドレス:</th>
+              <td>
+                <% if @invoice_recipient.email.present? %>
+                  <a href="mailto:<%= @invoice_recipient.email %>"><%= @invoice_recipient.email %></a>
+                <% else %>
+                  未設定
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>電話番号:</th>
+              <td>
+                <% if @invoice_recipient.tel.present? %>
+                  <a href="tel:<%= @invoice_recipient.tel %>"><%= @invoice_recipient.tel %></a>
+                <% else %>
+                  未設定
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>郵便番号:</th>
+              <td><%= @invoice_recipient.postal_code.presence || "未設定" %></td>
+            </tr>
+            <tr>
+              <th>住所:</th>
+              <td><%= simple_format(@invoice_recipient.address) %></td>
+            </tr>
+            <tr>
+              <th>備考:</th>
+              <td>
+                <% if @invoice_recipient.notes.present? %>
+                  <%= simple_format(@invoice_recipient.notes) %>
+                <% else %>
+                  なし
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>作成日:</th>
+              <td><%= @invoice_recipient.created_at.strftime("%Y年%m月%d日 %H:%M") %></td>
+            </tr>
+            <tr>
+              <th>更新日:</th>
+              <td><%= @invoice_recipient.updated_at.strftime("%Y年%m月%d日 %H:%M") %></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">関連する請求書</h5>
+        </div>
+        <div class="card-body">
+          <% if @invoice_recipient.invoices.any? %>
+            <div class="list-group list-group-flush">
+              <% @invoice_recipient.invoices.order(created_at: :desc).limit(5).each do |invoice| %>
+                <div class="list-group-item px-0">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <h6 class="mb-1">請求書 #<%= invoice.id.to_s.rjust(6, '0') %></h6>
+                      <p class="mb-1 small">¥<%= number_with_delimiter(invoice.total_amount) %></p>
+                      <small class="text-muted"><%= invoice.created_at.strftime("%Y/%m/%d") %></small>
+                    </div>
+                    <% if invoice.sent_at.present? %>
+                      <span class="badge bg-primary">送信済み</span>
+                    <% else %>
+                      <span class="badge bg-secondary">下書き</span>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+            <% if @invoice_recipient.invoices.count > 5 %>
+              <div class="text-center mt-2">
+                <small class="text-muted">他 <%= @invoice_recipient.invoices.count - 5 %> 件</small>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="text-muted text-center">まだ請求書がありません</p>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="card shadow mt-3">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">操作</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <%= link_to "編集", edit_admin_invoice_recipient_path(@invoice_recipient), class: "btn btn-warning" %>
+            <%= link_to "削除", admin_invoice_recipient_path(@invoice_recipient), method: :delete, 
+                data: { confirm: "本当に削除しますか？関連する請求書も影響を受ける可能性があります。" }, 
+                class: "btn btn-danger" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

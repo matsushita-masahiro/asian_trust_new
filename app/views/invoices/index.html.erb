@@ -1,0 +1,78 @@
+<div class="container py-5 pt-5 mt-5">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">📋 請求書管理</h2>
+        <%= link_to "マイページに戻る", mypage_path, class: "btn btn-outline-secondary" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- 請求書履歴 -->
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 shadow-sm hover-card">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="fas fa-history fa-3x text-primary"></i>
+          </div>
+          <h5 class="card-title">請求書履歴</h5>
+          <p class="card-text text-muted">過去に発行した請求書の履歴を確認できます</p>
+          <%= link_to "履歴を見る", history_invoices_path, class: "btn btn-primary" %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 請求書発行 -->
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 shadow-sm hover-card">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="fas fa-plus-circle fa-3x text-success"></i>
+          </div>
+          <h5 class="card-title">請求書発行</h5>
+          <p class="card-text text-muted">新しい請求書を作成・発行できます</p>
+          <%= link_to "新規発行", issue_invoices_path, class: "btn btn-success" %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 請求書情報入力・変更 -->
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 shadow-sm hover-card">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="fas fa-cog fa-3x text-warning"></i>
+          </div>
+          <h5 class="card-title">請求書情報設定</h5>
+          <p class="card-text text-muted">請求書に記載する会社情報などを設定できます</p>
+          <%= link_to "設定変更", settings_invoices_path, class: "btn btn-warning" %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.hover-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.hover-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.hover-card .card-body {
+  padding: 2rem;
+}
+
+.hover-card i {
+  transition: all 0.3s ease;
+}
+
+.hover-card:hover i {
+  transform: scale(1.1);
+}
+</style>

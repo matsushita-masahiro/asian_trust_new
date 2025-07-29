@@ -11,7 +11,7 @@
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
           <% if request.path == mypage_path %>
-            <%= link_to "請求書管理", "#", class: "nav-link" %>
+            <%= link_to "請求書管理", invoices_path, class: "nav-link" %>
           <% else %>
             <%= link_to "ホーム", root_path, class: "nav-link" %>
           <% end %>

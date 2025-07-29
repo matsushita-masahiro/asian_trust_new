@@ -1,0 +1,29 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  invoice_recipient: one
+  invoice_date: 2025-07-29
+  due_date: 2025-07-29
+  total_amount: 1
+  bank_name: MyString
+  bank_branch_name: MyString
+  bank_account_type: MyString
+  bank_account_number: MyString
+  bank_account_name: MyString
+  notes: MyText
+  sent_at: 2025-07-29 14:10:37
+
+two:
+  user: two
+  invoice_recipient: two
+  invoice_date: 2025-07-29
+  due_date: 2025-07-29
+  total_amount: 1
+  bank_name: MyString
+  bank_branch_name: MyString
+  bank_account_type: MyString
+  bank_account_number: MyString
+  bank_account_name: MyString
+  notes: MyText
+  sent_at: 2025-07-29 14:10:37

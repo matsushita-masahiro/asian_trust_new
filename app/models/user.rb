@@ -8,7 +8,13 @@ class User < ApplicationRecord
   belongs_to :referrer, class_name: 'User', foreign_key: 'referred_by_id', optional: true
   has_many   :referrals, class_name: 'User', foreign_key: 'referred_by_id'
   has_many   :referred_users, class_name: 'User', foreign_key: 'referred_by_id'
+  # invoice関連
+  has_many :invoices
+  has_many :invoice_recipients
+  has_one  :invoice_base
 
+
+   
   # 会員レベル
   belongs_to :level
   has_many :purchases

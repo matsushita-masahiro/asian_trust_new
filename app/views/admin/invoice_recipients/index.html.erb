@@ -1,0 +1,173 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">📋 請求書情報入力・変更</h2>
+        <%= link_to "ダッシュボードに戻る", admin_root_path, class: "btn btn-outline-secondary" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">会社の請求先情報</h5>
+          <% if @invoice_recipient.persisted? && @invoice_recipient.name.present? %>
+            <%= link_to "編集", edit_admin_invoice_recipient_path, class: "btn btn-sm btn-warning" %>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <% if @invoice_recipient.persisted? && @invoice_recipient.name.present? %>
+            <!-- 既存の請求先情報を表示 -->
+            <table class="table table-borderless">
+              <tr>
+                <th width="30%">会社名:</th>
+                <td><%= @invoice_recipient.name %></td>
+              </tr>
+              <tr>
+                <th>部署:</th>
+                <td><%= @invoice_recipient.department.presence || "未設定" %></td>
+              </tr>
+              <tr>
+                <th>メールアドレス:</th>
+                <td>
+                  <% if @invoice_recipient.email.present? %>
+                    <a href="mailto:<%= @invoice_recipient.email %>"><%= @invoice_recipient.email %></a>
+                  <% else %>
+                    未設定
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <th>電話番号:</th>
+                <td>
+                  <% if @invoice_recipient.tel.present? %>
+                    <a href="tel:<%= @invoice_recipient.tel %>"><%= @invoice_recipient.tel %></a>
+                  <% else %>
+                    未設定
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <th>郵便番号:</th>
+                <td><%= @invoice_recipient.postal_code.presence || "未設定" %></td>
+              </tr>
+              <tr>
+                <th>住所:</th>
+                <td><%= simple_format(@invoice_recipient.address) %></td>
+              </tr>
+              <tr>
+                <th>備考:</th>
+                <td>
+                  <% if @invoice_recipient.notes.present? %>
+                    <%= simple_format(@invoice_recipient.notes) %>
+                  <% else %>
+                    なし
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <th>最終更新:</th>
+                <td><%= @invoice_recipient.updated_at.strftime("%Y年%m月%d日 %H:%M") %></td>
+              </tr>
+            </table>
+            
+            <div class="d-flex justify-content-end mt-3">
+              <%= link_to "編集", edit_admin_invoice_recipient_path, class: "btn btn-warning me-2" %>
+              <%= link_to "情報をクリア", admin_invoice_recipient_path, method: :delete, 
+                  data: { confirm: "請求先情報をクリアしますか？" }, 
+                  class: "btn btn-outline-danger" %>
+            </div>
+          <% else %>
+            <!-- 新規作成フォーム -->
+            <div class="text-center mb-4">
+              <i class="fas fa-building fa-3x text-muted mb-3"></i>
+              <h5>請求先情報を設定してください</h5>
+              <p class="text-muted">会社の請求先情報を入力してください。</p>
+            </div>
+            
+            <%= form_with model: [:admin, @invoice_recipient], local: true, class: "needs-validation", novalidate: true do |f| %>
+              <% if @invoice_recipient.errors.any? %>
+                <div class="alert alert-danger">
+                  <h6>入力エラーがあります：</h6>
+                  <ul class="mb-0">
+                    <% @invoice_recipient.errors.full_messages.each do |message| %>
+                      <li><%= message %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              <% end %>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <%= f.label :name, "会社名", class: "form-label" %>
+                  <%= f.text_field :name, class: "form-control", placeholder: "株式会社サンプル", required: true %>
+                  <div class="invalid-feedback">
+                    会社名を入力してください。
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <%= f.label :department, "部署", class: "form-label" %>
+                  <%= f.text_field :department, class: "form-control", placeholder: "営業部" %>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <%= f.label :email, "メールアドレス", class: "form-label" %>
+                  <%= f.email_field :email, class: "form-control", placeholder: "info@example.com" %>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <%= f.label :tel, "電話番号", class: "form-label" %>
+                  <%= f.telephone_field :tel, class: "form-control", placeholder: "03-1234-5678" %>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <%= f.label :postal_code, "郵便番号", class: "form-label" %>
+                <%= f.text_field :postal_code, class: "form-control", placeholder: "100-0001" %>
+              </div>
+
+              <div class="mb-3">
+                <%= f.label :address, "住所", class: "form-label" %>
+                <%= f.text_area :address, class: "form-control", rows: 2, placeholder: "東京都千代田区千代田1-1-1", required: true %>
+                <div class="invalid-feedback">
+                  住所を入力してください。
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <%= f.label :notes, "備考", class: "form-label" %>
+                <%= f.text_area :notes, class: "form-control", rows: 3, placeholder: "その他の情報や備考を入力してください" %>
+              </div>
+
+              <div class="d-grid">
+                <%= f.submit "請求先情報を保存", class: "btn btn-primary" %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Bootstrap form validation
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    var forms = document.getElementsByClassName('needs-validation');
+    var validation = Array.prototype.filter.call(forms, function(form) {
+      form.addEventListener('submit', function(event) {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  }, false);
+})();
+</script>

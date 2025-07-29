@@ -56,6 +56,10 @@ Rails.application.routes.draw do
       post :check
       get :api_status
     end
+    
+    # 請求書管理
+    resource :invoice_recipient, only: [:show, :new, :create, :edit, :update, :destroy]
+    get 'invoice_recipients', to: 'invoice_recipients#index'
   end
 
   # 一般ユーザー用マイページ
@@ -66,6 +70,16 @@ Rails.application.routes.draw do
     end
   end
   resources :sales, only: [:index]
+  
+  # 請求書管理
+  resources :invoices, only: [:index, :show, :new, :create, :edit, :update] do
+    collection do
+      get :history      # 請求書履歴
+      get :issue        # 請求書発行
+      get :settings     # 請求書情報入力・変更
+      post :settings    # 請求書情報保存
+    end
+  end
 
   # ヘルスチェック
   get "up", to: "rails/health#show", as: :rails_health_check

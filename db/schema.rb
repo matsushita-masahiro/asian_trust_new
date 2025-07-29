@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_29_055834) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_29_073238) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"

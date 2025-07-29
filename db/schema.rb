@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_29_073238) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_29_102529) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -74,6 +74,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_29_073238) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "representative_name"
     t.index ["user_id"], name: "index_invoice_recipients_on_user_id"
   end
 
@@ -92,6 +93,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_29_073238) do
     t.datetime "sent_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "status", default: 0, null: false
     t.index ["invoice_recipient_id"], name: "index_invoices_on_invoice_recipient_id"
     t.index ["user_id"], name: "index_invoices_on_user_id"
   end

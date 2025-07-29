@@ -19,10 +19,23 @@ class Admin::InvoiceRecipientsController < Admin::BaseController
   end
 
   def create
-    if @invoice_recipient.update(invoice_recipient_params)
-      redirect_to admin_invoice_recipients_path, notice: '請求先情報が保存されました。'
+    # 既存のレコードがある場合は更新、ない場合は新規作成
+    if @invoice_recipient.persisted?
+      # 既存レコードの更新
+      if @invoice_recipient.update(invoice_recipient_params)
+        redirect_to admin_invoice_recipient_path, notice: '請求先情報が保存されました。'
+      else
+        render :index
+      end
     else
-      render :new
+      # 新規レコードの作成
+      @invoice_recipient.assign_attributes(invoice_recipient_params)
+      @invoice_recipient.user_id = current_user.id  # 管理者のIDを設定
+      if @invoice_recipient.save
+        redirect_to admin_invoice_recipient_path, notice: '請求先情報が保存されました。'
+      else
+        render :index
+      end
     end
   end
 
@@ -61,6 +74,6 @@ class Admin::InvoiceRecipientsController < Admin::BaseController
 
   def invoice_recipient_params
     # user_idは不要（会社全体で1つのため）
-    params.require(:invoice_recipient).permit(:name, :email, :postal_code, :address, :tel, :department, :notes)
+    params.require(:invoice_recipient).permit(:name, :representative_name, :email, :postal_code, :address, :tel, :department, :notes)
   end
 end

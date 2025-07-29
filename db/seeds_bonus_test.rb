@@ -16,7 +16,8 @@ Purchase.destroy_all
 Customer.destroy_all
 
 # 全てのユーザーを削除
-puts "全ユーザーを削除中..."
+puts "accessLogと全ユーザーを削除中..."
+AccessLog.delete_all
 User.destroy_all
 
 # IDシーケンスをリセット（SQLite用）

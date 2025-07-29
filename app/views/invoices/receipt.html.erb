@@ -1,0 +1,256 @@
+<div class="container py-5 pt-5 mt-5">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">📋 領収書確認</h2>
+        <div>
+          <%= link_to "請求書履歴に戻る", history_invoices_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 領収書プレビュー -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">領収書プレビュー</h5>
+          <div>
+            <span class="badge bg-success">確認済み</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- 領収書のPDF風表示 -->
+          <div class="receipt-preview p-4" style="background: white; border: 1px solid #ddd;">
+            <!-- ヘッダー -->
+            <div class="row mb-4">
+              <div class="col-6">
+                <h3 class="text-primary">領収書</h3>
+                <p class="mb-1">領収書番号: REC-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+                <p class="mb-1">発行日: <%= Date.current.strftime("%Y年%m月%d日") %></p>
+                <p class="mb-0">請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+              </div>
+              <div class="col-6 text-end">
+                <% if @invoice.invoice_recipient %>
+                  <h5><%= @invoice.invoice_recipient.name %></h5>
+                  <% if @invoice.invoice_recipient.representative_name.present? %>
+                    <p class="mb-1"><%= @invoice.invoice_recipient.representative_name %> 様</p>
+                  <% end %>
+                  <% if @invoice.invoice_recipient.department.present? %>
+                    <p class="mb-1"><%= @invoice.invoice_recipient.department %></p>
+                  <% end %>
+                  <% if @invoice.invoice_recipient.address.present? %>
+                    <p class="mb-0"><%= @invoice.invoice_recipient.address %></p>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- 領収金額 -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <div class="bg-light p-3 rounded">
+                  <div class="row">
+                    <div class="col-8">
+                      <h5 class="mb-0">領収金額</h5>
+                    </div>
+                    <div class="col-4 text-end">
+                      <h4 class="text-primary mb-0">¥<%= number_with_delimiter(@invoice.total_amount) %></h4>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 明細詳細 -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h6 class="text-muted">明細詳細</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <th>顧客名</th>
+                        <th>商品名</th>
+                        <th>単価</th>
+                        <th>数量</th>
+                        <th>金額</th>
+                        <th>ボーナス</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% 
+                        # ボーナス詳細データを取得
+                        selected_month = @invoice.invoice_date&.strftime("%Y-%m") || Date.current.strftime("%Y-%m")
+                        selected_month_start = Date.strptime(selected_month, "%Y-%m").beginning_of_month
+                        selected_month_end = Date.strptime(selected_month, "%Y-%m").end_of_month
+                        
+                        # コントローラーのget_bonus_detailsメソッドと同じロジック
+                        bonus_details = []
+                        
+                        # 自分の販売に対するボーナス
+                        self_purchases = current_user.purchases.includes(:product).where(purchased_at: selected_month_start..selected_month_end)
+                        self_purchases.each do |purchase|
+                          product = purchase.product
+                          base_price = product.base_price
+                          my_price = product.product_prices.find_by(level_id: current_user.level_id)&.price || 0
+                          bonus = (base_price - my_price) * purchase.quantity
+                          
+                          if bonus > 0
+                            bonus_details << {
+                              type: '自己販売',
+                              user_name: current_user.name || current_user.email,
+                              product_name: product.name,
+                              quantity: purchase.quantity,
+                              unit_price: base_price,
+                              unit_bonus: bonus / purchase.quantity,
+                              total_bonus: bonus,
+                              purchased_at: purchase.purchased_at
+                            }
+                          end
+                        end
+                        
+                        # 子孫の販売に対するボーナス
+                        descendant_purchases = Purchase.includes(:product, :user)
+                                                       .where(user_id: current_user.descendant_ids)
+                                                       .where(purchased_at: selected_month_start..selected_month_end)
+                        
+                        descendant_purchases.each do |purchase|
+                          bonus = current_user.bonus_for_purchase(purchase)
+                          
+                          if bonus > 0
+                            bonus_details << {
+                              type: '下位販売',
+                              user_name: purchase.user.name || purchase.user.email,
+                              product_name: purchase.product.name,
+                              quantity: purchase.quantity,
+                              unit_price: purchase.product.base_price,
+                              unit_bonus: bonus / purchase.quantity,
+                              total_bonus: bonus,
+                              purchased_at: purchase.purchased_at
+                            }
+                          end
+                        end
+                        
+                        # 日付順でソート
+                        bonus_details.sort_by! { |d| d[:purchased_at] }
+                      %>
+                      
+                      <% if bonus_details.present? %>
+                        <% bonus_details.each do |detail| %>
+                          <tr>
+                            <td><%= detail[:user_name] %></td>
+                            <td><%= detail[:product_name] %></td>
+                            <td class="text-end">¥<%= number_with_delimiter(detail[:unit_price]) %></td>
+                            <td class="text-center"><%= detail[:quantity] %></td>
+                            <td class="text-end">¥<%= number_with_delimiter(detail[:unit_price] * detail[:quantity]) %></td>
+                            <td class="text-end">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
+                          </tr>
+                        <% end %>
+                        <tr class="table-secondary fw-bold">
+                          <td colspan="4" class="text-center">合計</td>
+                          <td class="text-end">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:unit_price] * d[:quantity] }) %></td>
+                          <td class="text-end">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:total_bonus] }) %></td>
+                        </tr>
+                      <% else %>
+                        <tr>
+                          <td colspan="6" class="text-center text-muted">
+                            <%= @invoice.invoice_date&.strftime("%Y年%m月") %>分 インセンティブ報酬（詳細データなし）
+                          </td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 但し書き -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h6 class="text-muted">但し書き</h6>
+                <p>
+                  <% if @invoice.notes.present? %>
+                    <%= simple_format(@invoice.notes) %>
+                  <% else %>
+                    <%= @invoice.invoice_date&.strftime("%Y年%m月") %>分 インセンティブ支払いとして
+                  <% end %>
+                </p>
+              </div>
+            </div>
+
+            <!-- 発行者情報 -->
+            <div class="row">
+              <div class="col-12 text-end">
+                <h6 class="text-muted">発行者</h6>
+                <% if current_user.invoice_base %>
+                  <p class="mb-1"><strong><%= current_user.invoice_base.company_name %></strong></p>
+                  <% if current_user.invoice_base.department.present? %>
+                    <p class="mb-1"><%= current_user.invoice_base.department %></p>
+                  <% end %>
+                  <% if current_user.invoice_base.address.present? %>
+                    <p class="mb-1"><%= current_user.invoice_base.address %></p>
+                  <% end %>
+                  <% if current_user.invoice_base.email.present? %>
+                    <p class="mb-0"><%= current_user.invoice_base.email %></p>
+                  <% end %>
+                <% else %>
+                  <p class="mb-0"><%= current_user.name || current_user.email %></p>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 発行ボタン -->
+  <div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-1">領収書の発行</h6>
+              <small class="text-muted">
+                内容を確認後、領収書を発行してください。<br>
+                領収書は登録されたメールアドレス（<%= current_user.invoice_base&.email || current_user.email %>）に送付されます。
+              </small>
+            </div>
+            <div>
+              <%= button_to "発行", send_receipt_invoice_path(@invoice), method: :post, 
+                  class: "btn btn-success btn-lg", 
+                  data: { confirm: "領収書を発行してメール送付しますか？" } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.receipt-preview {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.receipt-preview h3, .receipt-preview h5, .receipt-preview h6 {
+  margin-bottom: 0.5rem;
+}
+
+.receipt-preview p {
+  margin-bottom: 0.25rem;
+}
+
+@media print {
+  .receipt-preview {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+</style>

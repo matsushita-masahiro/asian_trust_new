@@ -3,9 +3,18 @@
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-primary">📋 請求書発行</h2>
-        <div>
-          <%= link_to "履歴を見る", history_invoices_path, class: "btn btn-outline-info me-2" %>
-          <%= link_to "請求書管理に戻る", invoices_path, class: "btn btn-outline-secondary" %>
+        <div class="d-flex align-items-center">
+          <div class="me-3">
+            <%= form_with url: issue_invoices_path, method: :get, local: true, class: "d-flex align-items-center" do |f| %>
+              <small class="text-muted me-3">請求元: <%= current_user.name.presence || current_user.email %></small>
+              <label class="form-label me-2 mb-0">対象月:</label>
+              <%= f.month_field :month, value: @selected_month, class: "form-control me-2", style: "width: 180px;", onchange: "this.form.submit();" %>
+            <% end %>
+          </div>
+          <div>
+            <%= link_to "履歴を見る", history_invoices_path, class: "btn btn-outline-info me-2" %>
+            <%= link_to "請求書管理に戻る", invoices_path, class: "btn btn-outline-secondary" %>
+          </div>
         </div>
       </div>
     </div>
@@ -40,14 +49,12 @@
               </div>
 
               <div class="mb-3">
-                <%= f.label :total_amount, "請求金額", class: "form-label" %>
+                <%= f.label :total_amount, "請求金額（#{@selected_month}のインセンティブ合計）", class: "form-label" %>
                 <div class="input-group">
                   <span class="input-group-text">¥</span>
-                  <%= f.number_field :total_amount, class: "form-control", placeholder: "100000", required: true %>
+                  <%= f.number_field :total_amount, class: "form-control bg-light", readonly: true %>
                 </div>
-                <div class="invalid-feedback">
-                  請求金額を入力してください。
-                </div>
+                <div class="form-text">※ 選択された月のインセンティブ合計額が自動計算されます</div>
               </div>
 
               <div class="mb-3">
@@ -98,7 +105,7 @@
 
               <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                 <%= link_to "キャンセル", invoices_path, class: "btn btn-outline-secondary me-md-2" %>
-                <%= f.submit "請求書を作成", class: "btn btn-primary" %>
+                <%= f.submit "請求書作成・確認", class: "btn btn-primary" %>
               </div>
             <% end %>
           <% else %>
@@ -112,6 +119,74 @@
       </div>
     </div>
   </div>
+
+  <!-- インセンティブ内訳セクション -->
+  <% if @bonus_details.any? %>
+    <div class="row justify-content-center mt-4">
+      <div class="col-md-10">
+        <div class="card shadow">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">📊 <%= @selected_month %> インセンティブ内訳</h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>種別</th>
+                    <th>対象者</th>
+                    <th>商品名</th>
+                    <th>数量</th>
+                    <th>単価インセンティブ</th>
+                    <th>合計インセンティブ</th>
+                    <th>購入日</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @bonus_details.each do |detail| %>
+                    <tr>
+                      <td>
+                        <% if detail[:type] == '自己販売' %>
+                          <span class="badge bg-primary">自己販売</span>
+                        <% else %>
+                          <span class="badge bg-success">下位販売</span>
+                        <% end %>
+                      </td>
+                      <td><%= detail[:user_name] %></td>
+                      <td><%= detail[:product_name] %></td>
+                      <td><%= detail[:quantity] %></td>
+                      <td class="text-end">¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
+                      <td class="text-end text-success fw-bold">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
+                      <td><%= detail[:purchased_at].strftime("%Y/%m/%d") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+                <tfoot class="table-light">
+                  <tr>
+                    <th colspan="5" class="text-end">合計インセンティブ:</th>
+                    <th class="text-end text-primary fw-bold">¥<%= number_with_delimiter(@total_bonus) %></th>
+                    <th></th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="row justify-content-center mt-4">
+      <div class="col-md-8">
+        <div class="card shadow">
+          <div class="card-body text-center py-4">
+            <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+            <h5>インセンティブ内訳なし</h5>
+            <p class="text-muted"><%= @selected_month %> にはインセンティブ対象の販売がありませんでした。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
 </div>
 
 <script>

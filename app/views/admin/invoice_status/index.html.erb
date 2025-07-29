@@ -1,0 +1,188 @@
+<div class="container-fluid py-4" style="margin-top: 100px;">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">📋 請求書状況管理</h2>
+        <div>
+          <%= link_to "管理画面に戻る", admin_root_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ステータス選択 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <label class="form-label me-3 mb-0">表示ステータス:</label>
+            <%= form_with url: admin_invoice_status_index_path, method: :get, local: true, class: "d-flex align-items-center" do |f| %>
+              <%= f.select :status, 
+                  options_for_select([
+                    ['送付済み', 'sent'],
+                    ['振込確認済み', 'confirmed']
+                  ], @selected_status), 
+                  {}, 
+                  { class: "form-select me-2", style: "width: 200px;", onchange: "this.form.submit();" } %>
+            <% end %>
+            <span class="badge bg-info ms-2"><%= @invoices.count %>件</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 請求書一覧 -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">
+            <% if @selected_status == 'sent' %>
+              📤 送付済み請求書一覧
+            <% elsif @selected_status == 'confirmed' %>
+              ✅ 振込確認済み請求書一覧
+            <% end %>
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @invoices.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>請求書番号</th>
+                    <th>請求者</th>
+                    <th>請求先</th>
+                    <th>請求金額</th>
+                    <th>発行日</th>
+                    <th>支払期限</th>
+                    <th>送付日</th>
+                    <th>現在のステータス</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @invoices.each do |invoice| %>
+                    <tr>
+                      <td>
+                        <strong>INV-<%= invoice.id.to_s.rjust(6, '0') %></strong>
+                      </td>
+                      <td>
+                        <%= invoice.user.name.presence || invoice.user.email %>
+                      </td>
+                      <td>
+                        <%= invoice.invoice_recipient.name %>
+                      </td>
+                      <td class="text-end">
+                        <strong>¥<%= number_with_delimiter(invoice.total_amount) %></strong>
+                      </td>
+                      <td>
+                        <%= invoice.invoice_date&.strftime("%Y/%m/%d") %>
+                      </td>
+                      <td>
+                        <%= invoice.due_date&.strftime("%Y/%m/%d") %>
+                      </td>
+                      <td>
+                        <%= invoice.sent_at&.strftime("%Y/%m/%d %H:%M") %>
+                      </td>
+                      <td>
+                        <% if invoice.sent? %>
+                          <span class="badge bg-warning">送付済み</span>
+                        <% elsif invoice.confirmed? %>
+                          <span class="badge bg-success">振込確認済み</span>
+                        <% elsif invoice.draft? %>
+                          <span class="badge bg-secondary">下書き</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <div class="btn-group" role="group">
+                          <% if invoice.sent? %>
+                            <%= button_to "振込確認", 
+                                update_status_admin_invoice_status_path(invoice), 
+                                method: :patch, 
+                                params: { status: 'confirmed' },
+                                class: "btn btn-sm btn-success",
+                                data: { confirm: "振込確認済みに変更しますか？" } %>
+                          <% elsif invoice.confirmed? %>
+                            <%= button_to "送付済みに戻す", 
+                                update_status_admin_invoice_status_path(invoice), 
+                                method: :patch, 
+                                params: { status: 'sent' },
+                                class: "btn btn-sm btn-warning",
+                                data: { confirm: "送付済みに戻しますか？" } %>
+                          <% end %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+              <h5>該当する請求書がありません</h5>
+              <p class="text-muted">
+                <% if @selected_status == 'sent' %>
+                  送付済みの請求書がありません。
+                <% elsif @selected_status == 'confirmed' %>
+                  振込確認済みの請求書がありません。
+                <% end %>
+              </p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統計情報 -->
+  <div class="row mt-4">
+    <div class="col-md-6">
+      <div class="card bg-light">
+        <div class="card-body">
+          <h6 class="card-title">📊 請求書統計</h6>
+          <div class="row text-center">
+            <div class="col-4">
+              <div class="border-end">
+                <h4 class="text-secondary"><%= Invoice.draft.count %></h4>
+                <small>下書き</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="border-end">
+                <h4 class="text-warning"><%= Invoice.sent.count %></h4>
+                <small>送付済み</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <h4 class="text-success"><%= Invoice.confirmed.count %></h4>
+              <small>振込確認済み</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card bg-light">
+        <div class="card-body">
+          <h6 class="card-title">💰 請求金額合計</h6>
+          <div class="row text-center">
+            <div class="col-6">
+              <div class="border-end">
+                <h5 class="text-warning">¥<%= number_with_delimiter(Invoice.sent.sum(:total_amount)) %></h5>
+                <small>送付済み合計</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <h5 class="text-success">¥<%= number_with_delimiter(Invoice.confirmed.sum(:total_amount)) %></h5>
+              <small>振込確認済み合計</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

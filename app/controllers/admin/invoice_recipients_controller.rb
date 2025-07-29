@@ -44,9 +44,16 @@ class Admin::InvoiceRecipientsController < Admin::BaseController
   end
 
   def update
+    Rails.logger.info "=== Update Debug ==="
+    Rails.logger.info "Params: #{params.inspect}"
+    Rails.logger.info "Invoice recipient params: #{invoice_recipient_params.inspect}"
+    Rails.logger.info "Before update: #{@invoice_recipient.attributes.inspect}"
+    
     if @invoice_recipient.update(invoice_recipient_params)
-      redirect_to admin_invoice_recipients_path, notice: '請求先情報が更新されました。'
+      Rails.logger.info "After update: #{@invoice_recipient.attributes.inspect}"
+      redirect_to admin_invoice_recipient_path, notice: '請求先情報が更新されました。'
     else
+      Rails.logger.error "Update failed: #{@invoice_recipient.errors.full_messages}"
       render :edit
     end
   end

@@ -69,7 +69,7 @@
                       <p class="mb-1 text-break">📧 <%= ref_user.email %></p>
                       <p class="mb-1">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
                       <div>売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</div>
-                      <div>ボーナス（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
+                      <div>インセンティブ（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
                     </div>
                     <div class="col-md-4 text-end">
                       <%= link_to "売上明細", sales_path(user_id: ref_user.id), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
@@ -90,7 +90,7 @@
                   
                   <div class="text-center mb-2">
                     <div class="small">売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</div>
-                    <div class="small mb-2">ボーナス（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
+                    <div class="small mb-2">インセンティブ（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
                     <%= link_to "売上明細", sales_path(user_id: ref_user.id), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
                   </div>
                 </div>

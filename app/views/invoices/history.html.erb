@@ -41,15 +41,23 @@
                       <td><%= invoice.invoice_date&.strftime("%Y/%m/%d") || invoice.created_at.strftime("%Y/%m/%d") %></td>
                       <td><%= invoice.due_date&.strftime("%Y/%m/%d") %></td>
                       <td>
-                        <% if invoice.sent_at.present? %>
-                          <span class="badge bg-primary">送信済み</span>
+                        <% if invoice.confirmed? %>
+                          <span class="badge bg-success">確認済み</span>
+                        <% elsif invoice.sent? %>
+                          <span class="badge bg-warning">確認待ち</span>
                         <% else %>
                           <span class="badge bg-secondary">下書き</span>
                         <% end %>
                       </td>
                       <td>
-                        <%= link_to "詳細", invoice_path(invoice), class: "btn btn-sm btn-outline-primary me-1" %>
-                        <%= link_to "編集", edit_invoice_path(invoice), class: "btn btn-sm btn-outline-warning" %>
+                        <% if invoice.draft? %>
+                          <%= link_to "詳細", invoice_path(invoice), class: "btn btn-sm btn-outline-primary me-1" %>
+                          <%= link_to "編集", edit_invoice_path(invoice), class: "btn btn-sm btn-outline-warning" %>
+                        <% elsif invoice.sent? %>
+                          <%= link_to "詳細", invoice_path(invoice), class: "btn btn-sm btn-outline-primary" %>
+                        <% elsif invoice.confirmed? %>
+                          <%= link_to "領収書発行", receipt_invoice_path(invoice), class: "btn btn-sm btn-success" %>
+                        <% end %>
                       </td>
                     </tr>
                   <% end %>

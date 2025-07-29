@@ -1,0 +1,21 @@
+領収書発行のお知らせ
+
+いつもお世話になっております。
+
+下記の通り、領収書を発行いたしましたのでお知らせいたします。
+
+■ 添付ファイル
+領収書PDFが添付されています。
+ファイル名: 領収書_REC-<%= @invoice.id.to_s.rjust(6, '0') %>.pdf
+
+■ 領収書情報
+領収書番号: REC-<%= @invoice.id.to_s.rjust(6, '0') %>
+発行日: <%= Date.current.strftime("%Y年%m月%d日") %>
+請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %>
+宛先: <%= @invoice.invoice_recipient.name %>
+領収金額: ¥<%= number_with_delimiter(@invoice.total_amount) %>
+
+---
+領収書の詳細は添付のPDFファイルをご確認ください。
+このメールは自動送信されています。
+ご不明な点がございましたら、お気軽にお問い合わせください。

@@ -3,7 +3,7 @@
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 100px;">
         <div class="d-flex align-items-center">
-          <h4 class="text-primary me-3">支払いボーナス一覧</h4>
+          <h4 class="text-primary me-3">支払いインセンティブ一覧</h4>
           <%= form_with url: admin_bonuses_path, method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
             <label class="form-label me-2 mb-0">対象月:</label>
             <%= f.month_field :month, value: @selected_month, class: "form-control", style: "width: 180px;", onchange: "document.getElementById('month-form').submit();" %>
@@ -39,7 +39,7 @@
         <div class="card-body">
           <div class="d-flex justify-content-between">
             <div>
-              <h6 class="card-title">総支払いボーナス</h6>
+              <h6 class="card-title">総支払いインセンティブ</h6>
               <h3 class="mb-0">¥<%= number_with_delimiter(@bonus_data.sum { |data| data[:bonus_amount] }) %></h3>
             </div>
             <div class="align-self-center">
@@ -51,12 +51,12 @@
     </div>
   </div>
 
-  <!-- ボーナス一覧テーブル -->
+  <!-- インセンティブ一覧テーブル -->
   <div class="row">
     <div class="col-12">
       <div class="card">
         <div class="card-header">
-          <h5 class="card-title mb-0">支払いボーナス詳細 (<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>)</h5>
+          <h5 class="card-title mb-0">支払いインセンティブ詳細 (<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>)</h5>
         </div>
         <div class="card-body">
           <% if @bonus_data.any? %>
@@ -68,7 +68,7 @@
                     <th>LステップID</th>
                     <th>レベル</th>
                     <th>直接紹介数</th>
-                    <th>支払いボーナス額</th>
+                    <th>支払いインセンティブ額</th>
                     <th>操作</th>
                   </tr>
                 </thead>
@@ -107,8 +107,8 @@
           <% else %>
             <div class="text-center py-5">
               <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
-              <h5 class="text-muted">支払い対象のボーナスがありません</h5>
-              <p class="text-muted">選択した月（<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>）には支払うべきボーナスがありません。</p>
+              <h5 class="text-muted">支払い対象のインセンティブがありません</h5>
+              <p class="text-muted">選択した月（<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>）には支払うべきインセンティブがありません。</p>
             </div>
           <% end %>
         </div>

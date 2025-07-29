@@ -3,14 +3,14 @@
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
         <div class="d-flex align-items-center">
-          <h4 class="text-primary me-3"><%= @user.name.present? ? @user.name : @user.email %>のボーナス詳細</h4>
+          <h4 class="text-primary me-3"><%= @user.name.present? ? @user.name : @user.email %>のインセンティブ詳細</h4>
           <%= form_with url: admin_user_bonuses_path(@user), method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
             <label class="form-label me-2 mb-0">対象月:</label>
             <%= f.month_field :month, value: @selected_month, class: "form-control", style: "width: 180px;", onchange: "document.getElementById('month-form').submit();" %>
           <% end %>
         </div>
         <div>
-          <%= link_to "ボーナス一覧に戻る", admin_bonuses_path(month: @selected_month), class: "btn btn-outline-secondary me-2" %>
+          <%= link_to "インセンティブ一覧に戻る", admin_bonuses_path(month: @selected_month), class: "btn btn-outline-secondary me-2" %>
           <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
         </div>
       </div>
@@ -40,7 +40,7 @@
         <div class="card-body">
           <div class="d-flex justify-content-between">
             <div>
-              <h6 class="card-title">総ボーナス</h6>
+              <h6 class="card-title">総インセンティブ</h6>
               <h4 class="mb-0">¥<%= number_with_delimiter(@total_bonus) %></h4>
             </div>
             <div class="align-self-center">
@@ -89,7 +89,7 @@
     <div class="col-12">
       <div class="card">
         <div class="card-header">
-          <h5 class="card-title mb-0">販売履歴とボーナス詳細 (<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>)</h5>
+          <h5 class="card-title mb-0">販売履歴とインセンティブ詳細 (<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>)</h5>
         </div>
         <div class="card-body">
           <% if @purchases_with_descendants.any? %>
@@ -103,7 +103,7 @@
                     <th class="text-end text-nowrap">単価（円）</th>
                     <th class="text-end text-nowrap">数量</th>
                     <th class="text-end text-nowrap">合計（円）</th>
-                    <th class="text-end text-nowrap">ボーナス（円）</th>
+                    <th class="text-end text-nowrap">インセンティブ（円）</th>
                     <th class="text-nowrap">メール</th>
                     <th class="text-nowrap">電話番号</th>
                     <th class="text-nowrap">住所</th>

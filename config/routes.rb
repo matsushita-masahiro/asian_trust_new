@@ -60,6 +60,13 @@ Rails.application.routes.draw do
     # 請求書管理
     resource :invoice_recipient, only: [:show, :new, :create, :edit, :update, :destroy]
     get 'invoice_recipients', to: 'invoice_recipients#index'
+    
+    # 請求書状況管理
+    resources :invoice_status, only: [:index] do
+      member do
+        patch :update_status
+      end
+    end
   end
 
   # 一般ユーザー用マイページ
@@ -78,6 +85,11 @@ Rails.application.routes.draw do
       get :issue        # 請求書発行
       get :settings     # 請求書情報入力・変更
       post :settings    # 請求書情報保存
+    end
+    member do
+      patch :send_invoice  # 請求書送付
+      get :receipt        # 領収書確認画面
+      post :send_receipt  # 領収書送付
     end
   end
 

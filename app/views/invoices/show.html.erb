@@ -1,0 +1,205 @@
+<div class="container py-5 pt-5 mt-5">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">📋 請求書確認</h2>
+        <div>
+          <% if @invoice.draft? %>
+            <%= link_to "編集", edit_invoice_path(@invoice), class: "btn btn-outline-warning me-2" %>
+          <% end %>
+          <%= link_to "請求書管理に戻る", invoices_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 請求書プレビュー -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">請求書プレビュー</h5>
+          <div>
+            <% if @invoice.sent_at.present? %>
+              <span class="badge bg-success">送付済み</span>
+              <small class="text-muted ms-2"><%= @invoice.sent_at.strftime("%Y/%m/%d %H:%M") %></small>
+            <% else %>
+              <span class="badge bg-secondary">未送付</span>
+            <% end %>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- 請求書のPDF風表示 -->
+          <div class="invoice-preview p-4" style="background: white; border: 1px solid #ddd;">
+            <!-- ヘッダー -->
+            <div class="row mb-4">
+              <div class="col-6">
+                <h3 class="text-primary">請求書</h3>
+                <p class="mb-1">請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+                <p class="mb-1">発行日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></p>
+                <p class="mb-0">支払期限: <%= @invoice.due_date&.strftime("%Y年%m月%d日") %></p>
+              </div>
+              <div class="col-6 text-end">
+                <% if current_user.invoice_base %>
+                  <h5><%= current_user.invoice_base.company_name %></h5>
+                  <% if current_user.invoice_base.department.present? %>
+                    <p class="mb-1"><%= current_user.invoice_base.department %></p>
+                  <% end %>
+                  <% if current_user.invoice_base.address.present? %>
+                    <p class="mb-1"><%= current_user.invoice_base.address %></p>
+                  <% end %>
+                  <% if current_user.invoice_base.email.present? %>
+                    <p class="mb-0"><%= current_user.invoice_base.email %></p>
+                  <% end %>
+                <% else %>
+                  <h5><%= current_user.name || current_user.email %></h5>
+                <% end %>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- 請求先情報 -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h6 class="text-muted">請求先</h6>
+                <% if @invoice.invoice_recipient %>
+                  <p class="mb-1"><strong><%= @invoice.invoice_recipient.name %></strong></p>
+                  <% if @invoice.invoice_recipient.representative_name.present? %>
+                    <p class="mb-1"><%= @invoice.invoice_recipient.representative_name %> 様</p>
+                  <% end %>
+                  <% if @invoice.invoice_recipient.department.present? %>
+                    <p class="mb-1"><%= @invoice.invoice_recipient.department %></p>
+                  <% end %>
+                  <% if @invoice.invoice_recipient.address.present? %>
+                    <p class="mb-1"><%= @invoice.invoice_recipient.address %></p>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+
+            <!-- 請求金額 -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <div class="bg-light p-3 rounded">
+                  <div class="row">
+                    <div class="col-8">
+                      <h5 class="mb-0">請求金額</h5>
+                    </div>
+                    <div class="col-4 text-end">
+                      <h4 class="text-primary mb-0">¥<%= number_with_delimiter(@invoice.total_amount) %></h4>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 備考 -->
+            <% if @invoice.notes.present? %>
+              <div class="row mb-4">
+                <div class="col-12">
+                  <h6 class="text-muted">備考</h6>
+                  <p><%= simple_format(@invoice.notes) %></p>
+                </div>
+              </div>
+            <% end %>
+
+            <!-- 振込先情報 -->
+            <div class="row">
+              <div class="col-12">
+                <h6 class="text-muted">お振込先</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-borderless">
+                    <tr>
+                      <td width="20%">銀行名:</td>
+                      <td><%= @invoice.bank_name %></td>
+                    </tr>
+                    <tr>
+                      <td>支店名:</td>
+                      <td><%= @invoice.bank_branch_name %></td>
+                    </tr>
+                    <tr>
+                      <td>口座種別:</td>
+                      <td>
+                        <% if @invoice.bank_account_type == 'savings' %>
+                          普通
+                        <% elsif @invoice.bank_account_type == 'checking' %>
+                          当座
+                        <% else %>
+                          <%= @invoice.bank_account_type %>
+                        <% end %>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>口座番号:</td>
+                      <td><%= @invoice.bank_account_number %></td>
+                    </tr>
+                    <tr>
+                      <td>口座名義:</td>
+                      <td><%= @invoice.bank_account_name %></td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- アクションボタン -->
+  <div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-1">請求書の送付</h6>
+              <small class="text-muted">
+                <% if @invoice.sent_at.present? %>
+                  この請求書は <%= @invoice.sent_at.strftime("%Y年%m月%d日 %H:%M") %> に送付済みです。
+                <% else %>
+                  内容を確認後、請求書を送付してください。
+                <% end %>
+              </small>
+            </div>
+            <div>
+              <% if @invoice.sent_at.present? %>
+                <%= button_to "再送付", send_invoice_invoice_path(@invoice), method: :patch, 
+                    class: "btn btn-outline-primary", 
+                    data: { confirm: "請求書を再送付しますか？" } %>
+              <% else %>
+                <%= button_to "請求書を送付", send_invoice_invoice_path(@invoice), method: :patch, 
+                    class: "btn btn-success btn-lg", 
+                    data: { confirm: "請求書を送付しますか？送付後は編集できません。" } %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.invoice-preview {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.invoice-preview h3, .invoice-preview h5, .invoice-preview h6 {
+  margin-bottom: 0.5rem;
+}
+
+.invoice-preview p {
+  margin-bottom: 0.25rem;
+}
+
+@media print {
+  .invoice-preview {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+</style>

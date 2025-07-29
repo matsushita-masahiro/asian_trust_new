@@ -1,13 +1,11 @@
-# frozen_string_literal: true
-
 WickedPdf.config ||= {}
 
-WickedPdf.config.merge!(
-  exe_path: if Rails.env.production?
-              # Heroku 用：wkhtmltopdf-heroku ビルドパス
-              '/app/bin/wkhtmltopdf'
-            else
-              # 開発環境：which でパス取得
-              `which wkhtmltopdf`.strip
-            end
-)
+if Rails.env.production?
+  WickedPdf.config.merge!(
+    exe_path: '/app/bin/wkhtmltopdf' # Herokuのデフォルトパス
+  )
+else
+  WickedPdf.config.merge!(
+    exe_path: `which wkhtmltopdf`.strip # wkhtmltopdf-binaryにより自動パス指定
+  )
+end

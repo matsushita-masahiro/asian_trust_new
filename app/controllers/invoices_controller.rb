@@ -143,7 +143,7 @@ class InvoicesController < ApplicationController
     # 領収書PDF生成とメール送信
     begin
       ReceiptMailer.send_receipt(@invoice).deliver_now
-      @invoice.update!(receipt_sent_at: Time.current)
+      @invoice.update!(sent_at: Time.current)
       redirect_to history_invoices_path, notice: '領収書を送付しました。'
     rescue => e
       Rails.logger.error "領収書送付エラー: #{e.message}"

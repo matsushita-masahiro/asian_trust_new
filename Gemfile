@@ -71,7 +71,16 @@ gem 'dotenv-rails', groups: [:development, :test]
 
 gem 'devise'
 gem 'seed-fu'
+
 gem 'wicked_pdf'
-gem 'wkhtmltopdf-heroku', group: :production
+
+group :development do
+  gem 'wkhtmltopdf-binary'
+end
+
+group :production do
+  gem 'wkhtmltopdf-heroku'
+end
+
 
 

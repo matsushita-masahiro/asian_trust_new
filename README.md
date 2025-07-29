@@ -37,4 +37,134 @@
   User.all.each do |u| u.update(password: "password") end
 
 
+
+  class Invoice < ApplicationRecord
+  belongs_to :user
+  belongs_to :invoice_recipient
+
+  # ステータス定数
+  DRAFT = 0
+  SENT = 1
+  CONFIRMED = 2
+  
+  # ステータスのバリデーション
+  validates :status, inclusion: { in: [DRAFT, SENT, CONFIRMED] }
+  
+  # ステータス判定メソッド
+  def draft?
+    status == DRAFT
+  end
+  
+  def sent?
+    status == SENT
+  end
+  
+  def confirmed?
+    status == CONFIRMED
+  end
+  
+  # ステータス変更メソッド
+  def draft!
+    update!(status: DRAFT)
+  end
+  
+  def sent!
+    update!(status: SENT)
+  end
+  
+  def confirmed!
+    update!(status: CONFIRMED)
+  end
+  
+  # スコープ
+  scope :draft, -> { where(status: DRAFT) }
+  scope :sent, -> { where(status: SENT) }
+  scope :confirmed, -> { where(status: CONFIRMED) }
+  
+  # ステータス名を取得
+  def status_name
+    case status
+    when DRAFT then 'draft'
+    when SENT then 'sent'
+    when CONFIRMED then 'confirmed'
+    else 'unknown'
+    end
+  end
+  
+  # ステータス表示名を取得
+  def status_display_name
+    case status
+    when DRAFT then '下書き'
+    when SENT then '送付済み'
+    when CONFIRMED then '振込確認済み'
+    else '不明'
+    end
+  end
+  
+end
+
+
+------------------
+
+
+class InvoiceRecipient < ApplicationRecord
+  belongs_to :user, optional: true
+  has_many   :invoices, dependent: :nullify
+
+  # バリデーション
+  validates :name, presence: true
+  validates :address, presence: true
+end
+
+--------------
+
+class CreateInvoices < ActiveRecord::Migration[8.0]
+  def change
+    create_table :invoices do |t|
+      t.references :user, null: false, foreign_key: true
+      t.references :invoice_recipient, null: false, foreign_key: true
+
+      t.date :invoice_date
+      t.date :due_date
+      t.integer :total_amount
+
+      t.string :bank_name
+      t.string :bank_branch_name
+      t.string :bank_account_type
+      t.string :bank_account_number
+      t.string :bank_account_name
+      t.integer :status, default: 0, null: false
+      t.text :notes
+      t.datetime :sent_at
+      t.timestamps
+    end
+  end
+end
+
+
+^^^^^^^^^^^^^^^^^^^^
+
+
+
+class CreateInvoiceRecipients < ActiveRecord::Migration[8.0]
+  def change
+    create_table :invoice_recipients do |t|
+      t.references :user, null: false, foreign_key: true
+
+      t.string :name
+      t.string :email
+      t.string :postal_code
+      t.string :address
+      t.string :tel
+      t.string :department
+      t.text :notes
+      t.string :representative_name
+      t.timestamps
+    end
+  end
+end
+
+
+
+
   

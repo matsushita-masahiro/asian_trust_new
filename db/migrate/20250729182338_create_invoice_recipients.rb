@@ -2,6 +2,7 @@ class CreateInvoiceRecipients < ActiveRecord::Migration[8.0]
   def change
     create_table :invoice_recipients do |t|
       t.references :user, null: false, foreign_key: true
+
       t.string :name
       t.string :email
       t.string :postal_code
@@ -9,7 +10,7 @@ class CreateInvoiceRecipients < ActiveRecord::Migration[8.0]
       t.string :tel
       t.string :department
       t.text :notes
-
+      t.string :representative_name
       t.timestamps
     end
   end

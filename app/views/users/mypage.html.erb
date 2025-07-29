@@ -22,6 +22,9 @@
               <p>本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
               <p>下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
               <p>合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
+              <div class="mt-2">
+                <%= link_to "売上明細", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
+              </div>
             </div>
           </div>
 
@@ -38,7 +41,10 @@
             <div class="text-center">
               <p class="mb-1">本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
               <p class="mb-1">下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
-              <p class="mb-0">合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
+              <p class="mb-2">合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
+              <div>
+                <%= link_to "売上明細", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
+              </div>
             </div>
           </div>
         </div>

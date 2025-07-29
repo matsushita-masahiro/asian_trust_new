@@ -32,4 +32,9 @@
     "level_id": 4
   }'
   
+
+
+  User.all.each do |u| u.update(password: "password") end
+
+
   

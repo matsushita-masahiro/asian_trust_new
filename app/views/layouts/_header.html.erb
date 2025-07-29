@@ -10,7 +10,11 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
-          <%= link_to "ホーム", root_path, class: "nav-link" %>
+          <% if request.path == mypage_path %>
+            <%= link_to "請求書管理", "#", class: "nav-link" %>
+          <% else %>
+            <%= link_to "ホーム", root_path, class: "nav-link" %>
+          <% end %>
         </li>
         <li class="nav-item">
           <%= link_to "お問い合わせ", new_inquiry_path, class: "nav-link" %>

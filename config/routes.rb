@@ -41,6 +41,7 @@ Rails.application.routes.draw do
         patch :deactivate
         patch :suspend
         patch :reactivate
+        get :sales_details  # 売上明細ページ
       end
       collection do
         get :all_users

@@ -1,6 +1,6 @@
 class CreateInvoices < ActiveRecord::Migration[8.0]
   def change
-    create_table :invoices do |t|
+    create_table :invoices, if_not_exists: true do |t|
       t.references :user, null: false, foreign_key: true
       t.references :invoice_recipient, null: false, foreign_key: true
 

@@ -1,24 +1,9 @@
-# 開発用ファイル
-/test
-/spec
-/docs
-/script
-/scripts
-
-# ログファイル
-/log/*.log
-
-# 一時ファイル
-/tmp/cache
-/tmp/storage
-
-# CSVファイル（本番で不要な場合）
-*.csv
-
-# その他の開発用ファイル
-.DS_Store
-/storage/*
-!/storage/.keep
-
-# Node.js開発依存関係（本番で不要）
-/node_modules/.cache
+node_modules
+log
+tmp
+test
+spec
+coverage
+README.md
+public/assets
+vendor/bundle

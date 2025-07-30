@@ -178,6 +178,23 @@ invoiceデータのstatusが’2’になってる（送付済み）レコード
 の5行目の請求書状況管理の右端に
 「確認済み（レコード件数）」を表示したい
 
+現在
+invoiceの
+statusが
+invoice.rbで下記になってますが
+
+# ステータス定数
+DRAFT = 0 下書き
+SENT = 1 送付済み
+CONFIRMED = 2 振込確認済み
+
+DRAFT = 0 初期状態
+SENT = 1 下書き
+CONFIRMED = 2 送付済み
+CONFIRMED = 3 振込確認済み
+
+
+
 
 
 

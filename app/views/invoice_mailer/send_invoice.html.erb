@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+    .content { padding: 20px; background-color: #f8f9fa; }
+    .invoice-info { background-color: white; padding: 15px; margin: 15px 0; border-left: 4px solid #007bff; }
+    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>請求書送付のお知らせ</h2>
+    </div>
+    
+    <div class="content">
+      <p><%= @invoice_recipient.name %> 様</p>
+      
+      <p>いつもお世話になっております。<br>
+      <%= @user.name || @user.email %>です。</p>
+      
+      <p>請求書を送付いたします。<br>
+      添付のPDFファイルをご確認ください。</p>
+      
+      <div class="invoice-info">
+        <h3>請求書情報</h3>
+        <ul>
+          <li><strong>請求書番号:</strong> INV-<%= @invoice.id.to_s.rjust(6, '0') %></li>
+          <li><strong>発行日:</strong> <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></li>
+          <li><strong>支払期限:</strong> <%= @invoice.due_date&.strftime("%Y年%m月%d日") %></li>
+          <li><strong>請求金額:</strong> ¥<%= number_with_delimiter(@invoice.total_amount) %></li>
+        </ul>
+      </div>
+      
+      <p>お振込先につきましては、添付の請求書をご確認ください。</p>
+      
+      <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+      
+      <p>何卒よろしくお願いいたします。</p>
+    </div>
+    
+    <div class="footer">
+      <p>このメールは自動送信されています。</p>
+    </div>
+  </div>
+</body>
+</html>

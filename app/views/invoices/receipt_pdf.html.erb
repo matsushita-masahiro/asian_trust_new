@@ -155,7 +155,7 @@
               <div class="company-name"><%= @invoice_base.company_name %>様</div>
             <% end %>
             <% if @invoice_base.postal_code.present? %>
-              <div>〒<%= @invoice_base.postal_code %></div>
+              <div>〒<%= format_postal_code(@invoice_base.postal_code) %></div>
             <% end %>
             <% if @invoice_base.address.present? %>
               <div><%= @invoice_base.address %></div>
@@ -170,7 +170,7 @@
           <div class="company-name">株式会社アジアビジネストラスト</div>
         <% end %>
         <% if @invoice_recipients.postal_code.present? %>
-          <div class="company-name">&#12306;<%= @invoice_recipients.postal_code %></div>
+          <div class="company-name">&#12306;<%= format_postal_code（@invoice_recipients.postal_code) %></div>
         <% else %>
           <div class="company-name">〒104-0061</div>
         <% end %>

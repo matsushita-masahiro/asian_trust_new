@@ -12,4 +12,9 @@ module ApplicationHelper
     
         months.reverse # 新しい順
      end
+
+     def format_postal_code(postal_code)
+      postal_code.to_s.insert(3, '-')
+     end
+    
 end

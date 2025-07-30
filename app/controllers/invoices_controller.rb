@@ -115,10 +115,18 @@ class InvoicesController < ApplicationController
   def send_invoice
     @invoice = current_user.invoices.find(params[:id])
     
-    # 送付処理（実際のメール送信などはここで実装）
-    @invoice.update!(sent_at: Time.current, status: Invoice::SENT)
-    
-    redirect_to invoice_path(@invoice), notice: '請求書を送付しました。'
+    begin
+      # メール送信
+      InvoiceMailer.send_invoice(@invoice).deliver_now
+      
+      # 送付処理
+      @invoice.update!(sent_at: Time.current, status: Invoice::SENT)
+      
+      redirect_to invoice_path(@invoice), notice: '請求書を送付しました。'
+    rescue => e
+      Rails.logger.error "Invoice send error: #{e.message}"
+      redirect_to invoice_path(@invoice), alert: '請求書の送付に失敗しました。管理者にお問い合わせください。'
+    end
   end
 
   def receipt

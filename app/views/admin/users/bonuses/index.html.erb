@@ -1,27 +1,56 @@
-<div class="container-fluid">
-  <div class="row">
+<div class="container-fluid" style="padding-top: 100px;">
+  <!-- ヘッダーセクション -->
+  <div class="row mb-4">
     <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
-        <div class="d-flex align-items-center">
-          <h4 class="text-primary me-3"><%= @user.name.present? ? @user.name : @user.email %>のインセンティブ詳細</h4>
-          <%= form_with url: admin_user_bonuses_path(@user), method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
-            <label class="form-label me-2 mb-0">対象月:</label>
-            <%= f.month_field :month, value: @selected_month, class: "form-control", style: "width: 180px;", onchange: "document.getElementById('month-form').submit();" %>
-          <% end %>
-        </div>
-        <div>
-          <%= link_to "インセンティブ一覧に戻る", admin_bonuses_path(month: @selected_month), class: "btn btn-outline-secondary me-2" %>
-          <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
+      <div class="card border shadow-sm bg-white">
+        <div class="card-body p-4">
+          <!-- タイトル行 -->
+          <div class="row align-items-center mb-3">
+            <div class="col-md-8">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-user-tie fa-2x me-3 text-primary"></i>
+                <div>
+                  <h3 class="mb-0 fw-bold text-dark"><%= @user.name.present? ? @user.name : @user.email %></h3>
+                  <p class="mb-0 text-muted">インセンティブ詳細レポート</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+              <div class="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
+                <%= link_to admin_bonuses_path(month: @selected_month), class: "btn btn-outline-secondary btn-sm" do %>
+                  <i class="fas fa-arrow-left me-1"></i>一覧に戻る
+                <% end %>
+                <%= link_to admin_root_path, class: "btn btn-outline-primary btn-sm" do %>
+                  <i class="fas fa-tachometer-alt me-1"></i>ダッシュボード
+                <% end %>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 月選択行 -->
+          <div class="row">
+            <div class="col-12">
+              <%= form_with url: admin_user_bonuses_path(@user), method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
+                <label class="form-label me-3 mb-0 text-dark">対象月:</label>
+                <div class="input-group" style="width: 200px;">
+                  <span class="input-group-text bg-white border-0">
+                    <i class="fas fa-calendar-alt text-muted"></i>
+                  </span>
+                  <%= f.month_field :month, value: @selected_month, class: "form-control border-0", onchange: "document.getElementById('month-form').submit();" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- 統計情報 -->
-  <div class="row mb-4">
-    <div class="col-md-3">
-      <div class="card bg-info text-white">
-        <div class="card-body">
+  <div class="row mb-5">
+    <div class="col-md-3 mb-4">
+      <div class="card bg-info text-white shadow-sm">
+        <div class="card-body py-4">
           <div class="d-flex justify-content-between">
             <div>
               <h6 class="card-title">総売上</h6>
@@ -35,9 +64,9 @@
       </div>
     </div>
 
-    <div class="col-md-3">
-      <div class="card bg-success text-white">
-        <div class="card-body">
+    <div class="col-md-3 mb-4">
+      <div class="card bg-success text-white shadow-sm">
+        <div class="card-body py-4">
           <div class="d-flex justify-content-between">
             <div>
               <h6 class="card-title">総インセンティブ</h6>
@@ -51,9 +80,9 @@
       </div>
     </div>
 
-    <div class="col-md-3">
-      <div class="card bg-warning text-white">
-        <div class="card-body">
+    <div class="col-md-3 mb-4">
+      <div class="card bg-warning text-white shadow-sm">
+        <div class="card-body py-4">
           <div class="d-flex justify-content-between">
             <div>
               <h6 class="card-title">直接紹介数</h6>
@@ -67,9 +96,9 @@
       </div>
     </div>
 
-    <div class="col-md-3">
-      <div class="card bg-primary text-white">
-        <div class="card-body">
+    <div class="col-md-3 mb-4">
+      <div class="card bg-primary text-white shadow-sm">
+        <div class="card-body py-4">
           <div class="d-flex justify-content-between">
             <div>
               <h6 class="card-title">購入件数</h6>

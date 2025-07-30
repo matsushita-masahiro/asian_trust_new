@@ -56,7 +56,7 @@
               </tr>
               <tr>
                 <th>郵便番号:</th>
-                <td><%= @invoice_recipient.postal_code.presence || "未設定" %></td>
+                <td>&#12306;<%= format_postal_code(@invoice_recipient.postal_code.presence) || "未設定" %></td>
               </tr>
               <tr>
                 <th>住所:</th>

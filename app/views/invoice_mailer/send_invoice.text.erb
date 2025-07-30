@@ -1,0 +1,24 @@
+請求書送付のお知らせ
+
+<%= @invoice_recipient.name %> 様
+
+いつもお世話になっております。
+<%= @user.name || @user.email %>です。
+
+請求書を送付いたします。
+添付のPDFファイルをご確認ください。
+
+【請求書情報】
+・請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %>
+・発行日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %>
+・支払期限: <%= @invoice.due_date&.strftime("%Y年%m月%d日") %>
+・請求金額: ¥<%= number_with_delimiter(@invoice.total_amount) %>
+
+お振込先につきましては、添付の請求書をご確認ください。
+
+ご不明な点がございましたら、お気軽にお問い合わせください。
+
+何卒よろしくお願いいたします。
+
+---
+このメールは自動送信されています。

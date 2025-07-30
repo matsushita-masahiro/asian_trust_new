@@ -164,11 +164,24 @@
         <% end %>
       </div>
       <div class="company-info">
-        <div class="company-name">株式会社アジアビジネストラスト</div>
-        <div>〒1500045</div>
-        <div>渋谷区神泉町</div>
-        <div>渋谷区渋谷1-1-1</div>
+        <% if @invoice_recipients.name.present? %>
+          <div class="company-name"><%= @invoice_recipients.name %></div>
+        <% else %>
+          <div class="company-name">株式会社アジアビジネストラスト</div>
+        <% end %>
+        <% if @invoice_recipients.postal_code.present? %>
+          <div class="company-name"><%= @invoice_recipients.postal_code %></div>
+        <% else %>
+          <div class="company-name">〒104-0061</div>
+        <% end %>
+        <% if @invoice_recipients.address.present? %>
+          <div class="company-name"><%= @invoice_recipients.address %></div>
+        <% else %>
+          <div class="company-name">東京都中央区銀座4-8-1 3階</div>
+        <% end %>
       </div>
+
+
     </div>
     
     <!-- 領収書情報 -->

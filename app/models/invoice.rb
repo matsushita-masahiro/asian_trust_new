@@ -15,6 +15,7 @@ class Invoice < ApplicationRecord
     status == DRAFT
   end
   
+  
   def sent?
     status == SENT
   end

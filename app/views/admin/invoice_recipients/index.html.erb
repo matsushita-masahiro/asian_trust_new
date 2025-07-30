@@ -1,8 +1,8 @@
-<div class="container-fluid">
+<div class="container-fluid pt-4" style="margin-top: 50px;">
   <div class="row">
     <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary">📋 請求書情報入力・変更</h2>
+      <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+        <h4 class="text-primary">📋 請求書情報入力・変更</h4>
         <%= link_to "ダッシュボードに戻る", admin_root_path, class: "btn btn-outline-secondary" %>
       </div>
     </div>
@@ -13,9 +13,12 @@
       <div class="card shadow">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="mb-0">会社の請求先情報</h5>
-          <% if @invoice_recipient.persisted? && @invoice_recipient.name.present? %>
-            <%= link_to "編集", edit_admin_invoice_recipient_path, class: "btn btn-sm btn-warning" %>
-          <% end %>
+          <div>
+            <%= link_to "ダッシュボードに戻る", admin_root_path, class: "btn btn-sm btn-outline-secondary me-2" %>
+            <% if @invoice_recipient.persisted? && @invoice_recipient.name.present? %>
+              <%= link_to "編集", edit_admin_invoice_recipient_path, class: "btn btn-sm btn-warning" %>
+            <% end %>
+          </div>
         </div>
         <div class="card-body">
           <% if @invoice_recipient.persisted? && @invoice_recipient.name.present? %>

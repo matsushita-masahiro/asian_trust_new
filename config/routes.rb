@@ -70,13 +70,17 @@ Rails.application.routes.draw do
   end
 
   # 一般ユーザー用マイページ
-  get 'mypage', to: 'users#mypage', as: :mypage
+  get 'mysales', to: 'users#mysales', as: :mysales
   resources :users, only: [:show] do  # /users/:id → 下位ユーザー詳細
     member do
       get :purchases  # /users/:id/purchases → 販売履歴
     end
   end
+  get 'sales/:id' => "sales#show"
   resources :sales, only: [:index]
+  resources :customers, only: [:show]
+  
+  
   
   # 請求書管理
   resources :invoices, only: [:index, :show, :new, :create, :edit, :update] do

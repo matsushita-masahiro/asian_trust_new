@@ -1,10 +1,19 @@
-<div class="container-fluid">
+<div class="container-fluid" style="padding-top: 100px;">
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary">管理画面ダッシュボード</h2>
-        <div class="text-muted">
-          <%= Date.current.strftime("%Y年%m月%d日") %>
+        <h4 class="text-primary">管理ダッシュボード</h4>
+        <div class="d-flex align-items-center gap-3">
+          <% unconfirmed_invoices_count = Invoice.where(status: Invoice::SENT).count %>
+          <% if unconfirmed_invoices_count > 0 %>
+            <%= link_to admin_invoice_status_index_path, class: "btn btn-danger btn-sm d-flex align-items-center gap-2" do %>
+              <i class="fas fa-exclamation-triangle"></i>
+              未確認請求書有（<%= unconfirmed_invoices_count %>）
+            <% end %>
+          <% end %>
+          <div class="text-muted">
+            <%= Time.current.strftime("%Y/%m/%d") %> (<%= %w[日 月 火 水 木 金 土][Time.current.wday] %>)
+          </div>
         </div>
       </div>
     </div>
@@ -105,8 +114,29 @@
   </div>
 
   <div class="row">
+    <!-- クイックアクション -->
+    <div class="col-md-6 mb-4 order-1 order-md-1">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">クイックアクション</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <%= link_to "ユーザー管理", admin_users_path, class: "btn btn-outline-primary" %>
+            <%= link_to "購入履歴", admin_purchases_path, class: "btn btn-outline-secondary" %>
+            <%= link_to "お問い合わせ管理", admin_inquiries_path, class: "btn btn-outline-info" %>
+            <%= link_to "商品管理", admin_products_path, class: "btn btn-outline-success" %>
+            <%= link_to "支払いインセンティブ一覧", admin_bonuses_path, class: "btn btn-outline-warning" %>
+            <%= link_to "請求書会社情報", admin_invoice_recipient_path, class: "btn btn-outline-danger" %>
+            <%= link_to "請求書状況", admin_invoice_status_index_path, class: "btn btn-outline-primary" %>
+            <%= link_to "全ユーザー階層図", all_users_admin_users_path, class: "btn btn-outline-dark" %>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 最近のユーザー -->
-    <div class="col-md-6 mb-4">
+    <div class="col-md-6 mb-4 order-2 order-md-2">
       <div class="card">
         <div class="card-header">
           <h5 class="card-title mb-0">最近登録されたユーザー</h5>
@@ -136,27 +166,6 @@
           <% else %>
             <p class="text-muted text-center">まだユーザーが登録されていません</p>
           <% end %>
-        </div>
-      </div>
-    </div>
-
-    <!-- クイックアクション -->
-    <div class="col-md-6 mb-4">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">クイックアクション</h5>
-        </div>
-        <div class="card-body">
-          <div class="d-grid gap-2">
-            <%= link_to "ユーザー管理", admin_users_path, class: "btn btn-outline-primary" %>
-            <%= link_to "購入履歴", admin_purchases_path, class: "btn btn-outline-secondary" %>
-            <%= link_to "お問い合わせ管理", admin_inquiries_path, class: "btn btn-outline-info" %>
-            <%= link_to "商品管理", admin_products_path, class: "btn btn-outline-success" %>
-            <%= link_to "支払いインセンティブ一覧", admin_bonuses_path, class: "btn btn-outline-warning" %>
-            <%= link_to "請求書情報入力・変更", admin_invoice_recipient_path, class: "btn btn-outline-danger" %>
-            <%= link_to "請求書状況", admin_invoice_status_index_path, class: "btn btn-outline-primary" %>
-            <%= link_to "全ユーザー階層図", all_users_admin_users_path, class: "btn btn-outline-dark" %>
-          </div>
         </div>
       </div>
     </div>

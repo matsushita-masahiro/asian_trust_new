@@ -1,8 +1,8 @@
 <div id="sales-index">
-  <div class="container" style="margin-top: 120px; padding-top: 20px;">
+  <div class="container mt-5 pt-5">
   
     <!-- 年月度プルダウン（固定） -->
-    <div class="sticky-top bg-white month-selector-wrapper" style="z-index: 1020;">
+    <div class="sticky-top bg-white z-index-sticky month-selector-wrapper">
       <%= render 'shared/month_selector' %>
     </div>
   
@@ -26,7 +26,10 @@
               <th class="text-end">数量</th>
               <th class="text-end">合計（円）</th>
               <th class="text-end">インセンティブ（円）</th>
-              <th>購入日</th>
+              <th>メール</th>
+              <th>電話番号</th>
+              <th>住所</th>
+              <th>購入日時</th>
             </tr>
           </thead>
           <tbody>
@@ -40,19 +43,16 @@
               <% total_bonus += bonus %>
               <tr>
                 <td class="fw-bold"><%= purchase.user.name %></td>
-                <td>
-                  <% if purchase.customer %>
-                    <%= link_to purchase.customer.name, customer_path(purchase.customer), class: "text-decoration-none text-primary" %>
-                  <% else %>
-                    -
-                  <% end %>
-                </td>
+                <td><%= purchase.customer&.name || "-" %></td>
                 <td><%= purchase.product.name %></td>
                 <td class="text-end"><%= number_with_delimiter(purchase.product.base_price) %></td>
                 <td class="text-end"><%= purchase.quantity %></td>
                 <td class="text-end text-danger fw-bold"><%= number_with_delimiter(total) %></td>
                 <td class="text-end text-success fw-bold"><%= number_with_delimiter(bonus) %></td>
-                <td><%= purchase.purchased_at&.strftime("%Y/%m/%d") %></td>
+                <td><%= purchase.customer&.email || "-" %></td>
+                <td><%= purchase.customer&.phone || "-" %></td>
+                <td><%= purchase.customer&.address || "-" %></td>
+                <td><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
               </tr>
             <% end %>
   
@@ -61,7 +61,7 @@
               <td colspan="5" class="text-end">合計</td>
               <td class="text-end text-danger"><%= number_with_delimiter(total_sum) %></td>
               <td class="text-end text-success"><%= number_with_delimiter(total_bonus) %></td>
-              <td></td>
+              <td colspan="4"></td>
             </tr>
           </tbody>
         </table>

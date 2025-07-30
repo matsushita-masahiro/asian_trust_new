@@ -11,14 +11,20 @@ puts "🚀 ボーナス計算用テストデータの作成を開始します...
 # 既存データをクリア（テスト用）
 puts "📝 既存のデータを完全削除中..."
 
+# 外部キー制約を一時的に無効化
+ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
+
 # 関連データを順番に削除
-Purchase.destroy_all
-Customer.destroy_all
+Purchase.delete_all
+Customer.delete_all
 
 # 全てのユーザーを削除
 puts "accessLogと全ユーザーを削除中..."
 AccessLog.delete_all
-User.destroy_all
+User.delete_all
+
+# 外部キー制約を再有効化
+ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
 
 # IDシーケンスをリセット（SQLite用）
 begin
@@ -495,7 +501,7 @@ end
 
 # === すべてのユーザーのパスワードを「111111」に強制設定 ===
 puts "\n🔐 すべてのユーザーのパスワードを '111111' に設定中..."
-User.where("email LIKE ?", "%test_bonus%").find_each do |user|
+User.all.each do |user|
   user.password = "111111"
   user.password_confirmation = "111111"
   user.save!(validate: false)
@@ -513,3 +519,9 @@ puts "✅ 複雑な階層構造"
 
 puts "\n🎉 テストデータ作成完了！"
 puts "💡 管理画面でボーナス計算結果を確認してください。"
+
+if User.find(1).update(admin: true)
+  puts "✅ アジアビジネストラストを管理者にしました"
+else
+  puts "✅ アジアビジネストラストを管理者にできませんでした"
+end

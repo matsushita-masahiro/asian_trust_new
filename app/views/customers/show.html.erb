@@ -1,0 +1,82 @@
+<div class="container mt-5 pt-4">
+  <!-- 顧客情報 -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">👤 顧客情報</h4>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <table class="table table-borderless">
+            <tr>
+              <th width="30%">顧客名:</th>
+              <td><%= @customer.name %></td>
+            </tr>
+            <tr>
+              <th>メールアドレス:</th>
+              <td class="text-break"><%= @customer.email %></td>
+            </tr>
+          </table>
+        </div>
+        <div class="col-md-6">
+          <table class="table table-borderless">
+            <tr>
+              <th width="30%">電話番号:</th>
+              <td><%= @customer.phone %></td>
+            </tr>
+            <tr>
+              <th>住所:</th>
+              <td><%= @customer.address %></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 購入履歴 -->
+  <div class="card shadow">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0">📋 購入履歴</h5>
+    </div>
+    <div class="card-body">
+      <% if @purchases.any? %>
+        <div class="table-responsive" style="overflow-x: auto;">
+          <table class="table table-hover" style="min-width: 800px;">
+            <thead class="table-light">
+              <tr>
+                <th style="min-width: 100px;">購入日</th>
+                <th style="min-width: 150px; white-space: nowrap;">販売店</th>
+                <th style="min-width: 200px; white-space: nowrap;">商品名</th>
+                <th class="text-end" style="min-width: 100px;">単価</th>
+                <th class="text-end" style="min-width: 80px;">数量</th>
+                <th class="text-end" style="min-width: 120px;">合計金額</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @purchases.each do |purchase| %>
+                <tr>
+                  <td style="white-space: nowrap;"><%= purchase.purchased_at&.strftime("%Y/%m/%d") %></td>
+                  <td style="white-space: nowrap;"><%= purchase.user.name %></td>
+                  <td style="white-space: nowrap;"><%= purchase.product.name %></td>
+                  <td class="text-end" style="white-space: nowrap;">¥<%= number_with_delimiter(purchase.product.base_price) %></td>
+                  <td class="text-end" style="white-space: nowrap;"><%= purchase.quantity %></td>
+                  <td class="text-end text-success" style="white-space: nowrap;">¥<%= number_with_delimiter(purchase.product.base_price * purchase.quantity) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="text-center py-4">
+          <p class="text-muted">購入履歴がありません</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- 戻るボタン -->
+  <div class="mt-4 mb-5 text-center">
+    <button onclick="history.back()" class="btn btn-outline-secondary btn-lg px-4">⬅ 戻る</button>
+  </div>
+</div>

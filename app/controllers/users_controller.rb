@@ -2,7 +2,7 @@ class UsersController < ApplicationController
   before_action :authenticate_user!
   before_action :set_selected_month_range
   # 現在のユーザーのマイページ
-  def mypage
+  def mysales
     @user = current_user
   end
 

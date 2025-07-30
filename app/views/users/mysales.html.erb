@@ -1,0 +1,167 @@
+<div id="mypage">
+  <div class="container py-5 pt-5 mt-5 mypage-container">
+
+    <!-- 年月度プルダウン -->
+    <div class="sticky-top bg-white z-index-sticky month-selector-wrapper">
+      <%= render 'shared/month_selector' %>
+    </div>
+
+    <!-- ユーザー情報カード（固定） -->
+    <div class="sticky-top bg-white z-index-sticky user-info-wrapper">
+      <div class="card shadow mb-4">
+        <div class="card-body" style="background-color: #dee2e6;">
+          <!-- デスクトップ表示 -->
+          <div class="d-none d-md-flex justify-content-between align-items-start">
+            <div>
+              <h3 class="card-title"><%= @user.name %></h3>
+              <p class="mb-1"><strong>📧 メール:</strong> <span class="text-break"><%= @user.email %></span></p>
+              <p class="mb-1"><strong>🤏 レベル:</strong> <%= @user.level_label %></p>
+              <p class="mb-0"><strong>🆔 LステップID:</strong> <code class="text-purple"><%= @user.lstep_user_id.presence || "未登録" %></code></p>
+            </div>
+            <div class="text-end">
+              <p>本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
+              <p>下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
+              <p>合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
+              <div class="mt-2">
+                <%= link_to "売上明細", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
+              </div>
+            </div>
+          </div>
+
+          <!-- モバイル表示 -->
+          <div class="d-md-none">
+            <h3 class="card-title text-center mb-3"><%= @user.name %></h3>
+            
+            <div class="mb-3">
+              <p class="mb-1"><strong>📧 メール:</strong> <span class="text-break"><%= @user.email %></span></p>
+              <p class="mb-1"><strong>🤏 レベル:</strong> <%= @user.level_label %></p>
+              <p class="mb-0"><strong>🆔 LステップID:</strong> <code class="text-purple"><%= @user.lstep_user_id.presence || "未登録" %></code></p>
+            </div>
+            
+            <div class="text-center">
+              <p class="mb-1">本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
+              <p class="mb-1">下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
+              <p class="mb-2">合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
+              <div>
+                <%= link_to "売上明細", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 下位紹介者セクション -->
+    <div class="card shadow mt-3">
+      <div class="card-header bg-light">
+        <h5 class="mb-0">👇 下位紹介者</h5>
+      </div>
+      <div class="card-body">
+        <% if @user.referrals.any? %>
+          <% @user.referrals.each_with_index do |ref_user, i| %>
+            <div class="card mb-3 hover-pointer" onclick="window.location.href='<%= user_path(ref_user) %>'">
+              <div class="card-body">
+                <!-- デスクトップ表示 -->
+                <div class="d-none d-md-block">
+                  <div class="row align-items-start">
+                    <div class="col-md-8">
+                      <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
+                      <p class="mb-1 text-break">📧 <%= ref_user.email %></p>
+                      <p class="mb-1">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
+                      <div>売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</div>
+                      <div>インセンティブ（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                      <%= link_to "売上明細", sales_path(user_id: ref_user.id), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- モバイル表示 -->
+                <div class="d-md-none">
+                  <div class="text-center mb-2">
+                    <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
+                  </div>
+                  
+                  <div class="mb-2">
+                    <p class="mb-1 small text-break">📧 <%= ref_user.email %></p>
+                    <p class="mb-1 small">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
+                  </div>
+                  
+                  <div class="text-center mb-2">
+                    <div class="small">売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</div>
+                    <div class="small mb-2">インセンティブ（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
+                    <%= link_to "売上明細", sales_path(user_id: ref_user.id), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-muted mb-0">下位紹介者なし</p>
+        <% end %>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .mypage-container {
+    margin-top: 80px !important;
+  }
+  
+  /* navbarを常に最前面に表示 */
+  .navbar {
+    z-index: 99999 !important;
+    position: fixed !important;
+    top: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* sticky要素のz-indexを調整 */
+  .month-selector-wrapper {
+    z-index: 1020 !important;
+  }
+  
+  .user-info-wrapper {
+    z-index: 1010 !important;
+  }
+  
+  /* 下位紹介者のメールアドレス改行対応 */
+  .text-break {
+    word-wrap: break-word !important;
+    word-break: break-all !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    max-width: 100% !important;
+  }
+  
+  /* 下位紹介者カード内のテキスト調整 */
+  .card-body .mb-2 p {
+    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
+  }
+  
+  /* スマホでの調整 */
+  @media (max-width: 768px) {
+    .mypage-container {
+      margin-top: 100px !important;
+    }
+    
+    .month-selector-wrapper {
+      top: 70px !important;
+    }
+    
+    .user-info-wrapper {
+      top: 130px !important;
+    }
+    
+    /* スマホでのメールアドレス表示調整 */
+    .text-break {
+      font-size: 12px !important;
+      line-height: 1.3 !important;
+    }
+  }
+</style>

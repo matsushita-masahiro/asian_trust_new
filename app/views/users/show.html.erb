@@ -1,125 +1,516 @@
-<div id="user-show">
-  <!-- 固定表示：プルダウン＋ユーザー情報カード -->
-  <div class="sticky-top bg-white z-3 border-bottom">
-    <div class="container py-3 pt-4">
-  
-      <!-- 販売履歴ボタンと年月度プルダウン -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <%= link_to "販売履歴", purchases_user_path(@user, month: @selected_month), 
-              class: "btn btn-outline-info btn-sm" %>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4 mobile-header" style="margin-top: 80px;">
+        <div class="d-flex align-items-center mobile-title-section">
+          <h4 class="text-primary me-3 user-name-horizontal"><%= @user.name.present? ? @user.name : @user.email %></h4>
+          <%= form_with url: user_path(@user), method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
+            <label class="form-label me-2 mb-0">対象月:</label>
+            <%= f.month_field :month, value: @selected_month, class: "form-control", style: "width: 180px;", onchange: "document.getElementById('month-form').submit();" %>
+          <% end %>
         </div>
-        
-        <div>
-          <%= form_with url: request.path, method: :get, local: true do %>
-            <%= select_tag :month, options_for_select(month_options, @selected_month),
-                class: "form-select d-inline-block w-auto", onchange: "this.form.submit();" %>
-          
-          <%# ✅ user_id を hidden で送信 %>
-            <%= hidden_field_tag :user_id, @user.id if defined?(@user) %>
+        <div class="mobile-nav-buttons">
+          <%= link_to "🏠 マイページに戻る", mysales_path, class: "btn btn-outline-secondary me-2" %>
+          <% if @user.referrer.present? %>
+            <%= link_to "🔼 1つ上位に戻る", user_path(@user.referrer), class: "btn btn-outline-primary" %>
           <% end %>
         </div>
       </div>
-  
-      <!-- ユーザー情報カード -->
-      <div class="card shadow mb-3">
-        <div class="card-body d-flex justify-content-between align-items-start" style="background-color: #dee2e6;">
-          <div>
-            <h3 class="card-title"><%= @user.name %></h3>
-            <p class="mb-1"><strong>📧 メール:</strong> <%= @user.email %></p>
-            <p class="mb-1"><strong>🤏 レベル:</strong> <%= @user.level_label %></p>
-            <p class="mb-0"><strong>🆔 LステップID:</strong> <code class="text-purple"><%= @user.lstep_user_id.presence || "未登録" %></code></p>
-          </div>
-          <div class="text-end">
-            <p>本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
-            <p>下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
-            <p>合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
-            <p>インセンティブ：<strong class="text-success"><%= number_with_delimiter(@user.bonus_in_month(@selected_month).to_i) %></strong>円</p>
+    </div>
+  </div>
+
+  <!-- 基本情報 -->
+  <div class="row mb-4 mobile-cards">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">基本情報</h5>
+        </div>
+        <div class="card-body">
+          <table class="table table-borderless">
+            <tr>
+              <th width="30%">ID:</th>
+              <td><%= @user.id %></td>
+            </tr>
+            <tr>
+              <th>LステップID:</th>
+              <td>
+                <% if @user.lstep_user_id.present? %>
+                  <span class="badge bg-info"><%= @user.lstep_user_id %></span>
+                <% else %>
+                  <span class="text-muted">未設定</span>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>メールアドレス:</th>
+              <td><%= @user.email %></td>
+            </tr>
+            <tr>
+              <th>登録日:</th>
+              <td><%= @user.created_at.strftime("%Y年%m月%d日 %H:%M") %></td>
+            </tr>
+            <tr>
+              <th>紹介者:</th>
+              <td>
+                <% if @user.referrer %>
+                  <%= link_to (@user.referrer.name.present? ? @user.referrer.name : @user.referrer.email), user_path(@user.referrer, month: @selected_month), class: "text-decoration-none" %>
+                <% else %>
+                  <span class="text-muted">なし</span>
+                <% end %>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">統計情報</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <!-- 直接紹介数 -->
+            <div class="col-6">
+              <div class="stats-card bg-primary bg-gradient text-white rounded-3 p-3 text-center">
+                <div class="stats-icon mb-2">
+                  <i class="fas fa-users fa-2x"></i>
+                </div>
+                <div class="stats-number display-6 fw-bold"><%= @user.referrals.count %></div>
+                <div class="stats-label small">直接紹介数</div>
+              </div>
+            </div>
+            
+            <!-- 総紹介数 -->
+            <div class="col-6">
+              <div class="stats-card bg-info bg-gradient text-white rounded-3 p-3 text-center">
+                <div class="stats-icon mb-2">
+                  <i class="fas fa-network-wired fa-2x"></i>
+                </div>
+                <div class="stats-number display-6 fw-bold"><%= @user.descendants.count %></div>
+                <div class="stats-label small">総紹介数</div>
+              </div>
+            </div>
+            
+            <!-- 当月売上 -->
+            <div class="col-6">
+              <div class="stats-card bg-success bg-gradient text-white rounded-3 p-3 text-center">
+                <div class="stats-icon mb-2">
+                  <i class="fas fa-yen-sign fa-2x"></i>
+                </div>
+                <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month)) %></div>
+                <div class="stats-label small">当月売上</div>
+              </div>
+            </div>
+            
+            <!-- ボーナス -->
+            <div class="col-6">
+              <div class="stats-card bg-warning bg-gradient text-white rounded-3 p-3 text-center">
+                <div class="stats-icon mb-2">
+                  <i class="fas fa-gift fa-2x"></i>
+                </div>
+                <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@user.bonus_in_month(@selected_month)) %></div>
+                <div class="stats-label small">ボーナス</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-  
     </div>
   </div>
-  
-  <!-- 下位紹介者カード一覧 -->
-  <div class="container" style="margin-top: 2rem; padding-top: 4rem;">
-    <div class="card shadow">
-      <div class="card-header bg-light">
-        <h5 class="mb-0">👇 下位紹介者</h5>
-      </div>
-      <div class="card-body">
-        <% if @user.referrals.any? %>
-          <% @user.referrals.each_with_index do |ref_user, i| %>
-            <div class="card mb-3 hover-pointer" onclick="window.location.href='<%= user_path(ref_user) %>'">
-              <div class="card-body">
-                <!-- デスクトップ表示 -->
-                <div class="d-none d-md-block">
-                  <div class="row align-items-start">
-                    <div class="col-md-8">
-                      <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
-                      <p class="mb-1 text-break">📧 <%= ref_user.email %></p>
-                      <p class="mb-1">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
-                      <p class="mb-1">売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</p>
-                      <p class="mb-0">インセンティブ：<%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %>円</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                      <%= link_to "売上明細", sales_path(user_id: ref_user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
-                    </div>
+
+  <!-- 統計情報カード用のカスタムスタイル -->
+  <style>
+    .stats-card {
+      transition: all 0.3s ease;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .clickable-card {
+      cursor: pointer;
+    }
+    
+    .clickable-card:hover {
+      transform: translateY(-8px) !important;
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .stats-icon {
+      opacity: 0.8;
+    }
+    
+    .stats-number {
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .stats-label {
+      font-weight: 500;
+      opacity: 0.9;
+    }
+    
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+      .stats-card {
+        margin-bottom: 1rem;
+      }
+      
+      .stats-number {
+        font-size: 1.5rem !important;
+      }
+      
+      .stats-icon i {
+        font-size: 1.5rem !important;
+      }
+    }
+  </style>
+
+  <!-- 紹介チェーン -->
+  <% if @user.ancestors.any? %>
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">紹介チェーン</h5>
+          </div>
+          <div class="card-body">
+            <div class="referral-chain-diagram">
+              <% @user.ancestors.reverse.each_with_index do |ancestor, index| %>
+                <div class="chain-item">
+                  <div class="chain-box">
+                    <%= link_to (ancestor.name.present? ? ancestor.name : ancestor.email), user_path(ancestor, month: @selected_month), class: "text-decoration-none text-primary fw-bold" %>
+                  </div>
+                  <div class="chain-arrow">
+                    <i class="fas fa-arrow-down text-muted"></i>
                   </div>
                 </div>
-
-                <!-- モバイル表示 -->
-                <div class="d-md-none">
-                  <div class="text-center mb-2">
-                    <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
-                  </div>
-                  
-                  <div class="mb-2">
-                    <p class="mb-1 small text-break">📧 <%= ref_user.email %></p>
-                    <p class="mb-1 small">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
-                  </div>
-                  
-                  <div class="text-center mb-2">
-                    <p class="mb-1 small">売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</p>
-                    <p class="mb-2 small">インセンティブ：<%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %>円</p>
-                    <%= link_to "売上明細", sales_path(user_id: ref_user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
-                  </div>
+              <% end %>
+              <div class="chain-item current-user">
+                <div class="chain-box current">
+                  <span class="text-success fw-bold"><%= @user.name.present? ? @user.name : @user.email %></span>
                 </div>
               </div>
             </div>
-          <% end %>
-        <% else %>
-          <p class="text-muted mb-0">下位紹介者なし</p>
-        <% end %>
+          </div>
+          
+          <style>
+            .referral-chain-diagram {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 10px;
+              padding: 10px;
+            }
+            
+            .chain-item {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              width: 100%;
+              max-width: 300px;
+            }
+            
+            .chain-box {
+              background: #f8f9fa;
+              border: 2px solid #dee2e6;
+              border-radius: 8px;
+              padding: 12px 16px;
+              width: 100%;
+              min-width: 200px;
+              text-align: center;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              transition: all 0.3s ease;
+              word-wrap: break-word;
+              overflow-wrap: break-word;
+            }
+            
+            .chain-box:hover {
+              border-color: #007bff;
+              box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+              transform: translateY(-2px);
+            }
+            
+            .chain-box.current {
+              background: #d4edda;
+              border-color: #28a745;
+              font-weight: bold;
+            }
+            
+            .chain-arrow {
+              margin: 5px 0;
+              font-size: 18px;
+            }
+            
+            .current-user .chain-box {
+              position: relative;
+            }
+            
+            .current-user .chain-box::before {
+              content: "現在";
+              position: absolute;
+              top: -8px;
+              right: -8px;
+              background: #28a745;
+              color: white;
+              font-size: 10px;
+              padding: 2px 6px;
+              border-radius: 10px;
+            }
+            
+            /* モバイル対応 */
+            @media (max-width: 576px) {
+              .chain-box {
+                min-width: 150px;
+                padding: 10px 12px;
+                font-size: 14px;
+              }
+              
+              .chain-arrow {
+                font-size: 16px;
+              }
+              
+              .current-user .chain-box::before {
+                font-size: 9px;
+                padding: 1px 4px;
+              }
+            }
+          </style>
+          
+          <!-- スマホ専用レスポンシブCSS -->
+          <style>
+            @media (max-width: 768px) {
+              /* ヘッダー部分をスマホ用に調整 */
+              .mobile-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                padding: 1rem;
+              }
+              
+              .mobile-header .mobile-title-section {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                width: 100%;
+                margin-bottom: 1rem;
+              }
+              
+              /* ユーザー名を確実に横書きにする */
+              .mobile-header h4,
+              .mobile-header .user-name-horizontal,
+              .mobile-header h4.user-name-horizontal,
+              .mobile-header h4.text-primary {
+                writing-mode: horizontal-tb !important;
+                -webkit-writing-mode: horizontal-tb !important;
+                -ms-writing-mode: lr-tb !important;
+                text-orientation: mixed !important;
+                direction: ltr !important;
+                unicode-bidi: normal !important;
+                text-combine-upright: none !important;
+                font-variant-east-asian: normal !important;
+                display: block !important;
+                width: 100% !important;
+                margin-bottom: 0.75rem !important;
+                margin-right: 0 !important;
+                word-break: break-word !important;
+                white-space: normal !important;
+                line-height: 1.3 !important;
+                text-align: left !important;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+                letter-spacing: 0 !important;
+                word-spacing: normal !important;
+                vertical-align: baseline !important;
+                overflow-wrap: break-word !important;
+                hyphens: none !important;
+                font-feature-settings: normal !important;
+                text-rendering: optimizeLegibility !important;
+              }
+              
+              .mobile-header .mobile-title-section form {
+                width: 100%;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+              }
+              
+              .mobile-header .mobile-title-section form label {
+                margin-bottom: 0.5rem !important;
+                margin-right: 0 !important;
+              }
+              
+              .mobile-header .mobile-title-section form input[type="month"] {
+                width: 100% !important;
+                max-width: 300px;
+              }
+              
+              .mobile-header .mobile-nav-buttons {
+                flex-direction: column !important;
+                width: 100%;
+                gap: 0.5rem;
+              }
+              
+              .mobile-header .mobile-nav-buttons .btn {
+                width: 100%;
+                margin-right: 0 !important;
+              }
+              
+              /* カード部分をスマホ用に調整 */
+              .mobile-cards .col-md-6 {
+                margin-bottom: 1rem;
+              }
+              
+              /* テーブルのスクロール対応 */
+              .table-responsive {
+                font-size: 0.875rem;
+              }
+              
+              .table th, .table td {
+                padding: 0.5rem 0.25rem;
+                white-space: nowrap;
+              }
+            }
+          </style>
+          </style>
+        </div>
       </div>
     </div>
-  
-    <!-- 戻るボタン -->
-    <div class="d-flex justify-content-center gap-3 mt-4 mb-5">
-      <%= link_to "🏠 マイページに戻る", mypage_path, class: "btn btn-outline-secondary" %>
-      <% if @user.referrer.present? %>
-        <%= link_to "🔼 1つ上位に戻る", user_path(@user.referrer), class: "btn btn-outline-secondary" %>
-      <% end %>
+  <% end %>
+
+  <!-- 直接紹介した代理店 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">直接紹介した代理店 (<%= @user.referrals.count %>名)</h5>
+        </div>
+        <div class="card-body">
+          <% if @user.referrals.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>代理店名</th>
+                    <th>LステップID</th>
+                    <th>登録日</th>
+                    <th>当月売上</th>
+                    <th>当月ボーナス</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @user.referrals.each do |referral| %>
+                    <tr>
+                      <td><%= referral.id %></td>
+                      <td><%= referral.name.present? ? referral.name : referral.email %></td>
+                      <td>
+                        <% if referral.lstep_user_id.present? %>
+                          <span class="badge bg-info"><%= referral.lstep_user_id %></span>
+                        <% else %>
+                          <span class="text-muted">未設定</span>
+                        <% end %>
+                      </td>
+                      <td><%= referral.created_at.strftime("%Y/%m/%d") %></td>
+                      <td>
+                        <span class="text-success">¥<%= number_with_delimiter(referral.total_sales_with_descendants(@selected_month)) %></span>
+                      </td>
+                      <td>
+                        <span class="text-warning">¥<%= number_with_delimiter(referral.bonus_in_month(@selected_month)) %></span>
+                      </td>
+                      <td>
+                        <%= link_to "詳細", user_path(referral, month: @selected_month), class: "btn btn-sm btn-outline-primary" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">まだ誰も紹介していません</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 購入履歴 -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">当月の購入履歴</h5>
+        </div>
+        <div class="card-body">
+          <% 
+            # 当月の購入履歴を取得
+            current_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
+            current_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
+            monthly_purchases = @user.purchases.where(purchased_at: current_month_start..current_month_end).includes(:product)
+          %>
+          <% if monthly_purchases.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>購入日</th>
+                    <th>購入者</th>
+                    <th>商品名</th>
+                    <th>数量</th>
+                    <th>単価</th>
+                    <th>合計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% monthly_purchases.each do |purchase| %>
+                    <tr>
+                      <td><%= purchase.purchased_at.strftime("%Y/%m/%d") %></td>
+                      <td><%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %></td>
+                      <td><%= purchase.product.name %></td>
+                      <td><%= purchase.quantity %></td>
+                      <td>¥<%= number_with_delimiter(purchase.product.base_price) %></td>
+                      <td class="text-success">¥<%= number_with_delimiter(purchase.product.base_price * purchase.quantity) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">当月の購入履歴はありません</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- スタイル -->
 <style>
-/*.hover-pointer:hover {*/
-/*    background-color: #f8f9fa;*/
-/*    cursor: pointer;*/
-/*  }*/
-
-/*  .text-purple {*/
-/*    color: #8e44ad;*/
-/*  }*/
-
-/*  .sticky-top {*/
-/*    position: sticky;*/
-    top: 60px; /* ← ここを0から60pxなどに変更 */
-/*    z-index: 1030;*/
-/*    background-color: white;*/
-/*  }*/
+  /* テーブルのメールアドレス改行対応 */
+  .table td {
+    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
+  }
+  
+  /* 基本情報テーブルの調整 */
+  .table-borderless td {
+    max-width: 300px;
+    white-space: normal;
+  }
+  
+  /* スマホでの調整 */
+  @media (max-width: 768px) {
+    .table-borderless td {
+      max-width: 200px;
+      font-size: 14px;
+    }
+  }
 </style>

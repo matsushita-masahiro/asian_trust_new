@@ -9,24 +9,29 @@
 
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <% if request.path == mypage_path %>
-            <%= link_to "請求書管理", invoices_path, class: "nav-link" %>
-          <% else %>
-            <%= link_to "ホーム", root_path, class: "nav-link" %>
-          <% end %>
-        </li>
-        <li class="nav-item">
-          <%= link_to "お問い合わせ", new_inquiry_path, class: "nav-link" %>
-        </li>
-
         <% if user_signed_in? %>
-          <li class="nav-item">
-            <%= link_to "マイページ", mypage_path, class: "nav-link" %>
+          <% if user_signed_in? && !current_user.admin %>
+            <li class="nav-item">
+              <%= link_to "請求書管理", invoices_path, class: "nav-link" %>
+            </li>
+          <% end %>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="mypageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              マイページ
+            </a>
+            <ul class="dropdown-menu dropdown-menu-custom" aria-labelledby="mypageDropdown">
+              <li><%= link_to "マイアカウント", user_path(current_user), class: "dropdown-item" %></li>
+              <li><%= link_to "売上情報", mysales_path, class: "dropdown-item" %></li>
+            </ul>
           </li>
           <li class="nav-item">
             <%= link_to "ログアウト", destroy_user_session_path, method: :delete, data: { turbo: false }, class: "nav-link" %>
           </li>
+          <% if current_user.admin? %>
+            <li class="nav-item">
+              <%= link_to "ダッシュボード", admin_root_path, class: "nav-link" %>
+            </li>
+          <% end %>
         <% else %>
           <li class="nav-item">
             <%= link_to "ログイン", new_user_session_path, class: "nav-link" %>
@@ -36,3 +41,21 @@
     </div>
   </div>
 </nav>
+
+<style>
+  .dropdown-menu-custom {
+    z-index: 99999 !important;
+    position: absolute !important;
+  }
+  
+  .nav-item.dropdown {
+    position: relative !important;
+  }
+  
+  .navbar-nav .dropdown-menu {
+    z-index: 99999 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+  }
+</style>

@@ -3,7 +3,6 @@
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
         <h4 class="text-primary">代理店管理</h4>
-        <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-secondary" %>
       </div>
     </div>
   </div>
@@ -11,65 +10,162 @@
   <div class="row">
     <div class="col-12">
       <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">代理店一覧</h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <% if params[:parent_id].present? %>
+              <% parent_user = User.find(params[:parent_id]) %>
+              <h5 class="card-title mb-0"><%= parent_user.name.present? ? parent_user.name : parent_user.email %> の直紹介下位</h5>
+              <small class="text-muted">
+                <%= link_to "← 全体に戻る", admin_users_path, class: "text-decoration-none" %>
+              </small>
+            <% else %>
+              <h5 class="card-title mb-0"><%= current_user.name.present? ? current_user.name : current_user.email %> の直紹介下位</h5>
+            <% end %>
+          </div>
         </div>
         <div class="card-body">
-          <% if User.exists? %>
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead class="table-light">
-                  <tr>
-                    <th>ID</th>
-                    <th>代理店名</th>
-                    <th>LステップID</th>
-                    <th>メールアドレス</th>
-                    <th>登録日</th>
-                    <th>紹介者</th>
-                    <th>直接紹介数</th>
-                    <th>総売上</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% User.includes(:referrer, :referrals).order(:id).each do |user| %>
-                    <tr>
-                      <td><%= user.id %></td>
-                      <td><%= user.name.present? ? user.name : user.email %></td>
-                      <td>
-                        <% if user.lstep_user_id.present? %>
-                          <span class="badge bg-info"><%= user.lstep_user_id %></span>
-                        <% else %>
-                          <span class="text-muted">未設定</span>
-                        <% end %>
-                      </td>
-                      <td><%= user.email %></td>
-                      <td><%= user.created_at.strftime("%Y/%m/%d") %></td>
-                      <td>
-                        <% if user.referrer %>
-                          <%= link_to (user.referrer.name.present? ? user.referrer.name : user.referrer.email), admin_user_path(user.referrer), class: "text-decoration-none" %>
-                        <% else %>
-                          <span class="text-muted">なし</span>
-                        <% end %>
-                      </td>
-                      <td>
-                        <span class="badge bg-primary"><%= user.referrals.count %></span>
-                      </td>
-                      <td>
-                        <% total_sales = user.purchases.joins(:product).sum('products.base_price * purchases.quantity') %>
-                        <span class="text-success">¥<%= number_with_delimiter(total_sales) %></span>
-                      </td>
-                      <td>
-                        <%= link_to "詳細", admin_user_path(user), class: "btn btn-sm btn-outline-primary" %>
-                      </td>
-                    </tr>
+          <% 
+            # 対象月の設定
+            selected_month = params[:month].presence || Date.current.strftime("%Y-%m")
+            
+            # 表示するユーザーを決定
+            if params[:parent_id].present?
+              parent_user = User.find(params[:parent_id])
+              display_users = parent_user.referrals.includes(:referrer, :referrals).order(:id)
+            else
+              display_users = current_user.referrals.includes(:referrer, :referrals).order(:id)
+            end
+          %>
+          
+          <% if display_users.exists? %>
+            <!-- 戻るリンクと月選択 -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <% if params[:parent_id].present? %>
+                  <% parent_user = User.find(params[:parent_id]) %>
+                  <% if parent_user.referrer %>
+                    <%= link_to admin_users_path(parent_id: parent_user.referrer.id, month: selected_month), 
+                        class: "btn btn-sm btn-outline-secondary" do %>
+                      ↑ <%= parent_user.referrer.name.present? ? parent_user.referrer.name : parent_user.referrer.email %>
+                    <% end %>
+                  <% else %>
+                    <%= link_to admin_users_path(month: selected_month), 
+                        class: "btn btn-sm btn-outline-secondary" do %>
+                      ↑ トップ
+                    <% end %>
                   <% end %>
-                </tbody>
-              </table>
+                <% end %>
+              </div>
+              
+              <!-- 月選択フォーム -->
+              <div>
+                <%= form_with url: admin_users_path, method: :get, local: true, class: "d-flex align-items-center", id: "month-select-form" do |f| %>
+                  <%= f.hidden_field :parent_id, value: params[:parent_id] if params[:parent_id].present? %>
+                  <label class="form-label me-2 mb-0">対象月:</label>
+                  <%= f.month_field :month, value: selected_month, class: "form-control form-control-sm", style: "width: 150px;", id: "month-selector" %>
+                <% end %>
+              </div>
+            </div>
+            
+            <style>
+
+              .fixed-table td, .scroll-table td {
+                height: 60px;
+                vertical-align: middle;
+                padding: 12px 8px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              }
+              .fixed-table th, .scroll-table th {
+                height: 50px;
+                vertical-align: middle;
+                padding: 12px 8px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              }
+              .clickable-name {
+                cursor: pointer;
+                color: #0d6efd;
+                text-decoration: none;
+              }
+              .clickable-name:hover {
+                text-decoration: underline;
+                color: #0a58ca;
+              }
+            </style>
+            
+            <div class="d-flex">
+              <!-- 固定列（代理店名のみ） -->
+              <div class="flex-shrink-0" style="min-width: 220px;">
+                <table class="table table-hover mb-0 fixed-table">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width: 220px;">代理店名</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% display_users.each do |user| %>
+                      <tr>
+                        <td>
+                          <% if user.referrals.count > 0 %>
+                            <%= link_to admin_users_path(parent_id: user.id), class: "clickable-name" do %>
+                              <%= user.name.present? ? user.name : user.email %>
+                              <small class="text-muted">(下位<%= user.referrals.count %>名)</small>
+                            <% end %>
+                          <% else %>
+                            <%= user.name.present? ? user.name : user.email %>
+                          <% end %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- スクロール可能な列 -->
+              <div class="flex-grow-1 overflow-auto">
+                <table class="table table-hover mb-0 scroll-table">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="min-width: 120px;">直接売上</th>
+                      <th style="min-width: 120px;">総売上</th>
+                      <th style="min-width: 120px;">LステップID</th>
+                      <th style="min-width: 100px;">登録日</th>
+                      <th style="min-width: 80px;">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% display_users.each do |user| %>
+                      <tr>
+                        <td>
+                          <span class="text-primary">¥<%= number_with_delimiter(user.own_monthly_sales_total(selected_month)) %></span>
+                        </td>
+                        <td>
+                          <span class="text-success">¥<%= number_with_delimiter(user.total_sales_with_descendants(selected_month)) %></span>
+                        </td>
+                        <td>
+                          <% if user.lstep_user_id.present? %>
+                            <span class="badge bg-info"><%= user.lstep_user_id %></span>
+                          <% else %>
+                            <span class="text-muted">未設定</span>
+                          <% end %>
+                        </td>
+                        <td><%= user.created_at.strftime("%Y/%m/%d") %></td>
+                        <td>
+                          <%= link_to "詳細", admin_user_path(user), class: "btn btn-sm btn-outline-primary" %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
             </div>
           <% else %>
             <div class="text-center py-5">
-              <p class="text-muted">まだ代理店が登録されていません</p>
+              <i class="fas fa-users fa-3x text-muted mb-3"></i>
+              <p class="text-muted">直紹介下位の代理店はまだいません</p>
             </div>
           <% end %>
         </div>
@@ -77,3 +173,33 @@
     </div>
   </div>
 </div>
+
+<script>
+// 月選択の自動送信機能
+function initializeMonthSelector() {
+  const monthSelector = document.getElementById('month-selector');
+  const form = document.getElementById('month-select-form');
+  
+  if (monthSelector && form) {
+    // 既存のイベントリスナーを削除してから新しく追加
+    monthSelector.removeEventListener('change', handleMonthChange);
+    monthSelector.addEventListener('change', handleMonthChange);
+  }
+}
+
+function handleMonthChange() {
+  const form = document.getElementById('month-select-form');
+  if (form) {
+    form.submit();
+  }
+}
+
+// ページ読み込み時とTurboでの画面遷移時の両方で実行
+document.addEventListener('DOMContentLoaded', initializeMonthSelector);
+document.addEventListener('turbo:load', initializeMonthSelector);
+
+// 古いRailsのTurbolinksにも対応
+if (typeof Turbolinks !== 'undefined') {
+  document.addEventListener('turbolinks:load', initializeMonthSelector);
+}
+</script>

@@ -50,6 +50,46 @@
   <div class="amount-value">¥<%= number_with_delimiter(@invoice.total_amount) %></div>
 </div>
 
+<!-- 明細表 -->
+<% if @bonus_details && @bonus_details.any? %>
+  <div class="details-section">
+    <div class="section-title">インセンティブ明細</div>
+    <table class="details-table">
+      <thead>
+        <tr>
+          <th>種別</th>
+          <th>販売者</th>
+          <th>商品名</th>
+          <th>数量</th>
+          <th>単価</th>
+          <th>金額</th>
+          <th>日付</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% total_amount = 0 %>
+        <% @bonus_details.each do |detail| %>
+          <% total_amount += detail[:total_bonus] %>
+          <tr>
+            <td><%= detail[:type] %></td>
+            <td><%= detail[:user_name] %></td>
+            <td><%= detail[:product_name] %></td>
+            <td><%= detail[:quantity] %></td>
+            <td>¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
+            <td>¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
+            <td><%= detail[:purchased_at]&.strftime("%m/%d") %></td>
+          </tr>
+        <% end %>
+        <tr class="total-row">
+          <td colspan="5"><strong>合計</strong></td>
+          <td><strong>¥<%= number_with_delimiter(total_amount) %></strong></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
 <!-- 備考 -->
 <% if @invoice.notes.present? %>
   <div class="notes">

@@ -24,8 +24,8 @@
             <%= form_with url: admin_invoice_status_index_path, method: :get, local: true, class: "d-flex align-items-center" do |f| %>
               <%= f.select :status, 
                   options_for_select([
-                    ['送付済み', 'sent'],
-                    ['振込確認済み', 'confirmed']
+                    ['請求書受信済', 'sent'],
+                    ['振込済み', 'confirmed']
                   ], @selected_status), 
                   {}, 
                   { class: "form-select me-2", style: "width: 200px;", onchange: "this.form.submit();" } %>
@@ -63,7 +63,7 @@
                     <th>発行日</th>
                     <th>支払期限</th>
                     <th>送付日</th>
-                    <th>現在のステータス</th>
+                    <th>ステータス</th>
                     <th>操作</th>
                   </tr>
                 </thead>
@@ -93,9 +93,9 @@
                       </td>
                       <td>
                         <% if invoice.sent? %>
-                          <span class="badge bg-warning">送付済み</span>
+                          <span class="badge bg-warning">請求書受信済</span>
                         <% elsif invoice.confirmed? %>
-                          <span class="badge bg-success">振込確認済み</span>
+                          <span class="badge bg-success">振込済み</span>
                         <% elsif invoice.draft? %>
                           <span class="badge bg-secondary">下書き</span>
                         <% end %>
@@ -108,14 +108,14 @@
                                 method: :patch, 
                                 params: { status: 'confirmed' },
                                 class: "btn btn-sm btn-success",
-                                data: { confirm: "振込確認済みに変更しますか？" } %>
+                                data: { confirm: "振込済みに変更しますか？" } %>
                           <% elsif invoice.confirmed? %>
-                            <%= button_to "送付済みに戻す", 
+                            <%= button_to "請求書受信済に戻す", 
                                 update_status_admin_invoice_status_path(invoice), 
                                 method: :patch, 
                                 params: { status: 'sent' },
                                 class: "btn btn-sm btn-warning",
-                                data: { confirm: "送付済みに戻しますか？" } %>
+                                data: { confirm: "請求書受信済に戻しますか？" } %>
                           <% end %>
                         </div>
                       </td>

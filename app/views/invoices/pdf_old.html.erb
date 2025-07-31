@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      color: #000;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+      padding: 0;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      letter-spacing: 0.2em;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    .section {
+      margin-top: 20px;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .table th, .table td {
+      border: 1px solid #000;
+      padding: 5px;
+    }
+
+    .table th {
+      background-color: #f0f0f0;
+    }
+
+    .bank-info {
+      margin-top: 30px;
+    }
+
+    .bank-info p {
+      margin: 3px 0;
+    }
+
+    .note {
+      font-size: 12px;
+      margin-top: 5px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- タイトル -->
+  <div class="title">請　求　書</div>
+
+  <!-- 右上の情報 -->
+  <div class="right">
+    <p><%= @invoice.invoice_date.strftime('%Y/%m/%d') %></p>
+    <p>No：INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+  </div>
+
+  <!-- 請求先 -->
+  <div class="section">
+    <p><strong><%= @invoice.invoice_recipient.name %> 様</strong></p>
+    <% if @invoice.invoice_recipient.address.present? %>
+      <p><%= @invoice.invoice_recipient.address %></p>
+    <% end %>
+  </div>
+
+  <!-- ご請求金額 -->
+  <div class="section">
+    <p>下記の通りご請求申し上げます。</p>
+    <p><strong>ご請求金額　<%= number_to_currency(@invoice.total_amount, unit: '¥', precision: 0) %>（税込）</strong></p>
+  </div>
+
+  <!-- 明細テーブル -->
+  <table class="table">
+    <thead>
+      <tr>
+        <th>品名</th>
+        <th>数量</th>
+        <th>単価</th>
+        <th>金額</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% total_amount = 0 %>
+      <% @bonus_details.each do |detail| %>
+        <tr>
+          <td><%= detail[:product_name] %></td>
+          <td style="text-align: center;"><%= detail[:quantity] %></td>
+          <td style="text-align: right;">¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
+          <td style="text-align: right;">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
+        </tr>
+        <% total_amount += detail[:total_bonus] %>
+      <% end %>
+      <tr>
+        <td colspan="3" style="text-align: right;"><strong>小計</strong></td>
+        <td style="text-align: right;">¥<%= number_with_delimiter(total_amount) %></td>
+      </tr>
+      <tr>
+        <td colspan="3" style="text-align: right;"><strong>合計</strong></td>
+        <td style="text-align: right;">¥<%= number_with_delimiter(total_amount) %></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 振込先 -->
+  <div class="bank-info">
+    <p><strong>【振込先】</strong></p>
+    <p><%= @invoice.bank_name %>　<%= @invoice.bank_branch_name %></p>
+    <p>口座種別：<%= @invoice.bank_account_type == 'savings' ? '普通' : '当座' %></p>
+    <p>口座番号：<%= @invoice.bank_account_number %></p>
+    <p>口座名義：<%= @invoice.bank_account_name %></p>
+    <p class="note">※ お振込手数料はご負担いただきますようお願い申し上げます。</p>
+  </div>
+
+</body>
+</html>

@@ -17,7 +17,7 @@ class InvoiceMailer < ApplicationMailer
     # PDF生成
     pdf = WickedPdf.new.pdf_from_string(
       render_to_string(
-        template: 'invoices/pdf',
+        template: 'invoices/pdf_old',
         layout: 'pdf',
         locals: { invoice: @invoice, user: @user }
       ),

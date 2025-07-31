@@ -170,7 +170,7 @@
           <div class="company-name">株式会社アジアビジネストラスト</div>
         <% end %>
         <% if @invoice_recipients.postal_code.present? %>
-          <div class="company-name">&#12306;<%= format_postal_code（@invoice_recipients.postal_code) %></div>
+          <div class="company-name">&#12306;<%= format_postal_code(@invoice_recipients.postal_code) %></div>
         <% else %>
           <div class="company-name">〒104-0061</div>
         <% end %>

@@ -1,134 +1,150 @@
-<div class="header">
-  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-    <div>
-      <h1 class="invoice-title">請求書</h1>
-      <div class="invoice-info">
-        <p>請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
-        <p>発行日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></p>
-        <p>支払期限: <%= @invoice.due_date&.strftime("%Y年%m月%d日") %></p>
+<div style="font-family: 'MS Gothic', monospace; font-size: 12px; line-height: 1.4; padding: 20px;">
+  <!-- ヘッダー部分 -->
+  <div style="text-align: right; margin-bottom: 20px;">
+    <div><%= @invoice.invoice_date&.strftime("%Y/%m/%d") %></div>
+    <div>No. <%= @invoice.id.to_s.rjust(6, '0') %>-m-STA07</div>
+  </div>
+
+  <!-- 請求書タイトル -->
+  <div style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px;">
+    請求書
+  </div>
+
+  <!-- 宛先と発行者情報 -->
+  <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+    <div style="width: 60%;">
+      <div style="border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 20px;">
+        <% if @invoice.invoice_recipient %>
+          <%= @invoice.invoice_recipient.name %> 様
+        <% end %>
+      </div>
+      <div style="margin-top: 20px;">
+        下記の通り請求申し上げます。
+      </div>
+      <div style="margin-top: 20px; border-bottom: 1px solid #000; padding-bottom: 5px;">
+        <strong>ご請求金額      ¥<%= number_with_delimiter(@invoice.total_amount) %>  （税込）</strong>
       </div>
     </div>
-    <div class="company-info">
+    
+    <div style="width: 35%; text-align: right; font-size: 10px;">
       <% if @user.invoice_base %>
-        <h3><%= @user.invoice_base.company_name %></h3>
+        <div style="text-align: left;"><%= @user.invoice_base.company_name %></div>
         <% if @user.invoice_base.department.present? %>
-          <p><%= @user.invoice_base.department %></p>
+          <div style="text-align: left;"><%= @user.invoice_base.department %></div>
         <% end %>
         <% if @user.invoice_base.address.present? %>
-          <p><%= @user.invoice_base.address %></p>
+          <div style="text-align: left; white-space: nowrap;"><%= @user.invoice_base.address %></div>
         <% end %>
         <% if @user.invoice_base.email.present? %>
-          <p><%= @user.invoice_base.email %></p>
+          <div style="text-align: left;"><%= @user.invoice_base.email %></div>
         <% end %>
       <% else %>
-        <h3><%= @user.name || @user.email %></h3>
+        <div style="text-align: left;"><%= @user.name || @user.email %></div>
       <% end %>
     </div>
   </div>
-</div>
 
-<!-- 請求先情報 -->
-<div class="recipient-info">
-  <div class="section-title">請求先</div>
-  <% if @invoice.invoice_recipient %>
-    <p><strong><%= @invoice.invoice_recipient.name %></strong></p>
-    <% if @invoice.invoice_recipient.representative_name.present? %>
-      <p><%= @invoice.invoice_recipient.representative_name %> 様</p>
-    <% end %>
-    <% if @invoice.invoice_recipient.department.present? %>
-      <p><%= @invoice.invoice_recipient.department %></p>
-    <% end %>
-    <% if @invoice.invoice_recipient.address.present? %>
-      <p><%= @invoice.invoice_recipient.address %></p>
-    <% end %>
-  <% end %>
-</div>
+  <!-- 明細表 -->
+  <table style="width: 100%; border-collapse: collapse; border: 2px solid #000; margin-bottom: 20px;">
+    <!-- ヘッダー行 -->
+    <tr>
+      <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #f0f0f0; font-weight: bold;">品名</td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #f0f0f0; font-weight: bold; width: 60px;">数量</td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #f0f0f0; font-weight: bold; width: 80px;">単価</td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #f0f0f0; font-weight: bold; width: 80px;">金額</td>
+    </tr>
 
-<!-- 請求金額 -->
-<div class="amount-section">
-  <div class="amount-label">請求金額</div>
-  <div class="amount-value">¥<%= number_with_delimiter(@invoice.total_amount) %></div>
-</div>
-
-<!-- 明細表 -->
-<% if @bonus_details && @bonus_details.any? %>
-  <div class="details-section">
-    <div class="section-title">インセンティブ明細</div>
-    <table class="details-table">
-      <thead>
+    <!-- 明細行 -->
+    <% if @bonus_details && @bonus_details.any? %>
+      <% @bonus_details.each do |detail| %>
+        <!-- 日付・販売者行 -->
         <tr>
-          <th>種別</th>
-          <th>販売者</th>
-          <th>商品名</th>
-          <th>数量</th>
-          <th>単価</th>
-          <th>金額</th>
-          <th>日付</th>
+          <td style="border: 1px solid #000; padding: 4px; font-size: 10px;">
+            ABT  <%= detail[:purchased_at]&.strftime("%Y年%m月%d日") %>  <%= detail[:user_name] %>  <%= detail[:product_name] %>  <%= detail[:quantity] %>個
+          </td>
+          <td style="border: 1px solid #000; padding: 4px;"></td>
+          <td style="border: 1px solid #000; padding: 4px;"></td>
+          <td style="border: 1px solid #000; padding: 4px;"></td>
         </tr>
-      </thead>
-      <tbody>
-        <% total_amount = 0 %>
-        <% @bonus_details.each do |detail| %>
-          <% total_amount += detail[:total_bonus] %>
-          <tr>
-            <td><%= detail[:type] %></td>
-            <td><%= detail[:user_name] %></td>
-            <td><%= detail[:product_name] %></td>
-            <td><%= detail[:quantity] %></td>
-            <td>¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
-            <td>¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
-            <td><%= detail[:purchased_at]&.strftime("%m/%d") %></td>
-          </tr>
-        <% end %>
-        <tr class="total-row">
-          <td colspan="5"><strong>合計</strong></td>
-          <td><strong>¥<%= number_with_delimiter(total_amount) %></strong></td>
-          <td></td>
+        <!-- インセンティブ行 -->
+        <tr>
+          <td style="border: 1px solid #000; padding: 4px; padding-left: 20px;">
+            インセンティブ  ¥<%= number_with_delimiter(detail[:unit_bonus]) %> x <%= detail[:quantity] %>個
+          </td>
+          <td style="border: 1px solid #000; padding: 4px; text-align: center;"><%= detail[:quantity] %></td>
+          <td style="border: 1px solid #000; padding: 4px; text-align: right;"><%= number_with_delimiter(detail[:unit_bonus]) %></td>
+          <td style="border: 1px solid #000; padding: 4px; text-align: right;"><%= number_with_delimiter(detail[:total_bonus]) %></td>
         </tr>
-      </tbody>
-    </table>
-  </div>
-<% end %>
+        <!-- 空行 -->
+        <tr>
+          <td style="border: 1px solid #000; padding: 4px;"></td>
+          <td style="border: 1px solid #000; padding: 4px;"></td>
+          <td style="border: 1px solid #000; padding: 4px;"></td>
+          <td style="border: 1px solid #000; padding: 4px;"></td>
+        </tr>
+      <% end %>
+    <% end %>
 
-<!-- 備考 -->
-<% if @invoice.notes.present? %>
-  <div class="notes">
-    <div class="section-title">備考</div>
-    <p><%= simple_format(@invoice.notes) %></p>
-  </div>
-<% end %>
+    <!-- 空行を追加（レイアウト調整用） -->
+    <% 2.times do %>
+      <tr>
+        <td style="border: 1px solid #000; padding: 8px; height: 25px;"></td>
+        <td style="border: 1px solid #000; padding: 8px;"></td>
+        <td style="border: 1px solid #000; padding: 8px;"></td>
+        <td style="border: 1px solid #000; padding: 8px;"></td>
+      </tr>
+    <% end %>
 
-<!-- 振込先情報 -->
-<div class="bank-info">
-  <div class="section-title">お振込先</div>
-  <table>
+    <!-- 小計行 -->
     <tr>
-      <td>銀行名:</td>
-      <td><%= @invoice.bank_name %></td>
-    </tr>
-    <tr>
-      <td>支店名:</td>
-      <td><%= @invoice.bank_branch_name %></td>
-    </tr>
-    <tr>
-      <td>口座種別:</td>
-      <td>
-        <% if @invoice.bank_account_type == 'savings' %>
-          普通
-        <% elsif @invoice.bank_account_type == 'checking' %>
-          当座
-        <% else %>
-          <%= @invoice.bank_account_type %>
-        <% end %>
+      <td style="border: 1px solid #000; padding: 8px; text-align: right;" colspan="3">
+        <strong>小計</strong>
+      </td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: right;">
+        <strong><%= number_with_delimiter(@invoice.total_amount) %></strong>
       </td>
     </tr>
+
+    <!-- 合計行 -->
     <tr>
-      <td>口座番号:</td>
-      <td><%= @invoice.bank_account_number %></td>
-    </tr>
-    <tr>
-      <td>口座名義:</td>
-      <td><%= @invoice.bank_account_name %></td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: right; background-color: #f0f0f0;" colspan="3">
+        <strong>合計</strong>
+      </td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: right; background-color: #f0f0f0;">
+        <strong><%= number_with_delimiter(@invoice.total_amount) %></strong>
+      </td>
     </tr>
   </table>
+
+  <!-- 振込先情報 -->
+  <div style="margin-top: 20px; font-size: 10px;">
+    <div style="margin-bottom: 10px;">
+      <strong>【振込先】</strong>
+    </div>
+    <div style="margin-bottom: 5px;">
+      銀行名: <%= @invoice.bank_name %>
+    </div>
+    <div style="margin-bottom: 5px;">
+      支店名: <%= @invoice.bank_branch_name %>
+    </div>
+    <div style="margin-bottom: 5px;">
+      口座種別: 
+      <% if @invoice.bank_account_type == 'savings' %>
+        普通
+      <% elsif @invoice.bank_account_type == 'checking' %>
+        当座
+      <% else %>
+        <%= @invoice.bank_account_type %>
+      <% end %>
+    </div>
+    <div style="margin-bottom: 5px;">
+      口座番号: <%= @invoice.bank_account_number %>
+    </div>
+    <div style="margin-bottom: 10px;">
+      口座名義: <%= @invoice.bank_account_name %>
+    </div>
+    <div>
+      ※ お振込み手数料はご負担頂きますようお願い申し上げます。
+    </div>
+  </div>
 </div>

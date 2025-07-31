@@ -28,18 +28,18 @@
     
     <div style="width: 35%; text-align: right; font-size: 10px;">
       <% if @user.invoice_base %>
-        <div><%= @user.invoice_base.company_name %></div>
+        <div style="text-align: right;"><%= @user.invoice_base.company_name %></div>
         <% if @user.invoice_base.department.present? %>
-          <div><%= @user.invoice_base.department %></div>
+          <div style="text-align: right;"><%= @user.invoice_base.department %></div>
         <% end %>
         <% if @user.invoice_base.address.present? %>
-          <div><%= @user.invoice_base.address %></div>
+          <div style="text-align: right; white-space: nowrap;"><%= @user.invoice_base.address %></div>
         <% end %>
         <% if @user.invoice_base.email.present? %>
-          <div><%= @user.invoice_base.email %></div>
+          <div style="text-align: right;"><%= @user.invoice_base.email %></div>
         <% end %>
       <% else %>
-        <div><%= @user.name || @user.email %></div>
+        <div style="text-align: right;"><%= @user.name || @user.email %></div>
       <% end %>
     </div>
   </div>

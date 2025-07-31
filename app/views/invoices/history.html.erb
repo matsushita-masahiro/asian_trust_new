@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary">📋 請求書履歴</h2>
+        <h4 class="text-primary">📋 請求書履歴</h4>
         <div>
           <%= link_to "新規発行", issue_invoices_path, class: "btn btn-success me-2" %>
           <%= link_to "請求書管理に戻る", invoices_path, class: "btn btn-outline-secondary" %>
@@ -42,9 +42,9 @@
                       <td><%= invoice.due_date&.strftime("%Y/%m/%d") %></td>
                       <td>
                         <% if invoice.confirmed? %>
-                          <span class="badge bg-success">確認済み</span>
+                          <span class="badge bg-success">入金済み</span>
                         <% elsif invoice.sent? %>
-                          <span class="badge bg-warning">確認待ち</span>
+                          <span class="badge bg-warning">入金待ち</span>
                         <% else %>
                           <span class="badge bg-secondary">下書き</span>
                         <% end %>

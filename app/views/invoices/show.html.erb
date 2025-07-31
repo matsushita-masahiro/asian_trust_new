@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary">📋 請求書確認</h2>
+        <h4 class="text-primary">📋 請求書確認</h4>
         <div>
           <% if @invoice.draft? %>
             <%= link_to "編集", edit_invoice_path(@invoice), class: "btn btn-outline-warning me-2" %>
@@ -33,38 +33,10 @@
           <div class="invoice-preview p-4" style="background: white; border: 1px solid #ddd;">
             <!-- ヘッダー -->
             <div class="row mb-4">
-              <div class="col-6">
-                <h3 class="text-primary">請求書</h3>
-                <p class="mb-1">請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
-                <p class="mb-1">発行日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></p>
-                <p class="mb-0">支払期限: <%= @invoice.due_date&.strftime("%Y年%m月%d日") %></p>
-              </div>
-              <div class="col-6 text-end">
-                <% if current_user.invoice_base %>
-                  <h5><%= current_user.invoice_base.company_name %></h5>
-                  <% if current_user.invoice_base.department.present? %>
-                    <p class="mb-1"><%= current_user.invoice_base.department %></p>
-                  <% end %>
-                  <% if current_user.invoice_base.address.present? %>
-                    <p class="mb-1"><%= current_user.invoice_base.address %></p>
-                  <% end %>
-                  <% if current_user.invoice_base.email.present? %>
-                    <p class="mb-0"><%= current_user.invoice_base.email %></p>
-                  <% end %>
-                <% else %>
-                  <h5><%= current_user.name || current_user.email %></h5>
-                <% end %>
-              </div>
-            </div>
-
-            <hr>
-
-            <!-- 請求先情報 -->
-            <div class="row mb-4">
-              <div class="col-12">
-                <h6 class="text-muted">請求先</h6>
+              <!-- スマホ時は請求先情報を上に表示 -->
+              <div class="col-12 d-md-none mb-3">
                 <% if @invoice.invoice_recipient %>
-                  <p class="mb-1"><strong><%= @invoice.invoice_recipient.name %></strong></p>
+                  <h5><%= @invoice.invoice_recipient.name %></h5>
                   <% if @invoice.invoice_recipient.representative_name.present? %>
                     <p class="mb-1"><%= @invoice.invoice_recipient.representative_name %> 様</p>
                   <% end %>
@@ -74,6 +46,58 @@
                   <% if @invoice.invoice_recipient.address.present? %>
                     <p class="mb-1"><%= @invoice.invoice_recipient.address %></p>
                   <% end %>
+                  <% if @invoice.invoice_recipient.email.present? %>
+                    <p class="mb-0"><%= @invoice.invoice_recipient.email %></p>
+                  <% end %>
+                <% end %>
+              </div>
+              
+              <!-- 請求書情報 -->
+              <div class="col-12 col-md-6">
+                <h3 class="text-primary">請求書</h3>
+                <p class="mb-1">請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+                <p class="mb-1">発行日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></p>
+                <p class="mb-0">支払期限: <%= @invoice.due_date&.strftime("%Y年%m月%d日") %></p>
+              </div>
+              
+              <!-- デスクトップ時の請求先情報 -->
+              <div class="col-md-6 text-end d-none d-md-block">
+                <% if @invoice.invoice_recipient %>
+                  <h5><%= @invoice.invoice_recipient.name %></h5>
+                  <% if @invoice.invoice_recipient.representative_name.present? %>
+                    <p class="mb-1"><%= @invoice.invoice_recipient.representative_name %> 様</p>
+                  <% end %>
+                  <% if @invoice.invoice_recipient.department.present? %>
+                    <p class="mb-1"><%= @invoice.invoice_recipient.department %></p>
+                  <% end %>
+                  <% if @invoice.invoice_recipient.address.present? %>
+                    <p class="mb-1"><%= @invoice.invoice_recipient.address %></p>
+                  <% end %>
+                  <% if @invoice.invoice_recipient.email.present? %>
+                    <p class="mb-0"><%= @invoice.invoice_recipient.email %></p>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- 請求元情報 -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <% if current_user.invoice_base %>
+                  <p class="mb-1"><strong><%= current_user.invoice_base.company_name %></strong></p>
+                  <% if current_user.invoice_base.department.present? %>
+                    <p class="mb-1"><%= current_user.invoice_base.department %></p>
+                  <% end %>
+                  <% if current_user.invoice_base.address.present? %>
+                    <p class="mb-1"><%= current_user.invoice_base.address %></p>
+                  <% end %>
+                  <% if current_user.invoice_base.email.present? %>
+                    <p class="mb-1"><%= current_user.invoice_base.email %></p>
+                  <% end %>
+                <% else %>
+                  <p class="mb-1"><strong><%= current_user.name || current_user.email %></strong></p>
                 <% end %>
               </div>
             </div>
@@ -82,13 +106,19 @@
             <div class="row mb-4">
               <div class="col-12">
                 <div class="bg-light p-3 rounded">
-                  <div class="row">
+                  <!-- デスクトップ表示 -->
+                  <div class="row d-none d-md-flex">
                     <div class="col-8">
                       <h5 class="mb-0">請求金額</h5>
                     </div>
                     <div class="col-4 text-end">
                       <h4 class="text-primary mb-0">¥<%= number_with_delimiter(@invoice.total_amount) %></h4>
                     </div>
+                  </div>
+                  <!-- スマホ表示 -->
+                  <div class="d-md-none text-center">
+                    <h6 class="mb-2 text-muted">請求金額</h6>
+                    <h3 class="text-primary mb-0">¥<%= number_with_delimiter(@invoice.total_amount) %></h3>
                   </div>
                 </div>
               </div>
@@ -108,7 +138,8 @@
             <div class="row">
               <div class="col-12">
                 <h6 class="text-muted">お振込先</h6>
-                <div class="table-responsive">
+                <!-- デスクトップ表示 -->
+                <div class="table-responsive d-none d-md-block">
                   <table class="table table-sm table-borderless">
                     <tr>
                       <td width="20%">銀行名:</td>
@@ -140,9 +171,177 @@
                     </tr>
                   </table>
                 </div>
+                
+                <!-- スマホ表示 -->
+                <div class="d-md-none bank-info-mobile">
+                  <div class="bank-item">
+                    <span class="bank-label">銀行名:</span>
+                    <span class="bank-value"><%= @invoice.bank_name %></span>
+                  </div>
+                  <div class="bank-item">
+                    <span class="bank-label">支店名:</span>
+                    <span class="bank-value"><%= @invoice.bank_branch_name %></span>
+                  </div>
+                  <div class="bank-item">
+                    <span class="bank-label">口座種別:</span>
+                    <span class="bank-value">
+                      <% if @invoice.bank_account_type == 'savings' %>
+                        普通
+                      <% elsif @invoice.bank_account_type == 'checking' %>
+                        当座
+                      <% else %>
+                        <%= @invoice.bank_account_type %>
+                      <% end %>
+                    </span>
+                  </div>
+                  <div class="bank-item">
+                    <span class="bank-label">口座番号:</span>
+                    <span class="bank-value"><%= @invoice.bank_account_number %></span>
+                  </div>
+                  <div class="bank-item">
+                    <span class="bank-label">口座名義:</span>
+                    <span class="bank-value"><%= @invoice.bank_account_name %></span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- インセンティブ明細 -->
+  <div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">📊 インセンティブ明細 (<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>)</h5>
+        </div>
+        <div class="card-body">
+          <% if @bonus_details && @bonus_details.any? %>
+            <!-- デスクトップ表示 -->
+            <div class="table-responsive d-none d-md-block">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>種別</th>
+                    <th>販売者</th>
+                    <th>商品名</th>
+                    <th class="text-end">数量</th>
+                    <th class="text-end">単価</th>
+                    <th class="text-end">金額</th>
+                    <th>日付</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% total_amount = 0 %>
+                  <% @bonus_details.each do |detail| %>
+                    <% total_amount += detail[:total_bonus] %>
+                    <tr>
+                      <td>
+                        <% if detail[:type] == '自己販売' %>
+                          <span class="badge bg-primary">自己販売</span>
+                        <% else %>
+                          <span class="badge bg-success">下位販売</span>
+                        <% end %>
+                      </td>
+                      <td><%= detail[:user_name] %></td>
+                      <td><%= detail[:product_name] %></td>
+                      <td class="text-end"><%= detail[:quantity] %></td>
+                      <td class="text-end">¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
+                      <td class="text-end text-success fw-bold">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
+                      <td><%= detail[:purchased_at]&.strftime("%m/%d") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+                <tfoot class="table-light">
+                  <tr>
+                    <th colspan="5" class="text-end">合計</th>
+                    <th class="text-end text-success">¥<%= number_with_delimiter(total_amount) %></th>
+                    <th></th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- スマホ表示（固定列 + 横スクロール） -->
+            <div class="d-md-none">
+              <div class="mobile-table-container">
+                <table class="table table-hover align-middle mobile-table">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="fixed-col-1">種別</th>
+                      <th class="fixed-col-2">販売者</th>
+                      <th class="scroll-col">商品名</th>
+                      <th class="scroll-col text-end">数量</th>
+                      <th class="scroll-col text-end">単価</th>
+                      <th class="scroll-col text-end">金額</th>
+                      <th class="scroll-col">日付</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% total_amount = 0 %>
+                    <% @bonus_details.each do |detail| %>
+                      <% total_amount += detail[:total_bonus] %>
+                      <tr>
+                        <td class="fixed-col-1">
+                          <% if detail[:type] == '自己販売' %>
+                            <span class="badge bg-primary">自己販売</span>
+                          <% else %>
+                            <span class="badge bg-success">下位販売</span>
+                          <% end %>
+                        </td>
+                        <td class="fixed-col-2"><%= detail[:user_name] %></td>
+                        <td class="scroll-col"><%= detail[:product_name] %></td>
+                        <td class="scroll-col text-end"><%= detail[:quantity] %></td>
+                        <td class="scroll-col text-end">¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
+                        <td class="scroll-col text-end text-success fw-bold">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
+                        <td class="scroll-col"><%= detail[:purchased_at]&.strftime("%m/%d") %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                  <tfoot class="table-light">
+                    <tr>
+                      <th class="fixed-col-1"></th>
+                      <th class="fixed-col-2">合計</th>
+                      <th class="scroll-col"></th>
+                      <th class="scroll-col"></th>
+                      <th class="scroll-col"></th>
+                      <th class="scroll-col text-end text-success">¥<%= number_with_delimiter(total_amount) %></th>
+                      <th class="scroll-col"></th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+            
+            <!-- サマリー情報 -->
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <h6 class="card-title text-muted">自己販売件数</h6>
+                    <h4 class="text-primary mb-0"><%= @bonus_details.count { |d| d[:type] == '自己販売' } %>件</h4>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <h6 class="card-title text-muted">下位販売件数</h6>
+                    <h4 class="text-success mb-0"><%= @bonus_details.count { |d| d[:type] == '下位販売' } %>件</h4>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">明細データがありません</h5>
+              <p class="text-muted">選択した月（<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>）にはインセンティブ明細がありません。</p>
+            </div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -201,5 +400,92 @@
     box-shadow: none !important;
     border: none !important;
   }
+}
+
+/* スマホ用テーブルスタイル */
+.mobile-table-container {
+  position: relative;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-table {
+  min-width: 600px;
+}
+
+.mobile-table .fixed-col-1,
+.mobile-table .fixed-col-2 {
+  position: sticky;
+  background-color: white;
+  z-index: 10;
+}
+
+.mobile-table .fixed-col-1 {
+  left: 0;
+  min-width: 80px;
+  border-right: 2px solid #dee2e6;
+}
+
+.mobile-table .fixed-col-2 {
+  left: 80px;
+  min-width: 100px;
+  border-right: 2px solid #dee2e6;
+}
+
+.mobile-table thead .fixed-col-1,
+.mobile-table thead .fixed-col-2 {
+  background-color: #f8f9fa !important;
+}
+
+.mobile-table tfoot .fixed-col-1,
+.mobile-table tfoot .fixed-col-2 {
+  background-color: #f8f9fa !important;
+}
+
+.mobile-table .scroll-col {
+  min-width: 100px;
+}
+
+/* バッジのサイズ調整 */
+@media (max-width: 767px) {
+  .badge {
+    font-size: 0.7em;
+    padding: 0.25em 0.4em;
+  }
+}
+
+/* スマホ用銀行情報スタイル */
+.bank-info-mobile {
+  font-size: 14px;
+}
+
+.bank-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.bank-item:last-child {
+  border-bottom: none;
+}
+
+.bank-label {
+  color: #666;
+  font-weight: 500;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.bank-value {
+  text-align: right;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: 10px;
 }
 </style>

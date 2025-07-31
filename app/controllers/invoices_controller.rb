@@ -62,6 +62,15 @@ class InvoicesController < ApplicationController
 
   def show
     @invoice = current_user.invoices.includes(:invoice_recipient).find(params[:id])
+    
+    # 請求書の発行日から対象月を推定
+    @selected_month = @invoice.invoice_date&.strftime("%Y-%m") || Date.current.strftime("%Y-%m")
+    @selected_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
+    @selected_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
+    
+    # ボーナス内訳を取得
+    @bonus_details = get_bonus_details(@selected_month_start, @selected_month_end)
+    @total_bonus = current_user.bonus_in_month(@selected_month)
   end
 
   def new

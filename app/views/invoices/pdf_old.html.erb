@@ -22,7 +22,7 @@
         下記の通り請求申し上げます。
       </div>
       <div style="margin-top: 20px; border-bottom: 1px solid #000; padding-bottom: 5px;">
-        <strong>ご請求金額　　　¥<%= number_with_delimiter(@invoice.total_amount) %>　（税込）</strong>
+        <strong>ご請求金額      ¥<%= number_with_delimiter(@invoice.total_amount) %>  （税込）</strong>
       </div>
     </div>
     
@@ -60,7 +60,7 @@
         <!-- 日付・販売者行 -->
         <tr>
           <td style="border: 1px solid #000; padding: 4px; font-size: 10px;">
-            ABT　<%= detail[:purchased_at]&.strftime("%Y年%m月%d日") %>　<%= detail[:user_name] %>　<%= detail[:product_name] %>　<%= detail[:quantity] %>個
+            ABT  <%= detail[:purchased_at]&.strftime("%Y年%m月%d日") %>  <%= detail[:user_name] %>  <%= detail[:product_name] %>  <%= detail[:quantity] %>個
           </td>
           <td style="border: 1px solid #000; padding: 4px;"></td>
           <td style="border: 1px solid #000; padding: 4px;"></td>
@@ -69,7 +69,7 @@
         <!-- インセンティブ行 -->
         <tr>
           <td style="border: 1px solid #000; padding: 4px; padding-left: 20px;">
-            インセンティブ　¥<%= number_with_delimiter(detail[:unit_bonus]) %> x <%= detail[:quantity] %>個
+            インセンティブ  ¥<%= number_with_delimiter(detail[:unit_bonus]) %> x <%= detail[:quantity] %>個
           </td>
           <td style="border: 1px solid #000; padding: 4px; text-align: center;"><%= detail[:quantity] %></td>
           <td style="border: 1px solid #000; padding: 4px; text-align: right;"><%= number_with_delimiter(detail[:unit_bonus]) %></td>

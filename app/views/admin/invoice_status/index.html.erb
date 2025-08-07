@@ -103,7 +103,7 @@
                       <td>
                         <div class="btn-group" role="group">
                           <% if invoice.sent? %>
-                            <%= button_to "振込確認", 
+                            <%= button_to "振込完了", 
                                 update_status_admin_invoice_status_path(invoice), 
                                 method: :patch, 
                                 params: { status: 'confirmed' },

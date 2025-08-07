@@ -8,11 +8,18 @@ end
 
 puts "🚀 ボーナス計算用テストデータの作成を開始します..."
 
+# データベースアダプタの種類を判定
+adapter = ActiveRecord::Base.connection.adapter_name.downcase
+
 # 既存データをクリア（テスト用）
 puts "📝 既存のデータを完全削除中..."
 
 # 外部キー制約を一時的に無効化
-ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
+if adapter.include?("sqlite")
+  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
+elsif adapter.include?("postgresql")
+  ActiveRecord::Base.connection.execute("SET session_replication_role = replica;")
+end
 
 # 関連データを順番に削除
 Purchase.delete_all
@@ -24,19 +31,33 @@ AccessLog.delete_all
 User.delete_all
 
 # 外部キー制約を再有効化
-ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
+if adapter.include?("sqlite")
+  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
+elsif adapter.include?("postgresql")
+  ActiveRecord::Base.connection.execute("SET session_replication_role = DEFAULT;")
+end
 
-# IDシーケンスをリセット（SQLite用）
+# IDシーケンスをリセット
 begin
-  ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='users'")
-  ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='customers'")
-  ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='purchases'")
-  puts "IDシーケンスをリセットしました"
+  if adapter.include?("sqlite")
+    ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='users'")
+    ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='customers'")
+    ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='purchases'")
+    puts "IDシーケンスをリセットしました (SQLite)"
+  elsif adapter.include?("postgresql")
+    %w(users customers purchases).each do |table|
+      ActiveRecord::Base.connection.execute("ALTER SEQUENCE #{table}_id_seq RESTART WITH 1")
+    end
+    puts "IDシーケンスをリセットしました (PostgreSQL)"
+  end
 rescue => e
   puts "IDシーケンスリセット時のエラー: #{e.message}"
 end
 
 puts "データベースを完全にクリアしました"
+
+# ※ 以下の処理はそのまま保持（元の構造と同じ）
+
 
 # レベル情報を取得
 levels = {

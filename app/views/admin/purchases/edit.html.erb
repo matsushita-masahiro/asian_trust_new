@@ -1,7 +1,7 @@
-<div class="container-fluid">
+<div class="container-fluid admin-purchases-edit">
   <div class="row">
     <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+      <div class="d-flex justify-content-between align-items-center mb-4 page-header">
         <h2 class="text-primary">購入履歴編集</h2>
         <div>
           <%= link_to "購入履歴一覧に戻る", admin_purchases_path, class: "btn btn-outline-secondary me-2" %>
@@ -144,41 +144,3 @@
   });
 </script>
 
-<style>
-  .card {
-    border: none;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  }
-  
-  .card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-  }
-  
-  .form-control-lg {
-    font-size: 1.1rem;
-    padding: 0.75rem 1rem;
-  }
-  
-  .input-group-text {
-    font-weight: bold;
-    background-color: #e9ecef;
-  }
-  
-  .border-primary {
-    border-color: #0d6efd !important;
-  }
-  
-  /* レスポンシブ対応 */
-  @media (max-width: 768px) {
-    .d-flex.justify-content-between {
-      flex-direction: column;
-      align-items: flex-start !important;
-    }
-    
-    .me-2 {
-      margin-bottom: 0.5rem;
-      margin-right: 0 !important;
-    }
-  }
-</style>

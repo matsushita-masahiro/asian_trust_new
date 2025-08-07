@@ -9,6 +9,7 @@
 @use "concept";
 @use "inquiries";
 @use "admin";
+@use "admin/purchases";
 
 body {
   font-family: "メイリオ", "Meiryo", sans-serif !important;
@@ -42,7 +43,3 @@ section {
     font-size: 0.8rem;
   }
 }
-
-
-
-

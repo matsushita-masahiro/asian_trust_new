@@ -136,7 +136,7 @@
                     <th class="text-nowrap">メール</th>
                     <th class="text-nowrap">電話番号</th>
                     <th class="text-nowrap">住所</th>
-                    <th class="text-nowrap">購入日時</th>
+                    <th class="text-nowrap">購入日</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -161,7 +161,7 @@
                       <td class="text-nowrap"><%= purchase.customer&.email || "-" %></td>
                       <td class="text-nowrap"><%= purchase.customer&.phone || "-" %></td>
                       <td class="text-nowrap"><%= purchase.customer&.address || "-" %></td>
-                      <td class="text-nowrap"><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
+                      <td class="text-nowrap"><%= purchase.purchased_at&.strftime("%Y/%m/%d") %></td>
                     </tr>
                   <% end %>
 

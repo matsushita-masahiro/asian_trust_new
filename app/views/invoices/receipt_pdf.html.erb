@@ -189,7 +189,7 @@
       <div>領収書番号: REC-<%= @invoice.id.to_s.rjust(6, '0') %></div>
       <div>発行日: <%= Date.current.strftime("%Y年%m月%d日") %></div>
       <div>請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></div>
-      <div style="margin-top: 8px; font-weight: bold;">件名: <%= @invoice.invoice_date&.strftime("%Y年%m月") || Date.current.strftime("%Y年%m月") %>度インセンティブ</div>
+      <div style="margin-top: 8px; font-weight: bold;">件名: <%= @invoice.target_month_display %>度インセンティブ</div>
     </div>
     
     <!-- 領収金額 -->

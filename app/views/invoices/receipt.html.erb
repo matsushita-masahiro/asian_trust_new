@@ -83,8 +83,8 @@
                     </thead>
                     <tbody>
                       <% 
-                        # ボーナス詳細データを取得
-                        selected_month = @invoice.invoice_date&.strftime("%Y-%m") || Date.current.strftime("%Y-%m")
+                        # ボーナス詳細データを取得（target_monthを使用）
+                        selected_month = @invoice.target_month || Date.current.strftime("%Y-%m")
                         selected_month_start = Date.strptime(selected_month, "%Y-%m").beginning_of_month
                         selected_month_end = Date.strptime(selected_month, "%Y-%m").end_of_month
                         
@@ -158,7 +158,7 @@
                       <% else %>
                         <tr>
                           <td colspan="6" class="text-center text-muted">
-                            <%= @invoice.invoice_date&.strftime("%Y年%m月") %>分 インセンティブ報酬（詳細データなし）
+                            <%= @invoice.target_month_display %>分 インセンティブ報酬（詳細データなし）
                           </td>
                         </tr>
                       <% end %>
@@ -176,7 +176,7 @@
                   <% if @invoice.notes.present? %>
                     <%= simple_format(@invoice.notes) %>
                   <% else %>
-                    <%= @invoice.invoice_date&.strftime("%Y年%m月") %>分 インセンティブ支払いとして
+                    <%= @invoice.target_month_display %>分 インセンティブ支払いとして
                   <% end %>
                 </p>
               </div>

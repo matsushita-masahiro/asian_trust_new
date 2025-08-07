@@ -146,6 +146,13 @@ class InvoicesController < ApplicationController
       redirect_to history_invoices_path, alert: '確認済みの請求書のみ領収書を発行できます。'
       return
     end
+    
+    # target_monthのボーナス詳細を取得
+    if @invoice.target_month.present?
+      selected_month_start = Date.strptime(@invoice.target_month, "%Y-%m").beginning_of_month
+      selected_month_end = Date.strptime(@invoice.target_month, "%Y-%m").end_of_month
+      @bonus_details = get_bonus_details(selected_month_start, selected_month_end)
+    end
   end
 
   def send_receipt
@@ -171,7 +178,7 @@ class InvoicesController < ApplicationController
   private
 
   def invoice_params
-    params.require(:invoice).permit(:invoice_date, :due_date, :total_amount, :bank_name, :bank_branch_name, :bank_account_type, :bank_account_number, :bank_account_name, :notes, :sent_at, :invoice_recipient_id)
+    params.require(:invoice).permit(:invoice_date, :due_date, :total_amount, :bank_name, :bank_branch_name, :bank_account_type, :bank_account_number, :bank_account_name, :notes, :sent_at, :invoice_recipient_id, :target_month)
   end
 
   def invoice_recipient_params

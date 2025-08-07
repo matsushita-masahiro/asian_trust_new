@@ -1,6 +1,9 @@
 class Invoice < ApplicationRecord
   belongs_to :user
   belongs_to :invoice_recipient
+  
+  # バリデーション
+  validates :target_month, presence: true, format: { with: /\A\d{4}-\d{2}\z/, message: "は YYYY-MM 形式で入力してください" }
 
   # ステータス定数（新）
   INITIAL = 0     # 初期状態
@@ -76,6 +79,24 @@ class Invoice < ApplicationRecord
     when CONFIRMED then '振込確認済み'
     else '不明'
     end
+  end
+  
+  # 対象年月の表示名を取得
+  def target_month_display
+    return '' if target_month.blank?
+    Date.strptime(target_month, "%Y-%m").strftime("%Y年%m月")
+  end
+  
+  # 対象年月の売上データを取得
+  def target_month_sales
+    return 0 if target_month.blank?
+    user.own_monthly_sales_total(target_month)
+  end
+  
+  # 対象年月のボーナスデータを取得
+  def target_month_bonus
+    return 0 if target_month.blank?
+    user.bonus_in_month(target_month)
   end
   
 end

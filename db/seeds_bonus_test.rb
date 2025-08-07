@@ -1,60 +1,46 @@
 # ボーナス計算用の複雑なテストデータ（アジアビジネストラスト構造）
 # 実行方法: rails runner db/seeds_bonus_test.rb
 
-# ヘルパーメソッド
 def number_with_delimiter(number)
   number.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
 end
 
 puts "🚀 ボーナス計算用テストデータの作成を開始します..."
 
-# データベースアダプタの種類を判定
-adapter = ActiveRecord::Base.connection.adapter_name.downcase
-
-# 既存データをクリア（テスト用）
+# 既存データをクリア（外部キー制約に配慮した順）
 puts "📝 既存のデータを完全削除中..."
 
-# 外部キー制約を一時的に無効化
-if adapter.include?("sqlite")
-  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
-elsif adapter.include?("postgresql")
-  ActiveRecord::Base.connection.execute("SET session_replication_role = replica;")
+begin
+  Purchase.delete_all
+  AccessLog.delete_all
+  Customer.delete_all
+  User.delete_all
+  puts "✅ データ削除完了（外部キー順に削除）"
+rescue => e
+  puts "❌ データ削除中にエラーが発生しました: #{e.message}"
+  exit
 end
 
-# 関連データを順番に削除
-Purchase.delete_all
-Customer.delete_all
-
-# 全てのユーザーを削除
-puts "accessLogと全ユーザーを削除中..."
-AccessLog.delete_all
-User.delete_all
-
-# 外部キー制約を再有効化
-if adapter.include?("sqlite")
-  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
-elsif adapter.include?("postgresql")
-  ActiveRecord::Base.connection.execute("SET session_replication_role = DEFAULT;")
-end
-
-# IDシーケンスをリセット
+# IDシーケンスをリセット（SQLite / PostgreSQL 対応）
+adapter = ActiveRecord::Base.connection.adapter_name.downcase
 begin
   if adapter.include?("sqlite")
-    ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='users'")
-    ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='customers'")
-    ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='purchases'")
-    puts "IDシーケンスをリセットしました (SQLite)"
+    %w(users customers purchases).each do |table|
+      ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='#{table}'")
+    end
+    puts "✅ IDシーケンスをリセットしました (SQLite)"
   elsif adapter.include?("postgresql")
     %w(users customers purchases).each do |table|
       ActiveRecord::Base.connection.execute("ALTER SEQUENCE #{table}_id_seq RESTART WITH 1")
     end
-    puts "IDシーケンスをリセットしました (PostgreSQL)"
+    puts "✅ IDシーケンスをリセットしました (PostgreSQL)"
   end
 rescue => e
-  puts "IDシーケンスリセット時のエラー: #{e.message}"
+  puts "⚠️ IDシーケンスリセット時のエラー: #{e.message}"
 end
 
-puts "データベースを完全にクリアしました"
+puts "✅ データベース初期化完了"
+
 
 # ※ 以下の処理はそのまま保持（元の構造と同じ）
 

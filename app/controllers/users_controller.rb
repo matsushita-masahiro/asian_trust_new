@@ -10,8 +10,10 @@ class UsersController < ApplicationController
   def show
     @user = User.find(params[:id])
 
-    unless current_user.descendants.include?(@user) || @user == current_user
-      redirect_to mypage_path, alert: "アクセス権がありません。"
+    # アクセス権限チェック
+    unless can_access_user?(@user)
+      redirect_to mypage_path, alert: "権限がありません。"
+      return
     end
   end
 
@@ -19,8 +21,8 @@ class UsersController < ApplicationController
   def purchases
     @user = User.find(params[:id])
 
-    unless current_user.descendants.include?(@user) || @user == current_user
-      redirect_to mypage_path, alert: "アクセス権がありません。"
+    unless can_access_user?(@user)
+      redirect_to mypage_path, alert: "権限がありません。"
       return
     end
 
@@ -44,6 +46,22 @@ class UsersController < ApplicationController
   end
   
   private
+
+    # ユーザーへのアクセス権限をチェック
+    def can_access_user?(user)
+      # 自分自身の場合はアクセス可能
+      return true if user == current_user
+      
+      # 自分の下位ユーザーの場合はアクセス可能
+      return true if current_user.descendants.include?(user)
+      
+      # 自分の上位ユーザーで、かつ直接の紹介者の場合のみアクセス可能
+      return true if user == current_user.referrer
+      
+      # その他の場合はアクセス不可
+      false
+    end
+
     def set_selected_month_range
       selected_month = params[:month].presence || Date.today.strftime("%Y-%m")
       @selected_month = selected_month

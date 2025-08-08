@@ -55,7 +55,14 @@ class UsersController < ApplicationController
       # 自分の下位ユーザーの場合はアクセス可能
       return true if current_user.descendants.include?(user)
       
-      # 上位ユーザーへのアクセスは一切禁止
+      # 自分より上位のユーザーへのアクセスは禁止
+      # （ただし、自分の祖先ユーザーで、かつ現在表示中のユーザーの上位にあたる場合は許可）
+      if current_user.ancestors.include?(user)
+        # 現在表示中のユーザーが自分の下位で、かつアクセス対象が現在ユーザーの上位の場合のみ許可
+        current_displayed_user = User.find(params[:id]) rescue current_user
+        return current_displayed_user.ancestors.include?(user) && current_user.descendants.include?(current_displayed_user)
+      end
+      
       false
     end
 

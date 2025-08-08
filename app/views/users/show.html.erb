@@ -11,7 +11,9 @@
         </div>
         <div class="mobile-nav-buttons">
           <%= link_to "🏠 マイページに戻る", mysales_path, class: "btn btn-outline-secondary me-2" %>
-          <!-- 上位ユーザーへのアクセスは禁止 -->
+          <% if @user.referrer.present? && (@user.referrer == current_user || current_user.descendants.include?(@user.referrer)) %>
+            <%= link_to "🔼 1つ上位に戻る", user_path(@user.referrer), class: "btn btn-outline-primary" %>
+          <% end %>
         </div>
       </div>
     </div>
@@ -184,8 +186,11 @@
               <% @user.ancestors.reverse.each_with_index do |ancestor, index| %>
                 <div class="chain-item">
                   <div class="chain-box">
-                    <!-- 上位ユーザーへのリンクは表示のみ（クリック不可） -->
-                    <span class="text-muted"><%= ancestor.name.present? ? ancestor.name : ancestor.email %></span>
+                    <% if ancestor == current_user || current_user.descendants.include?(ancestor) %>
+                      <%= link_to (ancestor.name.present? ? ancestor.name : ancestor.email), user_path(ancestor, month: @selected_month), class: "text-decoration-none text-primary fw-bold" %>
+                    <% else %>
+                      <span class="text-muted"><%= ancestor.name.present? ? ancestor.name : ancestor.email %></span>
+                    <% end %>
                   </div>
                   <div class="chain-arrow">
                     <i class="fas fa-arrow-down text-muted"></i>

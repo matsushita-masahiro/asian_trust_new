@@ -96,7 +96,7 @@ Rails.application.configure do
 
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address:              ENV['MAIL_SERVER'],
+    address:              "mail1023.onamae.ne.jp",
     port:                 587,
     user_name:            ENV['ADMIN_EMAIL'],
     password:             ENV['ADMIN_EMAIL_PASSWORD'],

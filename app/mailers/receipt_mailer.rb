@@ -8,6 +8,10 @@ class ReceiptMailer < ApplicationMailer
     # 送信先メールアドレス
     recipient_email = @user.invoice_base&.email || @user.email
 
+    # 💡ここでログ出力（この2行を追加！）
+    Rails.logger.info "💌 Sending receipt to: #{recipient_email.inspect}"
+    Rails.logger.info "From: #{ENV['ADMIN_EMAIL'].inspect}"
+
     # ボーナス詳細データを取得
     selected_month = @invoice.invoice_date&.strftime("%Y-%m") || Date.current.strftime("%Y-%m")
     selected_month_start = Date.strptime(selected_month, "%Y-%m").beginning_of_month

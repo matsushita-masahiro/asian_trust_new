@@ -122,6 +122,17 @@
     .details-table .bonus {
       text-align: right;
     }
+
+    .details-table tfoot tr {
+      background-color: #333 !important;
+      color: white !important;
+      font-weight: bold;
+    }
+
+    .details-table tfoot td {
+      background-color: #333 !important;
+      color: white !important;
+    }
   </style>
 </head>
 <body>
@@ -171,12 +182,11 @@
       <table class="details-table">
         <thead>
           <tr>
-            <th style="width: 20%;">顧客名</th>
-            <th style="width: 30%;">商品名</th>
-            <th style="width: 12%;">単価</th>
-            <th style="width: 8%;">数量</th>
-            <th style="width: 15%;">金額</th>
-            <th style="width: 15%;">ボーナス</th>
+            <th style="width: 25%;">顧客名</th>
+            <th style="width: 35%;">商品名</th>
+            <th style="width: 15%;">単価</th>
+            <th style="width: 10%;">数量</th>
+            <th style="width: 15%;">インセンティブ</th>
           </tr>
         </thead>
         <tbody>
@@ -185,16 +195,23 @@
               <tr>
                 <td class="customer-name"><%= detail[:user_name] %></td>
                 <td class="product-name"><%= detail[:product_name] %></td>
-                <td class="amount">¥<%= number_with_delimiter(detail[:unit_price]) %></td>
+                <td class="amount">¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
                 <td><%= detail[:quantity] %></td>
-                <td class="amount">¥<%= number_with_delimiter(detail[:unit_price] * detail[:quantity]) %></td>
                 <td class="bonus">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
               </tr>
             <% end %>
           <% else %>
-            <tr><td colspan="6" style="text-align: center;">ボーナス情報が見つかりません</td></tr>
+            <tr><td colspan="5" style="text-align: center;">インセンティブ情報が見つかりません</td></tr>
           <% end %>
         </tbody>
+        <% if defined?(@bonus_details) && @bonus_details.present? %>
+          <tfoot>
+            <tr style="background-color: #333; color: white; font-weight: bold;">
+              <td colspan="4" style="text-align: center;">合計</td>
+              <td class="bonus">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:total_bonus] }) %></td>
+            </tr>
+          </tfoot>
+        <% end %>
       </table>
     </div>
   </div>

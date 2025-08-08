@@ -77,8 +77,7 @@
                         <th>商品名</th>
                         <th>単価</th>
                         <th>数量</th>
-                        <th>金額</th>
-                        <th>ボーナス</th>
+                        <th>インセンティブ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -89,22 +88,12 @@
                             <td><%= detail[:product_name] %></td>
                             <td class="text-end">¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
                             <td class="text-center"><%= detail[:quantity] %></td>
-                            <td class="text-end">¥<%= number_with_delimiter(detail[:unit_bonus] * detail[:quantity]) %></td>
                             <td class="text-end">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
                           </tr>
                         <% end %>
-                    </tbody>
-                    <tfoot class="table-dark">
-                      <tr class="fw-bold">
-                        <td colspan="3" class="text-center">合計</td>
-                        <td class="text-center"><%= @bonus_details.sum { |d| d[:quantity] } %></td>
-                        <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:unit_bonus] * d[:quantity] }) %></td>
-                        <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:total_bonus] }) %></td>
-                      </tr>
-                    </tfoot>
                       <% else %>
                         <tr>
-                          <td colspan="6" class="text-center text-muted">
+                          <td colspan="5" class="text-center text-muted">
                             <%= @invoice.target_month_display %>分 インセンティブ報酬（詳細データなし）
                           </td>
                         </tr>
@@ -113,9 +102,7 @@
                     <% if @bonus_details && @bonus_details.present? %>
                       <tfoot class="table-dark">
                         <tr class="fw-bold">
-                          <td colspan="3" class="text-center">合計</td>
-                          <td class="text-center"><%= @bonus_details.sum { |d| d[:quantity] } %></td>
-                          <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:unit_bonus] * d[:quantity] }) %></td>
+                          <td colspan="4" class="text-center">合計</td>
                           <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:total_bonus] }) %></td>
                         </tr>
                       </tfoot>

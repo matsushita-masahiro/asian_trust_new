@@ -12,11 +12,14 @@ class ReceiptMailer < ApplicationMailer
     Rails.logger.info "💌 Sending receipt to: #{recipient_email.inspect}"
     Rails.logger.info "From: #{ENV['ADMIN_EMAIL'].inspect}"
 
-    # ボーナス詳細データ取得
-    selected_month = @invoice.invoice_date&.strftime("%Y-%m") || Date.current.strftime("%Y-%m")
-    selected_month_start = Date.strptime(selected_month, "%Y-%m").beginning_of_month
-    selected_month_end = Date.strptime(selected_month, "%Y-%m").end_of_month
-    @bonus_details = get_bonus_details(selected_month_start, selected_month_end)
+    # ボーナス詳細データ取得（target_monthを使用）
+    if @invoice.target_month.present?
+      selected_month_start = Date.strptime(@invoice.target_month, "%Y-%m").beginning_of_month
+      selected_month_end = Date.strptime(@invoice.target_month, "%Y-%m").end_of_month
+      @bonus_details = get_bonus_details(selected_month_start, selected_month_end)
+    else
+      @bonus_details = []
+    end
 
     # 添付ファイルをクリア（重複防止）
     attachments.clear

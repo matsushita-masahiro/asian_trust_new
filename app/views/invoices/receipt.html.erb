@@ -82,78 +82,21 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <% 
-                        # ボーナス詳細データを取得（target_monthを使用）
-                        selected_month = @invoice.target_month || Date.current.strftime("%Y-%m")
-                        selected_month_start = Date.strptime(selected_month, "%Y-%m").beginning_of_month
-                        selected_month_end = Date.strptime(selected_month, "%Y-%m").end_of_month
-                        
-                        # コントローラーのget_bonus_detailsメソッドと同じロジック
-                        bonus_details = []
-                        
-                        # 自分の販売に対するボーナス
-                        self_purchases = current_user.purchases.includes(:product).where(purchased_at: selected_month_start..selected_month_end)
-                        self_purchases.each do |purchase|
-                          product = purchase.product
-                          base_price = product.base_price
-                          my_price = product.product_prices.find_by(level_id: current_user.level_id)&.price || 0
-                          bonus = (base_price - my_price) * purchase.quantity
-                          
-                          if bonus > 0
-                            bonus_details << {
-                              type: '自己販売',
-                              user_name: current_user.name || current_user.email,
-                              product_name: product.name,
-                              quantity: purchase.quantity,
-                              unit_price: base_price,
-                              unit_bonus: bonus / purchase.quantity,
-                              total_bonus: bonus,
-                              purchased_at: purchase.purchased_at
-                            }
-                          end
-                        end
-                        
-                        # 子孫の販売に対するボーナス
-                        descendant_purchases = Purchase.includes(:product, :user)
-                                                       .where(user_id: current_user.descendant_ids)
-                                                       .where(purchased_at: selected_month_start..selected_month_end)
-                        
-                        descendant_purchases.each do |purchase|
-                          bonus = current_user.bonus_for_purchase(purchase)
-                          
-                          if bonus > 0
-                            bonus_details << {
-                              type: '下位販売',
-                              user_name: purchase.user.name || purchase.user.email,
-                              product_name: purchase.product.name,
-                              quantity: purchase.quantity,
-                              unit_price: purchase.product.base_price,
-                              unit_bonus: bonus / purchase.quantity,
-                              total_bonus: bonus,
-                              purchased_at: purchase.purchased_at
-                            }
-                          end
-                        end
-                        
-                        # 日付順でソート
-                        bonus_details.sort_by! { |d| d[:purchased_at] }
-                      %>
-                      
-                      <% if bonus_details.present? %>
-                        <% bonus_details.each do |detail| %>
+                      <% if @bonus_details && @bonus_details.present? %>
+                        <% @bonus_details.each do |detail| %>
                           <tr>
                             <td><%= detail[:user_name] %></td>
                             <td><%= detail[:product_name] %></td>
-                            <td class="text-end">¥<%= number_with_delimiter(detail[:unit_price]) %></td>
+                            <td class="text-end">¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
                             <td class="text-center"><%= detail[:quantity] %></td>
-                            <td class="text-end">¥<%= number_with_delimiter(detail[:unit_price] * detail[:quantity]) %></td>
+                            <td class="text-end">¥<%= number_with_delimiter(detail[:unit_bonus] * detail[:quantity]) %></td>
                             <td class="text-end">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
                           </tr>
                         <% end %>
                         <tr class="table-secondary fw-bold">
                           <td colspan="4" class="text-center">合計</td>
-                          <td class="text-end">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:unit_price] * d[:quantity] }) %></td>
-                          <td class="text-end">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:total_bonus] }) %></td>
+                          <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:unit_bonus] * d[:quantity] }) %></td>
+                          <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:total_bonus] }) %></td>
                         </tr>
                       <% else %>
                         <tr>

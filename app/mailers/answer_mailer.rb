@@ -1,5 +1,5 @@
 class AnswerMailer < ApplicationMailer
-  default from: ENV['ADMIN_MAIL'] # 例: info@msworks.tokyo
+  default from: ENV['ADMIN_EMAIL']
 
   def notify_user(answer)
     @answer = answer

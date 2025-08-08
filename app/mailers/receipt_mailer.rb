@@ -8,11 +8,11 @@ class ReceiptMailer < ApplicationMailer
     # 送信先メールアドレス
     recipient_email = @user.invoice_base&.email || @user.email
 
-    # 💡ここでログ出力（この2行を追加！）
+    # ログ出力
     Rails.logger.info "💌 Sending receipt to: #{recipient_email.inspect}"
     Rails.logger.info "From: #{ENV['ADMIN_EMAIL'].inspect}"
 
-    # ボーナス詳細データを取得
+    # ボーナス詳細データ取得
     selected_month = @invoice.invoice_date&.strftime("%Y-%m") || Date.current.strftime("%Y-%m")
     selected_month_start = Date.strptime(selected_month, "%Y-%m").beginning_of_month
     selected_month_end = Date.strptime(selected_month, "%Y-%m").end_of_month
@@ -21,7 +21,7 @@ class ReceiptMailer < ApplicationMailer
     # 添付ファイルをクリア（重複防止）
     attachments.clear
 
-    # PDF用HTMLをレンダリング（assignsで明示的に変数を渡す）
+    # PDF用HTMLテンプレートをレンダリング
     pdf_html = ApplicationController.new.render_to_string(
       template: 'invoices/receipt_pdf',
       layout: false,
@@ -34,7 +34,7 @@ class ReceiptMailer < ApplicationMailer
       }
     )
 
-    # PDF生成（例外を捕捉してログ出力）
+    # PDF生成処理
     begin
       pdf = WickedPdf.new.pdf_from_string(
         pdf_html,
@@ -45,11 +45,11 @@ class ReceiptMailer < ApplicationMailer
         zoom: 0.8
       )
     rescue => e
-      Rails.logger.error("PDF生成に失敗: #{e.message}")
+      Rails.logger.error("❌ PDF生成に失敗: #{e.message}")
       raise
     end
 
-    # PDF添付（1通につき1ファイル）
+    # PDFファイル名と添付
     attachments["領収書_REC-#{@invoice.id.to_s.rjust(6, '0')}.pdf"] = {
       mime_type: 'application/pdf',
       content: pdf
@@ -68,7 +68,7 @@ class ReceiptMailer < ApplicationMailer
   def get_bonus_details(start_date, end_date)
     details = []
 
-    # 自分の販売分
+    # 自己販売ボーナス
     self_purchases = @user.purchases.includes(:product).where(purchased_at: start_date..end_date)
     self_purchases.each do |purchase|
       product = purchase.product
@@ -90,7 +90,7 @@ class ReceiptMailer < ApplicationMailer
       end
     end
 
-    # 子孫の販売分
+    # 下位代理店の販売ボーナス
     descendant_purchases = Purchase.includes(:product, :user)
                                    .where(user_id: @user.descendant_ids)
                                    .where(purchased_at: start_date..end_date)
@@ -112,7 +112,7 @@ class ReceiptMailer < ApplicationMailer
       end
     end
 
-    # 日付順ソート
+    # 購入日でソート
     details.sort_by { |d| d[:purchased_at] }
   end
 end

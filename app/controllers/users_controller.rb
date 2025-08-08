@@ -55,10 +55,7 @@ class UsersController < ApplicationController
       # 自分の下位ユーザーの場合はアクセス可能
       return true if current_user.descendants.include?(user)
       
-      # 自分の上位ユーザーで、かつ直接の紹介者の場合のみアクセス可能
-      return true if user == current_user.referrer
-      
-      # その他の場合はアクセス不可
+      # 上位ユーザーへのアクセスは一切禁止
       false
     end
 

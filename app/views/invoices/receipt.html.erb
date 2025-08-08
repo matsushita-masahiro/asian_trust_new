@@ -93,11 +93,15 @@
                             <td class="text-end">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
                           </tr>
                         <% end %>
-                        <tr class="table-secondary fw-bold">
-                          <td colspan="4" class="text-center">合計</td>
-                          <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:unit_bonus] * d[:quantity] }) %></td>
-                          <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:total_bonus] }) %></td>
-                        </tr>
+                    </tbody>
+                    <tfoot class="table-dark">
+                      <tr class="fw-bold">
+                        <td colspan="3" class="text-center">合計</td>
+                        <td class="text-center"><%= @bonus_details.sum { |d| d[:quantity] } %></td>
+                        <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:unit_bonus] * d[:quantity] }) %></td>
+                        <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:total_bonus] }) %></td>
+                      </tr>
+                    </tfoot>
                       <% else %>
                         <tr>
                           <td colspan="6" class="text-center text-muted">
@@ -106,6 +110,16 @@
                         </tr>
                       <% end %>
                     </tbody>
+                    <% if @bonus_details && @bonus_details.present? %>
+                      <tfoot class="table-dark">
+                        <tr class="fw-bold">
+                          <td colspan="3" class="text-center">合計</td>
+                          <td class="text-center"><%= @bonus_details.sum { |d| d[:quantity] } %></td>
+                          <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:unit_bonus] * d[:quantity] }) %></td>
+                          <td class="text-end">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:total_bonus] }) %></td>
+                        </tr>
+                      </tfoot>
+                    <% end %>
                   </table>
                 </div>
               </div>

@@ -4,11 +4,10 @@ class InvoiceMailer < ApplicationMailer
     @user = invoice.user
     @invoice_recipient = invoice.invoice_recipient
     
-    # 明細データを取得（請求書の発行日から月を特定）
-    invoice_month = @invoice.invoice_date
-    if invoice_month
-      month_start = invoice_month.beginning_of_month
-      month_end = invoice_month.end_of_month
+    # 明細データを取得（請求書のtarget_monthから月を特定）
+    if @invoice.target_month.present?
+      month_start = Date.strptime(@invoice.target_month, "%Y-%m").beginning_of_month
+      month_end = Date.strptime(@invoice.target_month, "%Y-%m").end_of_month
       @bonus_details = get_bonus_details_for_user(@user, month_start, month_end)
     else
       @bonus_details = []

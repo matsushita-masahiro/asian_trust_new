@@ -3,7 +3,7 @@ class Invoice < ApplicationRecord
   belongs_to :invoice_recipient
   
   # バリデーション
-  validates :target_month, presence: true, format: { with: /\A\d{4}-\d{2}\z/, message: "は YYYY-MM 形式で入力してください" }
+  validates :target_month, presence: true, format: { with: /\A\d{4}-\d{2}\z/, message: "は YYYY-MM 形式で入力してください" }, allow_blank: false
 
   # ステータス定数（新）
   INITIAL = 0     # 初期状態

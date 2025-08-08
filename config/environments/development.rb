@@ -32,7 +32,7 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
+  config.action_mailer.raise_delivery_errors = true
 
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
@@ -72,21 +72,26 @@ Rails.application.configure do
   
   
   # config/environments/development.rb
-    config.action_mailer.delivery_method = :smtp
-    config.action_mailer.smtp_settings = {
-      address:              ENV['MAIL_SERVER'],
-      port:                 465,
-      user_name:            ENV['ADMIN_EMAIL'],
-      password:             ENV['ADMIN_EMAIL_PASSWORD'],
-      authentication:       :login,
-      ssl:                  true,
-      tls:                  true,
-      enable_starttls_auto: false,
-    }
-    
-    config.action_mailer.perform_deliveries = true
-    config.action_mailer.raise_delivery_errors = true
-    config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
+  # 開発環境では実際にメールを送信せず、ログに出力のみ
+  config.action_mailer.delivery_method = :test
+  config.action_mailer.perform_deliveries = false
+  config.action_mailer.raise_delivery_errors = false
+  config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
+  
+  # 本番環境用のSMTP設定（コメントアウト）
+  # config.action_mailer.delivery_method = :smtp
+  # config.action_mailer.smtp_settings = {
+  #   address:              ENV['MAIL_SERVER'],
+  #   port:                 465,
+  #   user_name:            ENV['ADMIN_EMAIL'],
+  #   password:             ENV['ADMIN_EMAIL_PASSWORD'],
+  #   authentication:       :login,
+  #   ssl:                  true,
+  #   tls:                  true,
+  #   enable_starttls_auto: false,
+  # }
+  # config.action_mailer.perform_deliveries = true
+  # config.action_mailer.raise_delivery_errors = true
   
   
   

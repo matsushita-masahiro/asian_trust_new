@@ -27,6 +27,17 @@ class InvoicesController < ApplicationController
     # ボーナス内訳を取得
     @bonus_details = get_bonus_details(@selected_month_start, @selected_month_end)
     
+    # デバッグ情報
+    Rails.logger.info "=== Invoice Issue Debug ==="
+    Rails.logger.info "Selected month: #{@selected_month}"
+    Rails.logger.info "Date range: #{@selected_month_start} to #{@selected_month_end}"
+    Rails.logger.info "Total bonus: #{@total_bonus}"
+    Rails.logger.info "Bonus details count: #{@bonus_details.count}"
+    Rails.logger.info "User purchases count: #{current_user.purchases.where(purchased_at: @selected_month_start..@selected_month_end).count}"
+    Rails.logger.info "Descendant purchases count: #{Purchase.where(user_id: current_user.descendant_ids, purchased_at: @selected_month_start..@selected_month_end).count}"
+    Rails.logger.info "Current user level: #{current_user.level&.name}"
+    Rails.logger.info "Current user descendant_ids: #{current_user.descendant_ids}"
+    
     # 既存のInvoiceBaseから振込先情報を取得
     @existing_invoice_base = current_user.invoice_base
     if @existing_invoice_base
@@ -63,14 +74,23 @@ class InvoicesController < ApplicationController
   def show
     @invoice = current_user.invoices.includes(:invoice_recipient).find(params[:id])
     
-    # 請求書の発行日から対象月を推定
-    @selected_month = @invoice.invoice_date&.strftime("%Y-%m") || Date.current.strftime("%Y-%m")
+    # 請求書のtarget_monthを使用（invoice_dateではなく）
+    @selected_month = @invoice.target_month || Date.current.strftime("%Y-%m")
     @selected_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
     @selected_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
     
     # ボーナス内訳を取得
     @bonus_details = get_bonus_details(@selected_month_start, @selected_month_end)
     @total_bonus = current_user.bonus_in_month(@selected_month)
+    
+    # デバッグ情報
+    Rails.logger.info "=== Invoice Show Debug ==="
+    Rails.logger.info "Invoice ID: #{@invoice.id}"
+    Rails.logger.info "Target month: #{@invoice.target_month}"
+    Rails.logger.info "Selected month: #{@selected_month}"
+    Rails.logger.info "Date range: #{@selected_month_start} to #{@selected_month_end}"
+    Rails.logger.info "Total bonus: #{@total_bonus}"
+    Rails.logger.info "Bonus details count: #{@bonus_details.count}"
   end
 
   def new
@@ -82,16 +102,24 @@ class InvoicesController < ApplicationController
     @invoice = current_user.invoices.build(invoice_params)
     @invoice.status = Invoice::DRAFT  # 作成時は下書き状態
     
+    # デバッグ情報をログに出力
+    Rails.logger.info "Invoice params: #{invoice_params.inspect}"
+    Rails.logger.info "Invoice valid?: #{@invoice.valid?}"
+    Rails.logger.info "Invoice errors: #{@invoice.errors.full_messages}" unless @invoice.valid?
+    
     if @invoice.save
       redirect_to invoice_path(@invoice), notice: '請求書が作成されました。内容を確認してください。'
     else
       @invoice_recipients = InvoiceRecipient.all
       # エラー時に必要な変数を再設定
-      @selected_month = params[:month].presence || Date.current.strftime("%Y-%m")
+      @selected_month = @invoice.target_month || params[:month].presence || Date.current.strftime("%Y-%m")
       @selected_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
       @selected_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
       @total_bonus = current_user.bonus_in_month(@selected_month)
       @bonus_details = get_bonus_details(@selected_month_start, @selected_month_end)
+      
+      # エラーメッセージをフラッシュに追加
+      flash.now[:error] = "請求書の作成に失敗しました: #{@invoice.errors.full_messages.join(', ')}"
       render :issue
     end
   end
@@ -100,8 +128,8 @@ class InvoicesController < ApplicationController
     @invoice = current_user.invoices.find(params[:id])
     @invoice_recipients = InvoiceRecipient.all
     
-    # 請求書の発行日から対象月を推定
-    @selected_month = @invoice.invoice_date&.strftime("%Y-%m") || Date.current.strftime("%Y-%m")
+    # 請求書のtarget_monthを使用（invoice_dateではなく）
+    @selected_month = @invoice.target_month || Date.current.strftime("%Y-%m")
     @selected_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
     @selected_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
     
@@ -192,13 +220,20 @@ class InvoicesController < ApplicationController
   def get_bonus_details(start_date, end_date)
     details = []
     
+    Rails.logger.info "=== get_bonus_details Debug ==="
+    Rails.logger.info "Date range: #{start_date} to #{end_date}"
+    
     # 自分の販売に対するボーナス
-    self_purchases = current_user.purchases.where(purchased_at: start_date..end_date)
+    self_purchases = current_user.purchases.includes(:product).where(purchased_at: start_date..end_date)
+    Rails.logger.info "Self purchases found: #{self_purchases.count}"
+    
     self_purchases.each do |purchase|
       product = purchase.product
       base_price = product.base_price
       my_price = product.product_prices.find_by(level_id: current_user.level_id)&.price || 0
       bonus = (base_price - my_price) * purchase.quantity
+      
+      Rails.logger.info "Purchase: #{product.name}, base_price: #{base_price}, my_price: #{my_price}, bonus: #{bonus}"
       
       if bonus > 0
         details << {
@@ -218,8 +253,12 @@ class InvoicesController < ApplicationController
                                    .where(user_id: current_user.descendant_ids)
                                    .where(purchased_at: start_date..end_date)
     
+    Rails.logger.info "Descendant purchases found: #{descendant_purchases.count}"
+    
     descendant_purchases.each do |purchase|
       bonus = current_user.bonus_for_purchase(purchase)
+      
+      Rails.logger.info "Descendant purchase: #{purchase.product.name} by #{purchase.user.name}, bonus: #{bonus}"
       
       if bonus > 0
         details << {
@@ -235,6 +274,11 @@ class InvoicesController < ApplicationController
     end
     
     # 日付順でソート
-    details.sort_by { |d| d[:purchased_at] }
+    sorted_details = details.sort_by { |d| d[:purchased_at] }
+    
+    Rails.logger.info "Final bonus details count: #{sorted_details.count}"
+    Rails.logger.info "=== End get_bonus_details Debug ==="
+    
+    sorted_details
   end
 end

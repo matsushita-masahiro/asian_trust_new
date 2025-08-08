@@ -29,6 +29,7 @@
         <div class="card-body">
           <% if @invoice_recipients.any? %>
             <%= form_with model: @invoice, local: true, class: "needs-validation", novalidate: true do |f| %>
+              <%= f.hidden_field :target_month, value: @selected_month %>
               <div class="mb-3">
                 <%= f.label :invoice_recipient_id, "請求先", class: "form-label" %>
                 <%= f.select :invoice_recipient_id, 

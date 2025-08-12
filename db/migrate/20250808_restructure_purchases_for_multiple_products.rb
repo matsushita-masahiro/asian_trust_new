@@ -1,46 +1,63 @@
-class RestructurePurchasesForMultipleProducts < ActiveRecord::Migration[7.1]
+# db/migrate/20250808_restructure_purchases_for_multiple_products.rb
+class RestructurePurchasesForMultipleProducts < ActiveRecord::Migration[7.1]  # 7.1のままでOK
   def up
-    # 新しいpurchase_itemsテーブルを作成
+    # 1) テーブル作成（不足列も最初から用意）
     create_table :purchase_items do |t|
       t.references :purchase, null: false, foreign_key: true
-      t.references :product, null: false, foreign_key: true
-      t.integer :quantity, null: false, default: 1
-      t.integer :unit_price, null: false
+      t.references :product,  null: false, foreign_key: true
+      t.integer :quantity,     null: false, default: 1
+      t.integer :unit_price,   null: false, default: 0
+      t.integer :seller_price, null: false, default: 0   # ★必要
+      t.integer :buyer_price,  null: false, default: 0   # 使うなら
+      t.integer :subtotal,     null: false, default: 0
       t.timestamps
     end
+    add_index :purchase_items, [:purchase_id, :product_id]
 
-    # 既存のpurchasesデータをpurchase_itemsに移行
-    Purchase.find_each do |purchase|
-      if purchase.product_id.present?
-        # 販売店の購入単価を計算
-        user = purchase.user
-        product = Product.find(purchase.product_id)
-        seller_price = product.product_prices.find_by(level_id: user.level_id)&.price || 0
-        
-        PurchaseItem.create!(
-          purchase: purchase,
-          product_id: purchase.product_id,
-          quantity: purchase.quantity || 1,
-          unit_price: purchase.unit_price || 0,
-          seller_price: seller_price
-        )
+    # 2) バックフィルは匿名モデルで（アプリのモデルは使わない）
+    PurchaseItemRow   = Class.new(ActiveRecord::Base) { self.table_name = "purchase_items" }
+    PurchaseRow       = Class.new(ActiveRecord::Base) { self.table_name = "purchases" }
+    ProductPriceRow   = Class.new(ActiveRecord::Base) { self.table_name = "product_prices" }
+    UserRow           = Class.new(ActiveRecord::Base) { self.table_name = "users" }
+
+    PurchaseRow.find_in_batches(batch_size: 1000) do |batch|
+      rows = batch.filter_map do |p|
+        next unless p.respond_to?(:product_id) && p.product_id.present?
+
+        level_id    = UserRow.where(id: p.user_id).pick(:level_id)
+        quantity    = (p.try(:quantity)    || 1).to_i
+        unit_price  = (p.try(:unit_price)  || p.try(:price) || 0).to_i
+        buyer_price = unit_price
+        seller_prc  = ProductPriceRow.where(product_id: p.product_id, level_id: level_id).pick(:price) || 0
+        subtotal    = quantity * unit_price
+
+        {
+          purchase_id:  p.id,
+          product_id:   p.product_id,
+          quantity:     quantity,
+          unit_price:   unit_price,
+          buyer_price:  buyer_price,
+          seller_price: seller_prc,
+          subtotal:     subtotal,
+          created_at:   Time.current,
+          updated_at:   Time.current
+        }
       end
+      PurchaseItemRow.insert_all(rows) if rows.any?
     end
 
-    # purchasesテーブルから不要なカラムを削除
-    remove_column :purchases, :product_id
-    remove_column :purchases, :quantity
-    remove_column :purchases, :unit_price
-    remove_column :purchases, :price
+    # 3) 旧カラムの削除は分けるのが無難（ここでやるなら存在チェック付きで）
+    remove_column :purchases, :product_id if column_exists?(:purchases, :product_id)
+    remove_column :purchases, :quantity   if column_exists?(:purchases, :quantity)
+    remove_column :purchases, :unit_price if column_exists?(:purchases, :unit_price)
+    remove_column :purchases, :price      if column_exists?(:purchases, :price)
   end
 
   def down
-    # ロールバック用（簡略化）
-    add_column :purchases, :product_id, :integer
-    add_column :purchases, :quantity, :integer
-    add_column :purchases, :unit_price, :integer
-    add_column :purchases, :price, :integer
-
-    drop_table :purchase_items
+    add_column :purchases, :product_id, :integer unless column_exists?(:purchases, :product_id)
+    add_column :purchases, :quantity,   :integer unless column_exists?(:purchases, :quantity)
+    add_column :purchases, :unit_price, :integer unless column_exists?(:purchases, :unit_price)
+    add_column :purchases, :price,      :integer unless column_exists?(:purchases, :price)
+    drop_table :purchase_items if table_exists?(:purchase_items)
   end
 end

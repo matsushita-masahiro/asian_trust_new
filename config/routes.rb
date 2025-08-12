@@ -65,6 +65,8 @@ Rails.application.routes.draw do
     resources :invoice_status, only: [:index] do
       member do
         patch :update_status
+        get :show_receipt    # 領収書表示
+        post :send_receipt   # 領収書送信
       end
     end
   end

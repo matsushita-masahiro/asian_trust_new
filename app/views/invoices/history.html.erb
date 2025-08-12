@@ -62,6 +62,8 @@
                               data: { confirm: "領収書発行を依頼しますか？" } %>
                         <% elsif invoice.receipt_requested? %>
                           <span class="badge bg-info">領収書発行依頼済み</span>
+                        <% elsif invoice.receipt_sent? %>
+                          <span class="badge bg-primary">領収書発行完了</span>
                         <% end %>
                       </td>
                     </tr>

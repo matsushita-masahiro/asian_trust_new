@@ -192,8 +192,14 @@ class InvoicesController < ApplicationController
       return
     end
 
-    # 領収書発行依頼済みに変更
-    if @invoice.receipt_requested!
+    # 既に依頼済みの場合
+    if @invoice.receipt_requested?
+      redirect_to history_invoices_path, alert: '既に領収書発行を依頼済みです。'
+      return
+    end
+
+    # 領収書発行依頼（sent_atを設定）
+    if @invoice.request_receipt!
       redirect_to history_invoices_path, notice: '領収書発行を依頼しました。管理者が確認後、領収書を発行いたします。'
     else
       redirect_to history_invoices_path, alert: '領収書発行依頼に失敗しました。'

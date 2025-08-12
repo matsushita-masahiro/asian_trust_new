@@ -1,0 +1,173 @@
+<div class="container-fluid py-4" style="margin-top: 100px;">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary">📋 領収書発行</h4>
+        <%= link_to "請求書状況に戻る", admin_invoice_status_index_path(status: 'receipt_requested'), 
+            class: "btn btn-outline-secondary" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- 請求書情報 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">📄 請求書情報</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="120">請求書番号:</th>
+                  <td><strong>INV-<%= @invoice.id.to_s.rjust(6, '0') %></strong></td>
+                </tr>
+                <tr>
+                  <th>請求者:</th>
+                  <td><%= @invoice.user.name.presence || @invoice.user.email %></td>
+                </tr>
+                <tr>
+                  <th>請求先:</th>
+                  <td><%= @invoice.invoice_recipient.name %></td>
+                </tr>
+                <tr>
+                  <th>対象月:</th>
+                  <td><%= @invoice.target_month_display %></td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <th width="120">請求金額:</th>
+                  <td><strong class="text-success fs-4">¥<%= number_with_delimiter(@invoice.total_amount) %></strong></td>
+                </tr>
+                <tr>
+                  <th>発行日:</th>
+                  <td><%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></td>
+                </tr>
+                <tr>
+                  <th>支払期限:</th>
+                  <td><%= @invoice.due_date&.strftime("%Y年%m月%d日") %></td>
+                </tr>
+                <tr>
+                  <th>ステータス:</th>
+                  <td><span class="badge bg-info">領収書発行依頼済み</span></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 領収書プレビュー -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">🧾 領収書プレビュー</h5>
+        </div>
+        <div class="card-body">
+          <div class="receipt-preview p-4 border rounded bg-white" style="max-width: 600px; margin: 0 auto;">
+            <!-- 領収書ヘッダー -->
+            <div class="text-center mb-4">
+              <h2 class="fw-bold">領収書</h2>
+              <p class="text-muted">Receipt</p>
+            </div>
+
+            <!-- 宛先 -->
+            <div class="mb-4">
+              <div class="row">
+                <div class="col-8">
+                  <p class="mb-1"><strong><%= @invoice.invoice_recipient.name %> 様</strong></p>
+                </div>
+                <div class="col-4 text-end">
+                  <p class="mb-1">発行日: <%= Date.current.strftime("%Y年%m月%d日") %></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 金額 -->
+            <div class="text-center mb-4 p-3 border rounded bg-light">
+              <p class="mb-1">下記の通り領収いたしました</p>
+              <h3 class="fw-bold text-primary">¥<%= number_with_delimiter(@invoice.total_amount) %>-</h3>
+              <p class="text-muted">（<%= @invoice.target_month_display %>分インセンティブ）</p>
+            </div>
+
+            <!-- 発行者情報 -->
+            <div class="row">
+              <div class="col-6">
+                <p class="mb-1"><strong>発行者</strong></p>
+                <p class="mb-1">株式会社アジアビジネストラスト</p>
+                <p class="mb-1">〒000-0000</p>
+                <p class="mb-1">東京都○○区○○ 1-2-3</p>
+                <p class="mb-1">TEL: 03-0000-0000</p>
+              </div>
+              <div class="col-6 text-end">
+                <p class="mb-1">領収書番号</p>
+                <p class="fw-bold">REC-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 送信先確認 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">📧 送信先確認</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            以下のメールアドレスに領収書を送信します：
+            <strong><%= @invoice.user.email %></strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 発行ボタン -->
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-end">
+        <%= button_to "領収書を発行・送信", send_receipt_admin_invoice_status_path(@invoice), 
+            method: :post,
+            class: "btn btn-success btn-lg px-5",
+            data: { 
+              confirm: "領収書を #{@invoice.user.email} に送信しますか？\n\n送信後、請求書のステータスは「振込確認済み」に戻ります。" 
+            } do %>
+          <i class="fas fa-paper-plane me-2"></i>発行
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.receipt-preview {
+  font-family: 'Noto Sans JP', sans-serif;
+  line-height: 1.6;
+}
+
+.receipt-preview h2 {
+  border-bottom: 2px solid #333;
+  padding-bottom: 10px;
+}
+
+@media print {
+  .receipt-preview {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+</style>

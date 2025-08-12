@@ -26,7 +26,8 @@
                   options_for_select([
                     ['請求書受信済', 'sent'],
                     ['振込済み', 'confirmed'],
-                    ['領収書発行依頼済み', 'receipt_requested']
+                    ['領収書発行依頼済み', 'receipt_requested'],
+                    ['領収書発行完了', 'receipt_sent']
                   ], @selected_status), 
                   {}, 
                   { class: "form-select me-2", style: "width: 200px;", onchange: "this.form.submit();" } %>
@@ -50,6 +51,8 @@
               ✅ 振込確認済み請求書一覧
             <% elsif @selected_status == 'receipt_requested' %>
               📋 領収書発行依頼済み請求書一覧
+            <% elsif @selected_status == 'receipt_sent' %>
+              🧾 領収書発行完了請求書一覧
             <% end %>
           </h5>
         </div>
@@ -101,6 +104,8 @@
                           <span class="badge bg-success">振込済み</span>
                         <% elsif invoice.receipt_requested? %>
                           <span class="badge bg-info">領収書発行依頼済み</span>
+                        <% elsif invoice.receipt_sent? %>
+                          <span class="badge bg-primary">領収書発行完了</span>
                         <% elsif invoice.draft? %>
                           <span class="badge bg-secondary">下書き</span>
                         <% end %>
@@ -122,9 +127,10 @@
                                 class: "btn btn-sm btn-warning",
                                 data: { confirm: "請求書受信済に戻しますか？" } %>
                           <% elsif invoice.receipt_requested? %>
-                            <%= link_to "領収書発行", "#", 
-                                class: "btn btn-sm btn-primary",
-                                data: { confirm: "領収書を発行しますか？" } %>
+                            <%= link_to "領収書発行", show_receipt_admin_invoice_status_path(invoice), 
+                                class: "btn btn-sm btn-primary" %>
+                          <% elsif invoice.receipt_sent? %>
+                            <span class="text-muted">発行済み</span>
                           <% end %>
                         </div>
                       </td>
@@ -158,21 +164,29 @@
         <div class="card-body">
           <h6 class="card-title">📊 請求書統計</h6>
           <div class="row text-center">
-            <div class="col-4">
+            <div class="col-3">
               <div class="border-end">
                 <h4 class="text-secondary"><%= Invoice.draft.count %></h4>
                 <small>下書き</small>
               </div>
             </div>
-            <div class="col-4">
+            <div class="col-3">
               <div class="border-end">
                 <h4 class="text-warning"><%= Invoice.sent.count %></h4>
                 <small>送付済み</small>
               </div>
             </div>
-            <div class="col-4">
+            <div class="col-3">
               <h4 class="text-success"><%= Invoice.confirmed.count %></h4>
               <small>振込確認済み</small>
+            </div>
+            <div class="col-3">
+              <h4 class="text-info"><%= Invoice.receipt_requested.count %></h4>
+              <small>領収書依頼済み</small>
+            </div>
+            <div class="col-3">
+              <h4 class="text-primary"><%= Invoice.receipt_sent.count %></h4>
+              <small>領収書発行完了</small>
             </div>
           </div>
         </div>

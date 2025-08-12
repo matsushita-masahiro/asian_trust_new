@@ -18,7 +18,7 @@ class PurchaseItem < ApplicationRecord
     seller_price * quantity
   end
 
-  # 💰 単品あたりのボーナス（基本価格 - 販売店購入単価）
+  # 💰 単品あたりのボーナス（販売価格 - 販売店購入単価）
   def unit_bonus
     unit_price - seller_price
   end

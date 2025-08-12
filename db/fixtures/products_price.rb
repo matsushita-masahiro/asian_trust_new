@@ -1,100 +1,38 @@
-# ProductPrice fixtures
-# 商品とレベルごとの価格設定
+# db/fixtures/products_price.rb
+# Seed-Fu: ProductPrice 全リセット & 再投入（level_id:1=アジアビジネストラストは全商品0円）
+# 何度実行しても安全（idempotent）
 
-# 既存データをクリア
-ProductPrice.destroy_all
+# 1) 全削除（高速・コールバック無）
+ProductPrice.delete_all
 
-# レベル0（特別レベル）は全商品で0円に設定
+# 2) レベルIDを名前から解決（環境差異に強い）
+lv = %w[アジアビジネストラスト 特約代理店 代理店 アドバイザー サロン 病院 その他].map { |n|
+  [n, Level.find_by!(name: n).id]
+}.to_h
 
-# 商品1: 骨髄幹細胞培培養上清液 (base_price: 50000)
-product_1_prices = []
-[0, 1, 2, 3, 4, 5, 6, 7].each_with_index do |level_id, index|
-  price = case level_id
-          when 0 then 0      # 特別レベル（無料）
-          when 1 then 0      # 特約代理店（無料）
-          when 2 then 36000  # 特約代理店
-          when 3 then 38000  # 代理店
-          when 4 then 40000  # アドバイザー
-          when 5 then 50000  # サロン
-          when 6 then 50000  # 病院
-          when 7 then 50000  # その他
-          end
-  
-  product_1_prices << { id: index + 1, product_id: 1, level_id: level_id, price: price }
+# 3) 商品ごとの価格マップ
+#   - Product(1): base 50,000
+#   - Product(2..4): base 30,000
+#   - Product(5): base 3,800,000
+price_map_by_product = {
+  1 => { lv["アジアビジネストラスト"] => 0, lv["特約代理店"] => 36_000, lv["代理店"] => 38_000, lv["アドバイザー"] => 40_000, lv["サロン"] => 50_000, lv["病院"] => 50_000, lv["その他"] => 50_000 },
+  2 => { lv["アジアビジネストラスト"] => 0, lv["特約代理店"] => 20_000, lv["代理店"] => 22_000, lv["アドバイザー"] => 24_000, lv["サロン"] => 30_000, lv["病院"] => 30_000, lv["その他"] => 30_000 },
+  3 => { lv["アジアビジネストラスト"] => 0, lv["特約代理店"] => 20_000, lv["代理店"] => 22_000, lv["アドバイザー"] => 24_000, lv["サロン"] => 30_000, lv["病院"] => 30_000, lv["その他"] => 30_000 },
+  4 => { lv["アジアビジネストラスト"] => 0, lv["特約代理店"] => 20_000, lv["代理店"] => 22_000, lv["アドバイザー"] => 24_000, lv["サロン"] => 30_000, lv["病院"] => 30_000, lv["その他"] => 30_000 },
+  5 => { lv["アジアビジネストラスト"] => 0, lv["特約代理店"] => 3_500_000, lv["代理店"] => 3_550_000, lv["アドバイザー"] => 3_600_000, lv["サロン"] => 3_800_000, lv["病院"] => 3_800_000, lv["その他"] => 3_800_000 }
+}
+
+# 4) 存在する Product のみに投入（抜けても安全）
+existing_pids = Product.where(id: price_map_by_product.keys).pluck(:id)
+
+existing_pids.each do |pid|
+  price_map_by_product[pid].each do |level_id, price|
+    ProductPrice.seed(:product_id, :level_id) do |pp|
+      pp.product_id = pid
+      pp.level_id   = level_id
+      pp.price      = price
+    end
+  end
 end
 
-ProductPrice.seed(:id, *product_1_prices)
-
-# 商品2: テスト商品2 (base_price: 30000)
-product_2_prices = []
-[0, 2, 3, 4, 5, 6, 7].each_with_index do |level_id, index|
-  price = case level_id
-          when 0 then 0      # 特別レベル（無料）
-          when 2 then 20000  # 特約代理店
-          when 3 then 22000  # 代理店
-          when 4 then 24000  # アドバイザー
-          when 5 then 30000  # サロン
-          when 6 then 30000  # 病院
-          when 7 then 30000  # その他
-          end
-  
-  product_2_prices << { id: index + 9, product_id: 2, level_id: level_id, price: price }
-end
-
-ProductPrice.seed(:id, *product_2_prices)
-
-# 商品3: テスト商品3 (base_price: 30000)
-product_3_prices = []
-[0, 2, 3, 4, 5, 6, 7].each_with_index do |level_id, index|
-  price = case level_id
-          when 0 then 0      # 特別レベル（無料）
-          when 2 then 20000  # 特約代理店
-          when 3 then 22000  # 代理店
-          when 4 then 24000  # アドバイザー
-          when 5 then 30000  # サロン
-          when 6 then 30000  # 病院
-          when 7 then 30000  # その他
-          end
-  
-  product_3_prices << { id: index + 16, product_id: 3, level_id: level_id, price: price }
-end
-
-ProductPrice.seed(:id, *product_3_prices)
-
-# 商品4: テスト商品4 (base_price: 30000)
-product_4_prices = []
-[0, 2, 3, 4, 5, 6, 7].each_with_index do |level_id, index|
-  price = case level_id
-          when 0 then 0      # 特別レベル（無料）
-          when 2 then 20000  # 特約代理店
-          when 3 then 22000  # 代理店
-          when 4 then 24000  # アドバイザー
-          when 5 then 30000  # サロン
-          when 6 then 30000  # 病院
-          when 7 then 30000  # その他
-          end
-  
-  product_4_prices << { id: index + 23, product_id: 4, level_id: level_id, price: price }
-end
-
-ProductPrice.seed(:id, *product_4_prices)
-
-# 商品5: 高額商品テスト (base_price: 4000000)
-product_5_prices = []
-[0, 2, 3, 4, 5, 6, 7].each_with_index do |level_id, index|
-  price = case level_id
-          when 0 then 0        # 特別レベル（無料）
-          when 2 then 3500000  # 特約代理店
-          when 3 then 3550000  # 代理店
-          when 4 then 3600000  # アドバイザー
-          when 5 then 3800000  # サロン
-          when 6 then 3800000  # 病院
-          when 7 then 3800000  # その他
-          end
-  
-  product_5_prices << { id: index + 30, product_id: 5, level_id: level_id, price: price }
-end
-
-ProductPrice.seed(:id, *product_5_prices)
-
-puts "ProductPrice fixtures loaded: #{ProductPrice.count} records"
+puts "✅ ProductPrice seeded: #{ProductPrice.count} rows (products=#{existing_pids.size})"

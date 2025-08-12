@@ -10,6 +10,7 @@ class Invoice < ApplicationRecord
   DRAFT = 1       # 下書き
   SENT = 2        # 送付済み
   CONFIRMED = 3   # 振込確認済み
+  RECEIPT_REQUESTED = 4  # 領収書発行依頼済み
   
   # 旧ステータス定数（互換性のため一時的に保持）
   OLD_DRAFT = 0
@@ -17,7 +18,7 @@ class Invoice < ApplicationRecord
   OLD_CONFIRMED = 2
   
   # ステータスのバリデーション
-  validates :status, inclusion: { in: [INITIAL, DRAFT, SENT, CONFIRMED] }
+  validates :status, inclusion: { in: [INITIAL, DRAFT, SENT, CONFIRMED, RECEIPT_REQUESTED] }
   
   # ステータス判定メソッド
   def initial?
@@ -34,6 +35,10 @@ class Invoice < ApplicationRecord
   
   def confirmed?
     status == CONFIRMED
+  end
+  
+  def receipt_requested?
+    status == RECEIPT_REQUESTED
   end
   
   # ステータス変更メソッド
@@ -53,11 +58,16 @@ class Invoice < ApplicationRecord
     update!(status: CONFIRMED)
   end
   
+  def receipt_requested!
+    update!(status: RECEIPT_REQUESTED)
+  end
+  
   # スコープ
   scope :initial, -> { where(status: INITIAL) }
   scope :draft, -> { where(status: DRAFT) }
   scope :sent, -> { where(status: SENT) }
   scope :confirmed, -> { where(status: CONFIRMED) }
+  scope :receipt_requested, -> { where(status: RECEIPT_REQUESTED) }
   
   # ステータス名を取得
   def status_name
@@ -66,6 +76,7 @@ class Invoice < ApplicationRecord
     when DRAFT then 'draft'
     when SENT then 'sent'
     when CONFIRMED then 'confirmed'
+    when RECEIPT_REQUESTED then 'receipt_requested'
     else 'unknown'
     end
   end
@@ -77,6 +88,7 @@ class Invoice < ApplicationRecord
     when DRAFT then '下書き'
     when SENT then '送付済み'
     when CONFIRMED then '振込確認済み'
+    when RECEIPT_REQUESTED then '領収書発行依頼済み'
     else '不明'
     end
   end

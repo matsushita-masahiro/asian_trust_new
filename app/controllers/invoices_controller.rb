@@ -183,6 +183,23 @@ class InvoicesController < ApplicationController
     end
   end
 
+  def request_receipt
+    @invoice = current_user.invoices.find(params[:id])
+    
+    # 確認済みステータスのみ領収書発行依頼可能
+    unless @invoice.confirmed?
+      redirect_to history_invoices_path, alert: '確認済みの請求書のみ領収書発行依頼できます。'
+      return
+    end
+
+    # 領収書発行依頼済みに変更
+    if @invoice.receipt_requested!
+      redirect_to history_invoices_path, notice: '領収書発行を依頼しました。管理者が確認後、領収書を発行いたします。'
+    else
+      redirect_to history_invoices_path, alert: '領収書発行依頼に失敗しました。'
+    end
+  end
+
   def send_receipt
     @invoice = current_user.invoices.find(params[:id])
     

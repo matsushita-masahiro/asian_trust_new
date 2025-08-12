@@ -91,9 +91,10 @@ Rails.application.routes.draw do
       post :settings    # 請求書情報保存
     end
     member do
-      patch :send_invoice  # 請求書送付
-      get :receipt        # 領収書確認画面
-      post :send_receipt  # 領収書送付
+      patch :send_invoice     # 請求書送付
+      get :receipt           # 領収書確認画面
+      post :send_receipt     # 領収書送付
+      patch :request_receipt # 領収書発行依頼
     end
   end
 

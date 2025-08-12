@@ -25,7 +25,8 @@
               <%= f.select :status, 
                   options_for_select([
                     ['請求書受信済', 'sent'],
-                    ['振込済み', 'confirmed']
+                    ['振込済み', 'confirmed'],
+                    ['領収書発行依頼済み', 'receipt_requested']
                   ], @selected_status), 
                   {}, 
                   { class: "form-select me-2", style: "width: 200px;", onchange: "this.form.submit();" } %>
@@ -47,6 +48,8 @@
               📤 送付済み請求書一覧
             <% elsif @selected_status == 'confirmed' %>
               ✅ 振込確認済み請求書一覧
+            <% elsif @selected_status == 'receipt_requested' %>
+              📋 領収書発行依頼済み請求書一覧
             <% end %>
           </h5>
         </div>
@@ -96,6 +99,8 @@
                           <span class="badge bg-warning">請求書受信済</span>
                         <% elsif invoice.confirmed? %>
                           <span class="badge bg-success">振込済み</span>
+                        <% elsif invoice.receipt_requested? %>
+                          <span class="badge bg-info">領収書発行依頼済み</span>
                         <% elsif invoice.draft? %>
                           <span class="badge bg-secondary">下書き</span>
                         <% end %>
@@ -116,6 +121,10 @@
                                 params: { status: 'sent' },
                                 class: "btn btn-sm btn-warning",
                                 data: { confirm: "請求書受信済に戻しますか？" } %>
+                          <% elsif invoice.receipt_requested? %>
+                            <%= link_to "領収書発行", "#", 
+                                class: "btn btn-sm btn-primary",
+                                data: { confirm: "領収書を発行しますか？" } %>
                           <% end %>
                         </div>
                       </td>

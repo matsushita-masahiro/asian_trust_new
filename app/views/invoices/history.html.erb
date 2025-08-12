@@ -56,7 +56,12 @@
                         <% elsif invoice.sent? %>
                           <%= link_to "詳細", invoice_path(invoice), class: "btn btn-sm btn-outline-primary" %>
                         <% elsif invoice.confirmed? %>
-                          <%= link_to "領収書発行依頼", receipt_invoice_path(invoice), class: "btn btn-sm btn-success" %>
+                          <%= button_to "領収書発行依頼", request_receipt_invoice_path(invoice), 
+                              method: :patch, 
+                              class: "btn btn-sm btn-success",
+                              data: { confirm: "領収書発行を依頼しますか？" } %>
+                        <% elsif invoice.receipt_requested? %>
+                          <span class="badge bg-info">領収書発行依頼済み</span>
                         <% end %>
                       </td>
                     </tr>

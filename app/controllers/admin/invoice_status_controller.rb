@@ -5,6 +5,7 @@ class Admin::InvoiceStatusController < Admin::BaseController
     status_value = case @selected_status
                   when 'sent' then Invoice::SENT
                   when 'confirmed' then Invoice::CONFIRMED
+                  when 'receipt_requested' then Invoice::RECEIPT_REQUESTED
                   when 'draft' then Invoice::DRAFT
                   else Invoice::SENT
                   end
@@ -20,6 +21,7 @@ class Admin::InvoiceStatusController < Admin::BaseController
     status_value = case params[:status]
                   when 'sent' then Invoice::SENT
                   when 'confirmed' then Invoice::CONFIRMED
+                  when 'receipt_requested' then Invoice::RECEIPT_REQUESTED
                   when 'draft' then Invoice::DRAFT
                   else Invoice::SENT
                   end
@@ -28,6 +30,7 @@ class Admin::InvoiceStatusController < Admin::BaseController
       status_text = case params[:status]
                    when 'sent' then '送付済み'
                    when 'confirmed' then '振込確認済み'
+                   when 'receipt_requested' then '領収書発行依頼済み'
                    when 'draft' then '下書き'
                    else params[:status]
                    end

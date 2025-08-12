@@ -13,6 +13,7 @@ class Invoice < ApplicationRecord
   RECEIPT_REQUESTED = 4  # 領収書発行依頼済み
   RECEIPT_SENT = 5      # 領収書発行完了
   
+  
   # 旧ステータス定数（互換性のため一時的に保持）
   OLD_DRAFT = 0
   OLD_SENT = 1

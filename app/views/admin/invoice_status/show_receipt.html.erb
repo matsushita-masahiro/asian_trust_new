@@ -64,6 +64,93 @@
     </div>
   </div>
 
+  <!-- インセンティブ明細 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">💰 インセンティブ明細</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>項目</th>
+                    <th class="text-end">金額</th>
+                    <th class="text-end">件数</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <strong>自分の販売によるインセンティブ</strong>
+                      <br><small class="text-muted">直接販売による収益</small>
+                    </td>
+                    <td class="text-end">¥<%= number_with_delimiter(@incentive_details[:details][:own_sales]) %></td>
+                    <td class="text-end">-</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>子孫の販売による階層差額</strong>
+                      <br><small class="text-muted">下位代理店の販売による収益</small>
+                    </td>
+                    <td class="text-end">¥<%= number_with_delimiter(@incentive_details[:details][:descendant_sales]) %></td>
+                    <td class="text-end">-</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>無資格者の販売によるインセンティブ</strong>
+                      <br><small class="text-muted">直下の無資格者による販売収益</small>
+                    </td>
+                    <td class="text-end">¥<%= number_with_delimiter(@incentive_details[:details][:unqualified_sales]) %></td>
+                    <td class="text-end">-</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="table-success">
+                    <th>合計インセンティブ</th>
+                    <th class="text-end">¥<%= number_with_delimiter(@incentive_details[:total]) %></th>
+                    <th class="text-end"><%= @incentive_details[:details][:purchase_count] %>件</th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h6 class="card-title">📊 概要</h6>
+                  <p class="mb-1"><strong>対象月:</strong> <%= @incentive_details[:month] %></p>
+                  <p class="mb-1"><strong>代理店:</strong> <%= @incentive_details[:user_name] %></p>
+                  <p class="mb-1"><strong>現在のレベル:</strong> <%= @incentive_details[:current_level] %></p>
+                  <p class="mb-0"><strong>総購入件数:</strong> <%= @incentive_details[:details][:purchase_count] %>件</p>
+                </div>
+              </div>
+              
+              <% if @incentive_details[:details][:level_changes].any? %>
+                <div class="card bg-warning bg-opacity-10 mt-3">
+                  <div class="card-body">
+                    <h6 class="card-title">📈 期間中のレベル変更</h6>
+                    <% @incentive_details[:details][:level_changes].each do |change| %>
+                      <div class="small mb-2">
+                        <strong><%= change[:date].strftime("%m/%d") %></strong><br>
+                        <%= change[:from_level] %> → <%= change[:to_level] %>
+                        <% if change[:reason].present? %>
+                          <br><span class="text-muted"><%= change[:reason] %></span>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 領収書プレビュー -->
   <div class="row mb-4">
     <div class="col-12">

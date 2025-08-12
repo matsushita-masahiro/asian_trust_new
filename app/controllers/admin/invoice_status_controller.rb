@@ -25,6 +25,9 @@ class Admin::InvoiceStatusController < Admin::BaseController
                   alert: '領収書発行依頼済みの請求書のみ表示できます。'
       return
     end
+    
+    # インセンティブの詳細情報を取得
+    @incentive_details = @invoice.user.monthly_incentive_with_details(@invoice.target_month)
   end
 
   def send_receipt

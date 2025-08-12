@@ -10,7 +10,7 @@ class Purchase < ApplicationRecord
 
   # 💰 合計金額（全アイテムの合計）
   def total_price
-    purchase_items.sum(&:total_price)
+    purchase_items.sum(Arel.sql('quantity * unit_price'))
   end
 
   # 商品数の合計

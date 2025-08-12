@@ -23,7 +23,7 @@ levels = Level.all.index_by(&:name)
 company = User.create!(
   id: user_id_seq,
   name: "アジアビジネストラスト",
-  email: "company@example.com",
+  email: "info@abt-saisei.com",
   password: "password",
   level_id: levels["アジアビジネストラスト"].id,
   lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",

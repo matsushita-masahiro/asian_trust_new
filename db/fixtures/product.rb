@@ -7,3 +7,4 @@ Product.seed(:id,
   { id: 4, name: '脂肪幹細胞培培養上清液', base_price: 30000, is_active: true, unit_quantity: 2 , unit_label: "cc" },
   { id: 5, name: '骨髄幹細胞', base_price: 3800000, is_active: true, unit_quantity: 1 , unit_label: "回" }
 )
+

@@ -19,6 +19,7 @@ begin
   Purchase.delete_all
   AccessLog.delete_all if defined?(AccessLog)
   Customer.delete_all
+  UserLevelHistory.delete_all if defined?(UserLevelHistory)  # ★ 追加
   User.delete_all
   
   # 外部キー制約を再有効化
@@ -33,21 +34,23 @@ end
 
 # IDシーケンスをリセット（SQLite / PostgreSQL 対応）
 adapter = ActiveRecord::Base.connection.adapter_name.downcase
+tables  = %w(users customers purchases purchase_items user_level_histories) # ★ 追加
+
 begin
   if adapter.include?("sqlite")
-    %w(users customers purchases purchase_items).each do |table|
-      ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='#{table}'")
-    end
+    tables.each { |t| ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='#{t}'") }
     puts "✅ IDシーケンスをリセットしました (SQLite)"
   elsif adapter.include?("postgresql")
-    %w(users customers purchases purchase_items).each do |table|
-      ActiveRecord::Base.connection.execute("ALTER SEQUENCE #{table}_id_seq RESTART WITH 1")
+    # より堅牢：実際のシーケンス名を自動解決
+    tables.each do |t|
+      ActiveRecord::Base.connection.execute("SELECT setval(pg_get_serial_sequence('#{t}', 'id'), 1, false)")
     end
     puts "✅ IDシーケンスをリセットしました (PostgreSQL)"
   end
 rescue => e
   puts "⚠️ IDシーケンスリセット時のエラー: #{e.message}"
 end
+
 
 puts "✅ データベース初期化完了"
 

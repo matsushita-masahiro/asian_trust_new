@@ -140,14 +140,13 @@
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-end">
-        <%= button_to "領収書を発行・送信", send_receipt_admin_invoice_status_path(@invoice), 
+      <%= button_to send_receipt_admin_invoice_status_path(@invoice),
             method: :post,
             class: "btn btn-success btn-lg px-5",
-            data: { 
-              confirm: "領収書を #{@invoice.user.email} に送信しますか？\n\n送信後、請求書のステータスは「振込確認済み」に戻ります。" 
-            } do %>
-          <i class="fas fa-paper-plane me-2"></i>発行
-        <% end %>
+            data: { turbo_confirm: "領収書を送信します。よろしいですか？" } do %>
+       領収書を発行・送信
+      <% end %>
+
       </div>
     </div>
   </div>

@@ -126,10 +126,12 @@
               <table class="table table-bordered table-hover align-middle text-nowrap">
                 <thead class="table-light">
                   <tr>
+                    <th class="text-nowrap">購入ID</th>
                     <th class="text-nowrap">販売店</th>
                     <th class="text-nowrap">購入者名</th>
                     <th class="text-nowrap">商品名</th>
-                    <th class="text-end text-nowrap">単価（円）</th>
+                    <th class="text-end text-nowrap">基本単価（円）</th>
+                    <th class="text-end text-nowrap">インセンティブ単価（円）</th>
                     <th class="text-end text-nowrap">数量</th>
                     <th class="text-end text-nowrap">合計（円）</th>
                     <th class="text-end text-nowrap">インセンティブ（円）</th>
@@ -143,33 +145,98 @@
                   <% total_sum = 0 %>
                   <% total_bonus_sum = 0 %>
 
-                  <% @purchases_with_descendants.includes(:user, :customer, :product).each do |purchase| %>
-                    <% total = purchase.product.base_price * purchase.quantity %>
-                    <% bonus = @user.bonus_for_purchase(purchase) %>
-                    <% total_sum += total %>
-                    <% total_bonus_sum += bonus %>
-                    <tr>
-                      <td class="fw-bold text-nowrap">
-                        <%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %>
-                      </td>
-                      <td class="text-nowrap"><%= purchase.customer&.name || "-" %></td>
-                      <td class="text-nowrap"><%= purchase.product.name %></td>
-                      <td class="text-end text-nowrap"><%= number_with_delimiter(purchase.product.base_price) %></td>
-                      <td class="text-end text-nowrap"><%= purchase.quantity %></td>
-                      <td class="text-end text-primary fw-bold text-nowrap"><%= number_with_delimiter(total) %></td>
-                      <td class="text-end text-success fw-bold text-nowrap"><%= number_with_delimiter(bonus) %></td>
-                      <td class="text-nowrap"><%= purchase.customer&.email || "-" %></td>
-                      <td class="text-nowrap"><%= purchase.customer&.phone || "-" %></td>
-                      <td class="text-nowrap"><%= purchase.customer&.address || "-" %></td>
-                      <td class="text-nowrap"><%= purchase.purchased_at&.strftime("%Y/%m/%d") %></td>
-                    </tr>
+                  <% @purchases_with_descendants.each do |purchase| %>
+                    <% purchase.purchase_items.each_with_index do |item, index| %>
+                      <% total = item.unit_price * item.quantity %>
+                      <% # 各アイテムごとにインセンティブを計算（統一されたロジックを使用） %>
+                      <% if purchase.user == @user %>
+                        <% # 自分の販売の場合 %>
+                        <% item_bonus = @user.bonus_for_purchase_item(item) %>
+                      <% else %>
+                        <% # 子孫の販売の場合：モデルのロジックを使用 %>
+                        <% purchase_user_level = purchase.user.level_at(purchase.purchased_at) %>
+                        <% my_level_at_purchase = @user.level_at(purchase.purchased_at) %>
+                        <% purchase_user_price = item.product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0 %>
+                        <% my_price = item.product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0 %>
+                        <% if purchase_user_price > my_price %>
+                          <% item_bonus = (purchase_user_price - my_price) * item.quantity %>
+                        <% else %>
+                          <% item_bonus = 0 %>
+                        <% end %>
+                      <% end %>
+                      <% total_sum += total %>
+                      <% total_bonus_sum += item_bonus %>
+                      <% is_first_item = index == 0 %>
+                      <% row_class = purchase.purchase_items.count > 1 ? "bg-info bg-opacity-10" : "" %>
+                      <tr class="<%= row_class %>">
+                        <!-- 購入ID -->
+                        <td class="text-nowrap">
+                          <% if is_first_item %>
+                            <span class="badge bg-secondary">#<%= purchase.id %></span>
+                            <% if purchase.purchase_items.count > 1 %>
+                              <small class="text-muted d-block">(<%= purchase.purchase_items.count %>商品)</small>
+                            <% end %>
+                          <% else %>
+                            <span class="text-muted">└</span>
+                          <% end %>
+                        </td>
+                        <!-- 販売店（同じ購入IDの場合は非表示） -->
+                        <td class="fw-bold text-nowrap">
+                          <%= is_first_item ? (purchase.user.name.present? ? purchase.user.name : purchase.user.email) : "" %>
+                        </td>
+                        <!-- 購入者名（同じ購入IDの場合は非表示） -->
+                        <td class="text-nowrap">
+                          <%= is_first_item ? (purchase.customer&.name || "-") : "" %>
+                        </td>
+                        <!-- 商品名（常に表示） -->
+                        <td class="text-nowrap">
+                          <%= item.product.name %>
+                        </td>
+                        <!-- 基本単価（常に表示） -->
+                        <td class="text-end text-nowrap">
+                          <%= number_with_delimiter(item.product.base_price) %>
+                        </td>
+                        <!-- インセンティブ単価（常に表示） -->
+                        <td class="text-end text-nowrap">
+                          <%= number_with_delimiter(@user.incentive_unit_price_for_item(item)) %>
+                        </td>
+                        <!-- 数量（常に表示） -->
+                        <td class="text-end text-nowrap">
+                          <%= item.quantity %>
+                        </td>
+                        <!-- 合計（常に表示） -->
+                        <td class="text-end text-primary fw-bold text-nowrap">
+                          <%= number_with_delimiter(total) %>
+                        </td>
+                        <!-- インセンティブ（各アイテムごとに表示） -->
+                        <td class="text-end text-success fw-bold text-nowrap">
+                          <%= number_with_delimiter(item_bonus) %>
+                        </td>
+                        <!-- メール（同じ購入IDの場合は非表示） -->
+                        <td class="text-nowrap">
+                          <%= is_first_item ? (purchase.customer&.email || "-") : "" %>
+                        </td>
+                        <!-- 電話番号（同じ購入IDの場合は非表示） -->
+                        <td class="text-nowrap">
+                          <%= is_first_item ? (purchase.customer&.phone || "-") : "" %>
+                        </td>
+                        <!-- 住所（同じ購入IDの場合は非表示） -->
+                        <td class="text-nowrap">
+                          <%= is_first_item ? (purchase.customer&.address || "-") : "" %>
+                        </td>
+                        <!-- 購入日（同じ購入IDの場合は非表示） -->
+                        <td class="text-nowrap">
+                          <%= is_first_item ? purchase.purchased_at&.strftime("%Y/%m/%d") : "" %>
+                        </td>
+                      </tr>
+                    <% end %>
                   <% end %>
 
                   <!-- 合計行 -->
                   <tr class="table-primary fw-bold">
-                    <td colspan="5" class="text-end text-nowrap">合計</td>
+                    <td colspan="7" class="text-end text-nowrap">合計</td>
                     <td class="text-end text-primary text-nowrap"><%= number_with_delimiter(total_sum) %></td>
-                    <td class="text-end text-success text-nowrap"><%= number_with_delimiter(total_bonus_sum) %></td>
+                    <td class="text-end text-success text-nowrap"><%= number_with_delimiter(@total_bonus) %></td>
                     <td colspan="4"></td>
                   </tr>
                 </tbody>

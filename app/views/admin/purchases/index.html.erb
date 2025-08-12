@@ -101,20 +101,36 @@
                         </div>
                       </td>
                       <td>
-                        <div class="fw-bold">
-                          <%= purchase.product.name %>
-                        </div>
-                        <small class="text-muted">
-                          <%= purchase.product.display_unit %>
-                        </small>
+                        <% if purchase.purchase_items.count == 1 %>
+                          <% item = purchase.purchase_items.first %>
+                          <div class="fw-bold">
+                            <%= item.product.name %>
+                          </div>
+                          <small class="text-muted">
+                            <%= item.product.display_unit %>
+                          </small>
+                        <% else %>
+                          <div class="fw-bold">
+                            複数商品 (<%= purchase.purchase_items.count %>種類)
+                          </div>
+                          <small class="text-muted">
+                            <% purchase.purchase_items.each_with_index do |item, index| %>
+                              <%= item.product.name %><%= index < purchase.purchase_items.count - 1 ? ', ' : '' %>
+                            <% end %>
+                          </small>
+                        <% end %>
                       </td>
                       <td class="text-center">
                         <span class="badge bg-secondary">
-                          <%= number_with_delimiter(purchase.quantity) %>
+                          <%= number_with_delimiter(purchase.total_quantity) %>
                         </span>
                       </td>
                       <td class="text-end">
-                        ¥<%= number_with_delimiter(purchase.unit_price) %>
+                        <% if purchase.purchase_items.count == 1 %>
+                          ¥<%= number_with_delimiter(purchase.purchase_items.first.unit_price) %>
+                        <% else %>
+                          <small class="text-muted">複数単価</small>
+                        <% end %>
                       </td>
                       <td class="text-end">
                         <div class="fw-bold text-success">

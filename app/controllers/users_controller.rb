@@ -29,7 +29,7 @@ class UsersController < ApplicationController
     @selected_month = params[:month] || Time.current.strftime('%Y-%m')
     
     # 指定ユーザーの販売履歴を取得
-    @purchases = Purchase.includes(:product, :customer)
+    @purchases = Purchase.includes(purchase_items: :product, customer: [])
                         .where(user_id: @user.id)
                         .in_month_tokyo(@selected_month)
                         .order(purchased_at: :desc)

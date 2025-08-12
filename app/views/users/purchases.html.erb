@@ -36,6 +36,7 @@
               <th class="text-end">単価（円）</th>
               <th class="text-end">数量</th>
               <th class="text-end">合計（円）</th>
+              <th class="text-end">購入単価（円）</th>
               <th class="text-end">インセンティブ（円）</th>
               <th>メール</th>
               <th>電話番号</th>
@@ -52,26 +53,41 @@
               <% bonus = @user.bonus_for_purchase(purchase) %>
               <% total_sum += total %>
               <% total_bonus += bonus %>
-              <tr>
-                <td><%= purchase.customer&.name || "-" %></td>
-                <td><%= purchase.product.name %></td>
-                <td class="text-end"><%= number_with_delimiter(purchase.unit_price) %></td>
-                <td class="text-end"><%= purchase.quantity %></td>
-                <td class="text-end text-danger fw-bold"><%= number_with_delimiter(total) %></td>
-                <td class="text-end text-success fw-bold"><%= number_with_delimiter(bonus) %></td>
-                <td><%= purchase.customer&.email || "-" %></td>
-                <td><%= purchase.customer&.phone || "-" %></td>
-                <td><%= purchase.customer&.address || "-" %></td>
-                <td><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
-              </tr>
+              <% purchase.purchase_items.each_with_index do |item, index| %>
+                <% 
+                  # 各アイテムに対するボーナスを個別計算
+                  temp_purchase = Purchase.new(user: purchase.user, customer: purchase.customer, purchased_at: purchase.purchased_at)
+                  temp_item = PurchaseItem.new(purchase: temp_purchase, product: item.product, quantity: item.quantity, unit_price: item.unit_price, seller_price: item.seller_price)
+                  temp_purchase.purchase_items = [temp_item]
+                  item_bonus = @user.bonus_for_purchase(temp_purchase)
+                %>
+                <tr>
+                  <% if index == 0 %>
+                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.customer&.name || "-" %></td>
+                  <% end %>
+                  <td><%= item.product.name %></td>
+                  <td class="text-end"><%= number_with_delimiter(item.unit_price) %></td>
+                  <td class="text-end"><%= item.quantity %></td>
+                  <td class="text-end text-danger fw-bold"><%= number_with_delimiter(item.total_price) %></td>
+                  <td class="text-end text-info fw-bold"><%= number_with_delimiter(item.seller_price) %></td>
+                  <td class="text-end text-success fw-bold"><%= number_with_delimiter(item_bonus) %></td>
+                  <% if index == 0 %>
+                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.customer&.email || "-" %></td>
+                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.customer&.phone || "-" %></td>
+                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.customer&.address || "-" %></td>
+                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
+                  <% end %>
+                </tr>
+              <% end %>
             <% end %>
   
             <!-- 合計行 -->
             <tr class="table-primary fw-bold text-end">
               <td colspan="4" class="text-end">合計</td>
               <td class="text-end text-danger"><%= number_with_delimiter(total_sum) %></td>
+              <td class="text-end"></td> <!-- 販売店購入単価列（空） -->
               <td class="text-end text-success"><%= number_with_delimiter(total_bonus) %></td>
-              <td colspan="4"></td>
+              <td colspan="4"></td> <!-- メール、電話、住所、購入日時列（空） -->
             </tr>
           </tbody>
         </table>

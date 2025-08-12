@@ -1,3 +1,5 @@
+require 'set'
+
 class User < ApplicationRecord
   # Devise（認証機能）
   devise :database_authenticatable, :registerable,
@@ -13,11 +15,13 @@ class User < ApplicationRecord
   has_many :invoice_recipients
   has_one  :invoice_base
 
-
-   
   # 会員レベル
   belongs_to :level
   has_many :purchases
+  
+  # レベル履歴
+  has_many :user_level_histories, dependent: :destroy
+  has_many :changed_level_histories, class_name: 'UserLevelHistory', foreign_key: 'changed_by_id'
 
   # ステータス管理
   attribute :status, :string, default: 'active'
@@ -77,17 +81,24 @@ class User < ApplicationRecord
   end
 
   def own_monthly_sales_total(month_str)
-    purchases.in_month_tokyo(month_str).sum('unit_price * quantity')
+    # 新しい構造：purchase_itemsから合計を計算
+    Purchase.joins(:purchase_items)
+            .where(user: self)
+            .in_month_tokyo(month_str)
+            .sum('purchase_items.unit_price * purchase_items.quantity')
   end
   
   def direct_referees_monthly_sales_total(month_str)
     referred_users.sum do |user|
-      user.purchases.in_month_tokyo(month_str).sum('unit_price * quantity')
+      user.own_monthly_sales_total(month_str)
     end
   end
   
   def all_descendants_monthly_sales_total(month_str)
-    descendant_purchases.in_month_tokyo(month_str).sum('unit_price * quantity')
+    Purchase.joins(:purchase_items)
+            .where(user_id: descendant_ids)
+            .in_month_tokyo(month_str)
+            .sum('purchase_items.unit_price * purchase_items.quantity')
   end
   
   def total_sales_with_descendants(month_str)
@@ -111,6 +122,120 @@ class User < ApplicationRecord
 
   alias_method :current_month_bonus, :bonus_in_month
 
+  # 指定月の総インセンティブを履歴ベースで計算（詳細情報付き）
+  def monthly_incentive_with_details(month_str = nil)
+    return { total: 0, details: {} } unless bonus_eligible?
+
+    month_str ||= Time.current.strftime("%Y-%m")
+    from_date = Date.strptime(month_str, "%Y-%m").beginning_of_month.beginning_of_day
+    to_date   = Date.strptime(month_str, "%Y-%m").end_of_month.end_of_day
+
+    details = {
+      own_sales: 0,           # 自分の販売によるインセンティブ
+      descendant_sales: 0,    # 子孫の販売による階層差額
+      unqualified_sales: 0,   # 無資格者の販売によるインセンティブ
+      purchase_count: 0,      # 対象購入件数
+      level_changes: []       # 期間中のレベル変更履歴
+    }
+
+    # 期間中のレベル変更履歴を取得
+    level_histories = user_level_histories
+                     .where(effective_from: from_date..to_date)
+                     .includes(:level, :previous_level, :changed_by)
+                     .order(:effective_from)
+
+    details[:level_changes] = level_histories.map do |history|
+      {
+        date: history.effective_from,
+        from_level: history.previous_level&.name,
+        to_level: history.level.name,
+        reason: history.change_reason,
+        changed_by: history.changed_by&.name
+      }
+    end
+
+    # --- (1) 自分の販売に対するインセンティブ ---
+    my_purchase_items = PurchaseItem.joins(:purchase)
+                                   .where(purchases: { user_id: id, purchased_at: from_date..to_date })
+                                   .includes(:product, purchase: :user)
+
+    my_purchase_items.each do |item|
+      purchase_date = item.purchase.purchased_at
+      my_level_at_purchase = level_at(purchase_date)
+      product = item.product
+      base_price = product.base_price
+      my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+      
+      item_bonus = (base_price - my_price) * item.quantity
+      details[:own_sales] += item_bonus if item_bonus > 0
+      details[:purchase_count] += 1
+    end
+
+    # --- (2) 子孫の販売に対するインセンティブ（階層差額） ---
+    descendant_user_ids = descendant_ids.reject { |uid| uid == id }
+    
+    if descendant_user_ids.any?
+      descendant_purchase_items = PurchaseItem.joins(:purchase)
+                                             .where(purchases: { user_id: descendant_user_ids, purchased_at: from_date..to_date })
+                                             .includes(:product, purchase: :user)
+
+      descendant_purchase_items.each do |item|
+        purchase = item.purchase
+        purchase_date = purchase.purchased_at
+        purchase_user_level = purchase.user.level_at(purchase_date)
+        my_level_at_purchase = level_at(purchase_date)
+        
+        product = item.product
+        purchase_user_price = product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
+        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+        
+        if purchase_user_price > my_price
+          diff = purchase_user_price - my_price
+          item_bonus = diff * item.quantity
+          details[:descendant_sales] += item_bonus
+          details[:purchase_count] += 1
+        end
+      end
+    end
+
+    # --- (3) 直下の無資格者による販売に対するインセンティブ ---
+    referrals.reject(&:bonus_eligible?).each do |child|
+      child_purchase_items = PurchaseItem.joins(:purchase)
+                                        .where(purchases: { user_id: child.id, purchased_at: from_date..to_date })
+                                        .includes(:product, purchase: :user)
+      
+      child_purchase_items.each do |item|
+        purchase_date = item.purchase.purchased_at
+        my_level_at_purchase = level_at(purchase_date)
+        product = item.product
+        base_price = product.base_price
+        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+        diff = base_price - my_price
+        
+        if diff.positive?
+          item_bonus = diff * item.quantity
+          details[:unqualified_sales] += item_bonus
+          details[:purchase_count] += 1
+        end
+      end
+    end
+
+    total_incentive = details[:own_sales] + details[:descendant_sales] + details[:unqualified_sales]
+
+    {
+      total: total_incentive,
+      details: details,
+      month: month_str,
+      user_name: display_name,
+      current_level: level&.name
+    }
+  end
+
+  # 指定月の総インセンティブを履歴ベースで計算（シンプル版）
+  def monthly_total_incentive(month_str = nil)
+    monthly_incentive_with_details(month_str)[:total]
+  end
+
   def bonus_path_up_to(ancestor)
     path = []
     current = self
@@ -125,47 +250,95 @@ class User < ApplicationRecord
   def bonus_for_purchase(purchase)
     return 0 unless bonus_eligible?
 
-    product = purchase.product
-    quantity = purchase.quantity
+    total_bonus = 0
     purchase_user = purchase.user
 
-    # 自分の販売か？
-    if purchase_user == self
-      base_price = product.base_price
-      my_price = product.product_prices.find_by(level_id: level_id)&.price || 0
-      return (base_price - my_price) * quantity
-    end
+    # 各購入アイテムに対してボーナスを計算
+    purchase.purchase_items.each do |item|
+      product = item.product
+      quantity = item.quantity
 
-    # 自分の直下の無資格者の販売か？
-    if referrals.include?(purchase_user) && !purchase_user.bonus_eligible?
-      base_price = product.base_price
-      my_price = product.product_prices.find_by(level_id: level_id)&.price || 0
-      diff = base_price - my_price
-      return diff * quantity if diff.positive?
-    end
-
-    # 子孫からの販売に対して、自分にボーナスがあるか？
-    if descendant_ids.include?(purchase_user.id)
-      bonus_chain = [purchase_user] + purchase_user.ancestors
-      bonus_chain = bonus_chain.select(&:bonus_eligible?)
-
-      price_map = bonus_chain.index_with do |u|
-        product.product_prices.find_by(level_id: u.level_id)&.price
+      # 自分の販売か？
+      if purchase_user == self
+        base_price = product.base_price
+        my_price = product.product_prices.find_by(level_id: level_id)&.price || 0
+        total_bonus += (base_price - my_price) * quantity
+        next
       end
 
-      bonus_chain.each_cons(2) do |lower, upper|
-        lower_price = price_map[lower]
-        upper_price = price_map[upper]
-        next unless lower_price && upper_price
+      # 自分の直下の無資格者の販売か？
+      if referrals.include?(purchase_user) && !purchase_user.bonus_eligible?
+        base_price = product.base_price
+        my_price = product.product_prices.find_by(level_id: level_id)&.price || 0
+        diff = base_price - my_price
+        total_bonus += diff * quantity if diff.positive?
+        next
+      end
 
-        if upper == self
-          diff = lower_price - upper_price
-          return diff * quantity if diff.positive?
+      # 子孫からの販売に対して、自分にボーナスがあるか？
+      if descendant_ids.include?(purchase_user.id)
+        bonus_chain = [purchase_user] + purchase_user.ancestors
+        bonus_chain = bonus_chain.select(&:bonus_eligible?)
+
+        price_map = bonus_chain.index_with do |u|
+          product.product_prices.find_by(level_id: u.level_id)&.price
+        end
+
+        bonus_chain.each_cons(2) do |lower, upper|
+          lower_price = price_map[lower]
+          upper_price = price_map[upper]
+          next unless lower_price && upper_price
+
+          if upper == self
+            diff = lower_price - upper_price
+            total_bonus += diff * quantity if diff.positive?
+            break
+          end
         end
       end
     end
 
-    0
+    total_bonus
+  end
+
+  # インセンティブ単価を計算（履歴ベース）
+  def incentive_unit_price_for_item(purchase_item)
+    return 0 unless bonus_eligible?
+
+    purchase = purchase_item.purchase
+    purchase_user = purchase.user
+    product = purchase_item.product
+    purchase_date = purchase.purchased_at
+
+    # 購入時点での自分のレベルを取得
+    my_level_at_purchase = level_at(purchase_date)
+    my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+    
+    # 自分の販売の場合：基本単価 - 購入時点での自分の購入単価
+    if purchase_user == self
+      base_price = product.base_price
+      incentive_unit = base_price - my_price
+    else
+      # 他人の販売の場合：階層差額による計算
+      # 購入者の購入時点でのレベルを取得
+      purchase_user_level = purchase_user.level_at(purchase_date)
+      purchase_user_price = product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
+      
+      # 階層差額：購入者の価格 - 自分の価格
+      incentive_unit = purchase_user_price - my_price
+    end
+    
+    # 負の値の場合は0を返す
+    incentive_unit > 0 ? incentive_unit : 0
+  end
+
+  # 個別のpurchase_itemに対するボーナスを計算
+  def bonus_for_purchase_item(purchase_item)
+    return 0 unless bonus_eligible?
+
+    # インセンティブ単価 × 数量 = インセンティブ
+    incentive_unit = incentive_unit_price_for_item(purchase_item)
+    return incentive_unit * purchase_item.quantity
   end
 
   def bonus_in_period(start_date, end_date)
@@ -175,51 +348,59 @@ class User < ApplicationRecord
     total_bonus = 0
 
     # --- (1) 自分の販売に対するボーナス ---
-    self_bonus = purchases.where(purchased_at: range).sum do |purchase|
-      product = purchase.product
-      base_price = product.base_price
-      my_price = product.product_prices.find_by(level_id: level_id)&.price || 0
-      (base_price - my_price) * purchase.quantity
+    my_purchase_items = PurchaseItem.joins(:purchase)
+                                   .where(purchases: { user_id: id, purchased_at: range })
+                                   .includes(:product, purchase: :user)
+
+    my_purchase_items.each do |item|
+      bonus = bonus_for_purchase_item(item)
+      total_bonus += bonus
     end
-    total_bonus += self_bonus
 
-    # --- (2) 子孫の販売に対して自分が得られるボーナス（階層差額） ---
-    descendant_purchases = Purchase.includes(:product, :user)
-                                   .where(user_id: descendant_ids)
-                                   .where(purchased_at: range)
+    # --- (2) 子孫の販売に対するボーナス（階層差額） ---
+    descendant_user_ids = descendant_ids.reject { |uid| uid == id }
+    
+    if descendant_user_ids.any?
+      descendant_purchase_items = PurchaseItem.joins(:purchase)
+                                             .where(purchases: { user_id: descendant_user_ids, purchased_at: range })
+                                             .includes(:product, purchase: :user)
 
-    descendant_purchases.each do |purchase|
-      product = purchase.product
-      next unless product
-      quantity = purchase.quantity
-      purchase_user = purchase.user
-
-      bonus_chain = [purchase_user] + purchase_user.ancestors
-      bonus_chain = bonus_chain.select(&:bonus_eligible?)
-
-      price_map = bonus_chain.index_with do |u|
-        product.product_prices.find_by(level_id: u.level_id)&.price
-      end
-
-      bonus_chain.each_cons(2) do |lower, upper|
-        lower_price = price_map[lower]
-        upper_price = price_map[upper]
-        next unless lower_price && upper_price
-        if upper == self
-          diff = lower_price - upper_price
-          total_bonus += diff * quantity if diff.positive?
+      descendant_purchase_items.each do |item|
+        purchase = item.purchase
+        purchase_user_level = purchase.user.level_at(purchase.purchased_at)
+        my_level_at_purchase = level_at(purchase.purchased_at)
+        
+        product = item.product
+        purchase_user_price = product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
+        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+        
+        if purchase_user_price > my_price
+          diff = purchase_user_price - my_price
+          total_bonus += diff * item.quantity
         end
       end
     end
 
     # --- (3) 直下の無資格者による販売に対するボーナス ---
+    # 既に子孫として計算されたユーザーを除外
+    descendant_user_ids_set = Set.new(descendant_ids)
+    
     referrals.reject(&:bonus_eligible?).each do |child|
-      child.purchases.where(purchased_at: range).each do |purchase|
-        product = purchase.product
+      # 既に子孫として計算済みの場合はスキップ
+      next if descendant_user_ids_set.include?(child.id)
+      
+      child_purchase_items = PurchaseItem.joins(:purchase)
+                                        .where(purchases: { user_id: child.id, purchased_at: range })
+                                        .includes(:product, purchase: :user)
+      
+      child_purchase_items.each do |item|
+        purchase_date = item.purchase.purchased_at
+        my_level_at_purchase = level_at(purchase_date)
+        product = item.product
         base_price = product.base_price
-        my_price = product.product_prices.find_by(level_id: level_id)&.price || 0
+        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
         diff = base_price - my_price
-        total_bonus += diff * purchase.quantity if diff.positive?
+        total_bonus += diff * item.quantity if diff.positive?
       end
     end
 
@@ -262,6 +443,50 @@ class User < ApplicationRecord
     purchases.sum do |purchase|
       calculate_bonus_for(purchase)
     end
+  end
+
+  # 指定日時でのレベルを取得
+  def level_at(datetime)
+    history = user_level_histories.effective_at(datetime).order(:effective_from).last
+    history&.level || level
+  end
+
+  # 指定日時での商品価格を取得
+  def product_price_at(product, datetime)
+    level_at_time = level_at(datetime)
+    product.product_prices.find_by(level_id: level_at_time.id)&.price || 0
+  end
+
+  # レベル変更時の履歴更新
+  def update_level_history(new_level_id, change_reason, changed_by_user, ip_address = nil)
+    return false if level_id == new_level_id
+
+    transaction do
+      # 現在の履歴を終了
+      current_history = user_level_histories.current.first
+      if current_history
+        current_history.update!(effective_to: Time.current)
+      end
+
+      # 新しい履歴を作成
+      user_level_histories.create!(
+        level_id: new_level_id,
+        previous_level_id: level_id,
+        effective_from: Time.current,
+        change_reason: change_reason,
+        changed_by: changed_by_user,
+        ip_address: ip_address
+      )
+
+      # ユーザーの現在レベルを更新
+      update!(level_id: new_level_id)
+    end
+
+    true
+  rescue => e
+    Rails.logger.error "Level history update failed: #{e.message}"
+    false
+    false
   end
 
   private

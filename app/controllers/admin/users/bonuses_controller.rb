@@ -5,7 +5,7 @@ class Admin::Users::BonusesController < Admin::BaseController
   def index
     begin
       # 基本的にsales/indexと同じ内容だが、管理者向けの詳細情報を追加
-      @purchases = @user.purchases.includes(:product, :customer)
+      @purchases = @user.purchases.includes(purchase_items: :product, customer: [])
       
       # 期間でフィルタリング（in_periodメソッドが存在しない場合の対応）
       if @purchases.respond_to?(:in_period)
@@ -16,19 +16,15 @@ class Admin::Users::BonusesController < Admin::BaseController
       
       # 自身 + 下位の購入履歴（選択月）
       descendant_ids = @user.descendants.pluck(:id)
-      @purchases_with_descendants = Purchase.includes(:product, :customer, :user)
+      @purchases_with_descendants = Purchase.includes(purchase_items: :product, customer: [], user: [])
                                             .where(user_id: [@user.id] + descendant_ids)
                                             .where(purchased_at: @selected_month_start..@selected_month_end)
 
-      # 安全な計算
-      @total_sales_amount = @purchases_with_descendants.joins(:product).sum('products.base_price * purchases.quantity') rescue 0
+      # 安全な計算 - purchase_itemsを通じて計算
+      @total_sales_amount = @purchases_with_descendants.joins(purchase_items: :product).sum('products.base_price * purchase_items.quantity') rescue 0
       
-      # ボーナス計算
-      @total_bonus = if @user.respond_to?(:bonus_in_period)
-                       @user.bonus_in_period(@selected_month_start, @selected_month_end)
-                     else
-                       0
-                     end
+      # ボーナス計算 - 履歴ベースの正しい計算を使用
+      @total_bonus = @user.bonus_in_period(@selected_month_start, @selected_month_end)
       
       # 直接紹介者
       @referrals = @user.referrals

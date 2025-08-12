@@ -11,13 +11,23 @@ puts "🚀 ボーナス計算用テストデータの作成を開始します...
 puts "📝 既存のデータを完全削除中..."
 
 begin
+  # 外部キー制約を一時的に無効化（SQLite用）
+  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF") if ActiveRecord::Base.connection.adapter_name.downcase.include?("sqlite")
+  
+  # 削除順序（依存関係の逆順）
+  PurchaseItem.delete_all if defined?(PurchaseItem)
   Purchase.delete_all
-  AccessLog.delete_all
+  AccessLog.delete_all if defined?(AccessLog)
   Customer.delete_all
   User.delete_all
+  
+  # 外部キー制約を再有効化
+  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON") if ActiveRecord::Base.connection.adapter_name.downcase.include?("sqlite")
+  
   puts "✅ データ削除完了（外部キー順に削除）"
 rescue => e
   puts "❌ データ削除中にエラーが発生しました: #{e.message}"
+  puts "⚠️ 手動でデータベースをリセットしてください: rails db:reset"
   exit
 end
 
@@ -25,12 +35,12 @@ end
 adapter = ActiveRecord::Base.connection.adapter_name.downcase
 begin
   if adapter.include?("sqlite")
-    %w(users customers purchases).each do |table|
+    %w(users customers purchases purchase_items).each do |table|
       ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='#{table}'")
     end
     puts "✅ IDシーケンスをリセットしました (SQLite)"
   elsif adapter.include?("postgresql")
-    %w(users customers purchases).each do |table|
+    %w(users customers purchases purchase_items).each do |table|
       ActiveRecord::Base.connection.execute("ALTER SEQUENCE #{table}_id_seq RESTART WITH 1")
     end
     puts "✅ IDシーケンスをリセットしました (PostgreSQL)"
@@ -436,34 +446,97 @@ purchase_scenarios = [
     scenario: "退会ユーザーの販売"
   },
   
-  # シナリオ13-20: 複数の小規模販売（統計テスト用）
+  # シナリオ13: 複数商品購入テスト（アドバイザー）
+  {
+    user: advisors[2],
+    customer: customers[12],
+    quantity: 50,  # この数量は複数商品に分割される
+    date: current_month + 22.days,
+    scenario: "複数商品購入（アドバイザー）"
+  },
+  
+  # シナリオ14: 複数商品購入テスト（病院）
+  {
+    user: hospitals[3],
+    customer: customers[13],
+    quantity: 80,  # この数量は複数商品に分割される
+    date: current_month + 26.days,
+    scenario: "複数商品購入（病院）"
+  },
+  
+  # シナリオ15-20: 複数の小規模販売（統計テスト用）
 ]
 
-# 追加の小規模販売を生成（10の倍数）
-(13..20).each do |i|
+# 追加の小規模販売を生成
+(15..20).each do |i|
   customer_index = i < customers.length ? i : i % customers.length
   purchase_scenarios << {
     user: [advisors, salons, hospitals].flatten.sample,
     customer: customers[customer_index],
     quantity: [10, 20, 30].sample,
     date: current_month + rand(1..30).days,
-    scenario: "ランダム小規模販売#{i-12}"
+    scenario: "ランダム小規模販売#{i-14}"
   }
 end
 
-# 購入データを作成
+# 購入データを作成（新しい構造：1購入複数製品対応）
 purchase_scenarios.each_with_index do |scenario, index|
+  # 購入レコードを作成（商品情報は含まない）
   purchase = Purchase.create!(
     user: scenario[:user],
-    product: product,
     customer: scenario[:customer],
-    quantity: scenario[:quantity],
-    unit_price: product.base_price,
-    price: product.base_price * scenario[:quantity],
     purchased_at: scenario[:date]
   )
   
-  puts "   ✓ #{scenario[:scenario]}: #{scenario[:user].name} → ¥#{number_with_delimiter(purchase.price)}"
+  # 購入アイテムを作成（基本は1商品だが、一部のケースで複数商品にする）
+  if defined?(PurchaseItem) && index % 5 == 0 && index > 0  # 5件に1件は複数商品購入
+    # 複数商品購入のケース
+    products = Product.limit(2)  # 最大2商品
+    if products.count > 1
+      products.each_with_index do |prod, prod_index|
+        quantity = scenario[:quantity] / products.count  # 数量を分割
+        seller_price = prod.product_prices.find_by(level_id: scenario[:user].level_id)&.price || 0
+        PurchaseItem.create!(
+          purchase: purchase,
+          product: prod,
+          quantity: quantity,
+          unit_price: prod.base_price,
+          seller_price: seller_price
+        )
+      end
+      total_price = purchase.purchase_items.sum(&:total_price)
+      puts "   ✓ #{scenario[:scenario]} (複数商品): #{scenario[:user].name} → ¥#{number_with_delimiter(total_price)}"
+    else
+      # 商品が1つしかない場合は単一商品購入
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: product,
+        quantity: scenario[:quantity],
+        unit_price: product.base_price
+      )
+      puts "   ✓ #{scenario[:scenario]}: #{scenario[:user].name} → ¥#{number_with_delimiter(purchase.total_price)}"
+    end
+  elsif defined?(PurchaseItem)
+    # 単一商品購入のケース
+    seller_price = product.product_prices.find_by(level_id: scenario[:user].level_id)&.price || 0
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: product,
+      quantity: scenario[:quantity],
+      unit_price: product.base_price,
+      seller_price: seller_price
+    )
+    puts "   ✓ #{scenario[:scenario]}: #{scenario[:user].name} → ¥#{number_with_delimiter(purchase.total_price)}"
+  else
+    # PurchaseItemモデルが存在しない場合は旧形式で作成
+    purchase.update!(
+      product: product,
+      quantity: scenario[:quantity],
+      unit_price: product.base_price,
+      price: product.base_price * scenario[:quantity]
+    )
+    puts "   ✓ #{scenario[:scenario]} (旧形式): #{scenario[:user].name} → ¥#{number_with_delimiter(purchase.price)}"
+  end
 end
 
 puts "\n📈 ボーナス計算テストケース作成完了！"
@@ -523,6 +596,20 @@ puts "✅ 月次比較"
 puts "✅ 停止処分・退会ユーザーの除外"
 puts "✅ 大量購入・小規模購入"
 puts "✅ 複雑な階層構造"
+puts "✅ 1購入複数製品対応"
+puts "✅ 購入アイテム明細管理"
+
+puts "\n【購入データ統計】"
+puts "総購入数: #{Purchase.count}件"
+if defined?(PurchaseItem)
+  puts "総購入アイテム数: #{PurchaseItem.count}件"
+  multi_product_purchases = Purchase.joins(:purchase_items).group('purchases.id').having('COUNT(purchase_items.id) > 1').count.size
+  single_product_purchases = Purchase.joins(:purchase_items).group('purchases.id').having('COUNT(purchase_items.id) = 1').count.size
+  puts "複数商品購入: #{multi_product_purchases}件"
+  puts "単一商品購入: #{single_product_purchases}件"
+else
+  puts "⚠️ PurchaseItemモデルが見つかりません（旧形式で作成されました）"
+end
 
 puts "\n🎉 テストデータ作成完了！"
 puts "💡 管理画面でボーナス計算結果を確認してください。"

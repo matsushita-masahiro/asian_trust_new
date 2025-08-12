@@ -64,7 +64,7 @@
                 <div class="mb-3">
                   <%= form.label :product_id, "商品", class: "form-label" %>
                   <%= form.select :product_id, 
-                      options_from_collection_for_select(@products, :id, :name, @purchase.product_id),
+                      options_from_collection_for_select(@products, :id, :name),
                       { prompt: "商品を選択してください" },
                       { class: "form-select", required: true, id: "product_select" } %>
                   <div class="invalid-feedback">

@@ -21,7 +21,7 @@ class SalesController < ApplicationController
 
     # ✅ 該当月の購入データを取得（N+1防止のincludes）
     @purchases = Purchase
-                   .includes(:product, :customer, :user)
+                   .includes(purchase_items: :product, customer: [], user: [])
                    .where(user_id: user_ids)
                    .where(purchased_at: start_date..end_date)
                    .order(purchased_at: :desc)
@@ -57,7 +57,7 @@ class SalesController < ApplicationController
 
     # ✅ 該当月の購入データを取得（N+1防止のincludes）
     @purchases = Purchase
-                   .includes(:product, :customer, :user)
+                   .includes(purchase_items: :product, customer: [], user: [])
                    .where(user_id: user_ids)
                    .where(purchased_at: start_date..end_date)
                    .order(purchased_at: :desc)

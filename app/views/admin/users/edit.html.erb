@@ -47,12 +47,54 @@
               <%= f.text_field :lstep_user_id, class: "form-control", placeholder: "LステップIDを入力" %>
             </div>
 
-            <div class="col-md-6">
-              <%= f.label :level_id, "会員レベル", class: "form-label" %>
-              <%= f.select :level_id, 
-                    options_from_collection_for_select(@levels, :id, :name, @user.level_id), 
-                    { prompt: "レベルを選択してください" }, 
-                    { class: "form-select" } %>
+            <div class="col-12">
+              <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                  <h6 class="card-title mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    会員レベル変更（要認証）
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <%= f.label :level_id, "新しい会員レベル", class: "form-label" %>
+                      <%= f.select :level_id, 
+                            options_from_collection_for_select(@levels, :id, :name, @user.level_id), 
+                            { prompt: "レベルを選択してください" }, 
+                            { class: "form-select", id: "user_level_id" } %>
+                    </div>
+                    
+                    <div class="col-md-6" id="level-change-fields" style="display: none;">
+                      <%= label_tag :admin_password, "管理者パスワード", class: "form-label text-danger" %>
+                      <%= password_field_tag :admin_password, "", 
+                            class: "form-control", 
+                            placeholder: "レベル変更には管理者パスワードが必要です" %>
+                    </div>
+                    
+                    <div class="col-12" id="change-reason-field" style="display: none;">
+                      <%= label_tag :level_change_reason, "レベル変更理由", class: "form-label text-danger" %>
+                      <%= text_area_tag :level_change_reason, "", 
+                            class: "form-control", 
+                            rows: 3,
+                            placeholder: "レベル変更の理由を詳しく記入してください（必須）" %>
+                    </div>
+                    
+                    <div class="col-12" id="level-change-warning" style="display: none;">
+                      <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>重要な警告:</strong>
+                        <ul class="mb-0 mt-2">
+                          <li>レベル変更は<strong>取り消すことができません</strong></li>
+                          <li>過去のインセンティブ計算に影響する可能性があります</li>
+                          <li>変更履歴は永続的に記録されます</li>
+                          <li>管理者パスワードによる認証が必要です</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="col-12">
@@ -72,12 +114,125 @@
               <hr>
               <div class="d-flex justify-content-end gap-2">
                 <%= link_to "キャンセル", admin_user_path(@user), class: "btn btn-secondary" %>
-                <%= f.submit "更新", class: "btn btn-danger", 
+                <%= f.submit "更新", class: "btn btn-danger", id: "submit-btn", 
                     data: { 
-                      confirm: "本当に変更しても大丈夫ですか？\n\nこの操作により以下の影響が発生する可能性があります：\n・ボーナス計算の変更\n・紹介関係の変更\n・統計データへの影響\n\n変更を続行しますか？" 
+                      confirm: "レベル変更を実行しますか？\n\nこの操作は取り消すことができません。" 
                     } %>
               </div>
             </div>
+
+            <style>
+              .timeline {
+                position: relative;
+                padding-left: 15px;
+                max-width: 100%;
+              }
+              
+              .timeline-item {
+                position: relative;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-left: 2px solid #dee2e6;
+              }
+              
+              .timeline-item:last-child {
+                border-left: none;
+                margin-bottom: 0;
+              }
+              
+              .timeline-marker {
+                position: absolute;
+                left: -6px;
+                top: 5px;
+                background: white;
+                border-radius: 50%;
+                width: 12px;
+                height: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1;
+              }
+              
+              .timeline-content {
+                margin-left: 10px;
+                padding: 12px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border-left: 3px solid #007bff;
+                text-align: center;
+              }
+              
+              .timeline-item.current .timeline-content {
+                background: #d4edda;
+                border-left-color: #28a745;
+              }
+            </style>
+
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const levelSelect = document.getElementById('user_level_id');
+                const originalLevelId = '<%= @user.level_id %>';
+                const levelChangeFields = document.getElementById('level-change-fields');
+                const changeReasonField = document.getElementById('change-reason-field');
+                const levelChangeWarning = document.getElementById('level-change-warning');
+                const submitBtn = document.getElementById('submit-btn');
+                const adminPasswordField = document.querySelector('#admin_password');
+                const changeReasonTextarea = document.querySelector('#level_change_reason');
+
+                function toggleLevelChangeFields() {
+                  const isLevelChanged = levelSelect.value !== originalLevelId;
+                  
+                  if (isLevelChanged) {
+                    levelChangeFields.style.display = 'block';
+                    changeReasonField.style.display = 'block';
+                    levelChangeWarning.style.display = 'block';
+                  } else {
+                    levelChangeFields.style.display = 'none';
+                    changeReasonField.style.display = 'none';
+                    levelChangeWarning.style.display = 'none';
+                    adminPasswordField.value = '';
+                    changeReasonTextarea.value = '';
+                  }
+                }
+
+                levelSelect.addEventListener('change', toggleLevelChangeFields);
+
+                // フォーム送信時の検証
+                const form = document.querySelector('form');
+                if (form) {
+                  form.addEventListener('submit', function(e) {
+                    const isLevelChanged = levelSelect.value !== originalLevelId;
+                    
+                    if (isLevelChanged) {
+                      // レベル変更時の必須チェック
+                      if (!adminPasswordField || !adminPasswordField.value.trim()) {
+                        e.preventDefault();
+                        alert('レベル変更には管理者パスワードの入力が必要です。');
+                        if (adminPasswordField) adminPasswordField.focus();
+                        return false;
+                      }
+                      
+                      if (!changeReasonTextarea || !changeReasonTextarea.value.trim()) {
+                        e.preventDefault();
+                        alert('レベル変更の理由を入力してください。');
+                        if (changeReasonTextarea) changeReasonTextarea.focus();
+                        return false;
+                      }
+
+                      // 最終確認は data-confirm に任せる
+                      return true;
+                    }
+                    
+                    // 通常の更新時はそのまま送信
+                    return true;
+                  });
+                }
+
+                // 初期状態の設定
+                toggleLevelChangeFields();
+              });
+            </script>
           <% end %>
         </div>
       </div>
@@ -85,61 +240,187 @@
 
     <div class="col-md-4">
       <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">現在の情報</h5>
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-user me-2"></i>
+            現在の情報
+          </h5>
         </div>
         <div class="card-body">
-          <table class="table table-borderless table-sm">
-            <tr>
-              <th width="40%">ID:</th>
-              <td><%= @user.id %></td>
-            </tr>
-            <tr>
-              <th>現在の名前:</th>
-              <td><%= @user.name.present? ? @user.name : "未設定" %></td>
-            </tr>
-            <tr>
-              <th>現在のメール:</th>
-              <td><%= @user.email %></td>
-            </tr>
-            <tr>
-              <th>現在のレベル:</th>
-              <td>
-                <% if @user.level %>
-                  <span class="badge bg-info"><%= @user.level.name %></span>
-                <% else %>
-                  <span class="text-muted">未設定</span>
-                <% end %>
-              </td>
-            </tr>
-            <tr>
-              <th>現在のステータス:</th>
-              <td>
-                <% case @user.status %>
-                <% when 'active' %>
-                  <span class="badge bg-success">アクティブ</span>
-                <% when 'inactive' %>
-                  <span class="badge bg-secondary">退会</span>
-                <% when 'suspended' %>
-                  <span class="badge bg-danger">停止処分</span>
-                <% end %>
-              </td>
-            </tr>
-            <tr>
-              <th>現在の紹介者:</th>
-              <td>
-                <% if @user.referrer %>
-                  <%= @user.referrer.display_name %>
-                <% else %>
-                  <span class="text-muted">なし</span>
-                <% end %>
-              </td>
-            </tr>
-            <tr>
-              <th>登録日:</th>
-              <td><%= @user.created_at.strftime("%Y年%m月%d日") %></td>
-            </tr>
-          </table>
+          <div class="row g-3">
+            <!-- ユーザーID -->
+            <div class="col-12">
+              <div class="d-flex justify-content-center align-items-center p-2 bg-light rounded">
+                <div class="me-3">
+                  <i class="fas fa-id-badge text-primary"></i>
+                </div>
+                <div class="text-center">
+                  <small class="text-muted d-block">ユーザーID</small>
+                  <strong class="text-primary">#<%= @user.id %></strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- 名前 -->
+            <div class="col-12">
+              <div class="d-flex justify-content-center align-items-center p-2 border rounded">
+                <div class="me-3">
+                  <i class="fas fa-user text-info"></i>
+                </div>
+                <div class="text-center">
+                  <small class="text-muted d-block">名前</small>
+                  <strong><%= @user.name.present? ? @user.name : "未設定" %></strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- メールアドレス -->
+            <div class="col-12">
+              <div class="text-center p-2 border rounded">
+                <div class="mb-2">
+                  <i class="fas fa-envelope text-warning"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">メールアドレス</small>
+                  <strong class="text-break"><%= @user.email %></strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- レベル -->
+            <div class="col-12">
+              <div class="d-flex justify-content-center align-items-center p-2 border rounded">
+                <div class="me-3">
+                  <i class="fas fa-star text-success"></i>
+                </div>
+                <div class="text-center">
+                  <small class="text-muted d-block">会員レベル</small>
+                  <% if @user.level %>
+                    <span class="badge bg-info fs-6"><%= @user.level.name %></span>
+                  <% else %>
+                    <span class="text-muted">未設定</span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <!-- ステータス -->
+            <div class="col-12">
+              <div class="d-flex justify-content-center align-items-center p-2 border rounded">
+                <div class="me-3">
+                  <i class="fas fa-circle-check text-success"></i>
+                </div>
+                <div class="text-center">
+                  <small class="text-muted d-block">ステータス</small>
+                  <% case @user.status %>
+                  <% when 'active' %>
+                    <span class="badge bg-success fs-6">アクティブ</span>
+                  <% when 'inactive' %>
+                    <span class="badge bg-secondary fs-6">退会</span>
+                  <% when 'suspended' %>
+                    <span class="badge bg-danger fs-6">停止処分</span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <!-- 紹介者 -->
+            <div class="col-12">
+              <div class="text-center p-2 border rounded">
+                <div class="mb-2">
+                  <i class="fas fa-user-friends text-purple"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">紹介者</small>
+                  <% if @user.referrer %>
+                    <strong><%= @user.referrer.display_name %></strong>
+                  <% else %>
+                    <span class="text-muted">なし</span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <!-- 登録日 -->
+            <div class="col-12">
+              <div class="d-flex justify-content-center align-items-center p-2 border rounded">
+                <div class="me-3">
+                  <i class="fas fa-calendar text-secondary"></i>
+                </div>
+                <div class="text-center">
+                  <small class="text-muted d-block">登録日</small>
+                  <strong><%= @user.created_at.strftime("%Y年%m月%d日") %></strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- LステップID -->
+            <% if @user.lstep_user_id.present? %>
+            <div class="col-12">
+              <div class="d-flex justify-content-center align-items-center p-2 border rounded">
+                <div class="me-3">
+                  <i class="fas fa-link text-info"></i>
+                </div>
+                <div class="text-center">
+                  <small class="text-muted d-block">LステップID</small>
+                  <strong><%= @user.lstep_user_id %></strong>
+                </div>
+              </div>
+            </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- レベル履歴カード -->
+      <div class="card mt-3">
+        <div class="card-header bg-info text-white">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-history me-2"></i>
+            レベル変更履歴
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @level_histories.any? %>
+            <div class="timeline">
+              <% @level_histories.each_with_index do |history, index| %>
+                <div class="timeline-item <%= 'current' if index == 0 %>">
+                  <div class="timeline-marker">
+                    <% if index == 0 %>
+                      <i class="fas fa-circle text-success"></i>
+                    <% else %>
+                      <i class="fas fa-circle text-muted"></i>
+                    <% end %>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div>
+                        <strong><%= history.level.name %></strong>
+                        <% if index == 0 %>
+                          <span class="badge bg-success ms-2">現在</span>
+                        <% end %>
+                      </div>
+                      <small class="text-muted">
+                        <%= history.effective_from.strftime("%Y/%m/%d %H:%M") %>
+                      </small>
+                    </div>
+                    <div class="mt-1">
+                      <small class="text-muted">
+                        理由: <%= history.change_reason %>
+                      </small>
+                    </div>
+                    <div class="mt-1">
+                      <small class="text-muted">
+                        変更者: <%= history.changed_by.name %>
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="text-muted mb-0">レベル変更履歴がありません。</p>
+          <% end %>
         </div>
       </div>
 

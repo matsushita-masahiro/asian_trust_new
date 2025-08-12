@@ -55,14 +55,18 @@
             </thead>
             <tbody>
               <% @purchases.each do |purchase| %>
-                <tr>
-                  <td style="white-space: nowrap;"><%= purchase.purchased_at&.strftime("%Y/%m/%d") %></td>
-                  <td style="white-space: nowrap;"><%= purchase.user.name %></td>
-                  <td style="white-space: nowrap;"><%= purchase.product.name %></td>
-                  <td class="text-end" style="white-space: nowrap;">¥<%= number_with_delimiter(purchase.product.base_price) %></td>
-                  <td class="text-end" style="white-space: nowrap;"><%= purchase.quantity %></td>
-                  <td class="text-end text-success" style="white-space: nowrap;">¥<%= number_with_delimiter(purchase.product.base_price * purchase.quantity) %></td>
-                </tr>
+                <% purchase.purchase_items.each_with_index do |item, index| %>
+                  <tr>
+                    <% if index == 0 %>
+                      <td rowspan="<%= purchase.purchase_items.count %>" style="white-space: nowrap;"><%= purchase.purchased_at&.strftime("%Y/%m/%d") %></td>
+                      <td rowspan="<%= purchase.purchase_items.count %>" style="white-space: nowrap;"><%= purchase.user.name %></td>
+                    <% end %>
+                    <td style="white-space: nowrap;"><%= item.product.name %></td>
+                    <td class="text-end" style="white-space: nowrap;">¥<%= number_with_delimiter(item.unit_price) %></td>
+                    <td class="text-end" style="white-space: nowrap;"><%= item.quantity %></td>
+                    <td class="text-end text-success" style="white-space: nowrap;">¥<%= number_with_delimiter(item.total_price) %></td>
+                  </tr>
+                <% end %>
               <% end %>
             </tbody>
           </table>

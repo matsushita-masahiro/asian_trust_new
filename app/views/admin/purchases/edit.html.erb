@@ -26,7 +26,13 @@
                   <h6 class="card-title text-muted">購入情報</h6>
                   <p class="mb-1"><strong>購入日時:</strong> <%= @purchase.purchased_at.strftime('%Y年%m月%d日 %H:%M') %></p>
                   <p class="mb-1"><strong>顧客名:</strong> <%= @purchase.customer.name %></p>
-                  <p class="mb-1"><strong>商品名:</strong> <%= @purchase.product.name %></p>
+                  <p class="mb-1"><strong>商品名:</strong> 
+                    <% if @purchase.purchase_items.count == 1 %>
+                      <%= @purchase.purchase_items.first.product.name %>
+                    <% else %>
+                      複数商品 (<%= @purchase.purchase_items.count %>種類)
+                    <% end %>
+                  </p>
                   <p class="mb-0"><strong>販売店:</strong> <%= @purchase.user.name.present? ? @purchase.user.name : @purchase.user.email %></p>
                 </div>
               </div>
@@ -35,8 +41,14 @@
               <div class="card bg-light">
                 <div class="card-body">
                   <h6 class="card-title text-muted">現在の金額情報</h6>
-                  <p class="mb-1"><strong>現在の数量:</strong> <span class="text-primary"><%= number_with_delimiter(@purchase.quantity) %></span></p>
-                  <p class="mb-1"><strong>現在の単価:</strong> <span class="text-success">¥<%= number_with_delimiter(@purchase.unit_price) %></span></p>
+                  <p class="mb-1"><strong>現在の数量:</strong> <span class="text-primary"><%= number_with_delimiter(@purchase.total_quantity) %></span></p>
+                  <p class="mb-1"><strong>現在の単価:</strong> 
+                    <% if @purchase.purchase_items.count == 1 %>
+                      <span class="text-success">¥<%= number_with_delimiter(@purchase.purchase_items.first.unit_price) %></span>
+                    <% else %>
+                      <span class="text-muted">複数単価</span>
+                    <% end %>
+                  </p>
                   <p class="mb-0"><strong>現在の合計:</strong> <span class="text-danger">¥<%= number_with_delimiter(@purchase.total_price) %></span></p>
                 </div>
               </div>
@@ -56,37 +68,39 @@
               </div>
             <% end %>
 
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <%= form.label :quantity, "数量", class: "form-label" %>
-                  <%= form.number_field :quantity, 
-                      class: "form-control form-control-lg", 
-                      min: 1, 
-                      required: true,
-                      id: "quantity_input" %>
-                  <div class="invalid-feedback">
-                    数量は1以上で入力してください。
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <%= form.label :unit_price, "単価", class: "form-label" %>
-                  <div class="input-group">
-                    <span class="input-group-text">¥</span>
-                    <%= form.number_field :unit_price, 
+            <%= form.fields_for :purchase_items, @purchase.purchase_items.first do |item_form| %>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <%= item_form.label :quantity, "数量", class: "form-label" %>
+                    <%= item_form.number_field :quantity, 
                         class: "form-control form-control-lg", 
-                        min: 0, 
+                        min: 1, 
                         required: true,
-                        id: "unit_price_input" %>
+                        id: "quantity_input" %>
+                    <div class="invalid-feedback">
+                      数量は1以上で入力してください。
+                    </div>
                   </div>
-                  <div class="invalid-feedback">
-                    単価は0以上で入力してください。
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <%= item_form.label :unit_price, "単価", class: "form-label" %>
+                    <div class="input-group">
+                      <span class="input-group-text">¥</span>
+                      <%= item_form.number_field :unit_price, 
+                          class: "form-control form-control-lg", 
+                          min: 0, 
+                          required: true,
+                          id: "unit_price_input" %>
+                    </div>
+                    <div class="invalid-feedback">
+                      単価は0以上で入力してください。
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            <% end %>
 
             <!-- 計算結果表示 -->
             <div class="row mb-4">

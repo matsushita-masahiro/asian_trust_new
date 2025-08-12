@@ -456,7 +456,7 @@
             # 当月の購入履歴を取得
             current_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
             current_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
-            monthly_purchases = @user.purchases.where(purchased_at: current_month_start..current_month_end).includes(:product)
+            monthly_purchases = @user.purchases.where(purchased_at: current_month_start..current_month_end).includes(purchase_items: :product)
           %>
           <% if monthly_purchases.any? %>
             <div class="table-responsive">
@@ -473,14 +473,18 @@
                 </thead>
                 <tbody>
                   <% monthly_purchases.each do |purchase| %>
-                    <tr>
-                      <td><%= purchase.purchased_at.strftime("%Y/%m/%d") %></td>
-                      <td><%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %></td>
-                      <td><%= purchase.product.name %></td>
-                      <td><%= purchase.quantity %></td>
-                      <td>¥<%= number_with_delimiter(purchase.product.base_price) %></td>
-                      <td class="text-success">¥<%= number_with_delimiter(purchase.product.base_price * purchase.quantity) %></td>
-                    </tr>
+                    <% purchase.purchase_items.each_with_index do |item, index| %>
+                      <tr>
+                        <% if index == 0 %>
+                          <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at.strftime("%Y/%m/%d") %></td>
+                          <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %></td>
+                        <% end %>
+                        <td><%= item.product.name %></td>
+                        <td><%= item.quantity %></td>
+                        <td>¥<%= number_with_delimiter(item.unit_price) %></td>
+                        <td class="text-success">¥<%= number_with_delimiter(item.total_price) %></td>
+                      </tr>
+                    <% end %>
                   <% end %>
                 </tbody>
               </table>

@@ -9,7 +9,7 @@ class Admin::UsersController < Admin::BaseController
 
   def all_users
     # 全ユーザーの階層構造を構築
-    @all_users = User.includes(:referrer, :referrals, :level, :purchases => :product).order(:id)
+    @all_users = User.includes(:referrer, :referrals, :level, purchases: { purchase_items: :product }).order(:id)
     
     # ルートユーザー（紹介者がいないユーザー）を取得
     @root_users = @all_users.select { |user| user.referrer.nil? }
@@ -33,12 +33,12 @@ class Admin::UsersController < Admin::BaseController
     @all_users.each do |user|
       # 今月の売上とボーナス
       current_purchases = user.purchases.where(purchased_at: current_month_start..current_month_end)
-      current_sales = current_purchases.joins(:product).sum('products.base_price * purchases.quantity')
+      current_sales = current_purchases.joins(purchase_items: :product).sum('purchase_items.unit_price * purchase_items.quantity')
       current_bonus = user.respond_to?(:bonus_in_period) ? user.bonus_in_period(current_month_start, current_month_end) : 0
       
       # 先月の売上とボーナス
       last_purchases = user.purchases.where(purchased_at: last_month_start..last_month_end)
-      last_sales = last_purchases.joins(:product).sum('products.base_price * purchases.quantity')
+      last_sales = last_purchases.joins(purchase_items: :product).sum('purchase_items.unit_price * purchase_items.quantity')
       last_bonus = user.respond_to?(:bonus_in_period) ? user.bonus_in_period(last_month_start, last_month_end) : 0
       
       @user_stats[user.id] = {
@@ -60,7 +60,7 @@ class Admin::UsersController < Admin::BaseController
     @purchases_with_descendants = Purchase.where(user_id: [@user.id] + descendant_ids)
                                           .in_period(@selected_month_start, @selected_month_end)
 
-    @total_sales_amount = @purchases_with_descendants.joins(:product).sum('products.base_price * purchases.quantity')
+    @total_sales_amount = @purchases_with_descendants.joins(purchase_items: :product).sum('purchase_items.unit_price * purchase_items.quantity')
 
     # ✅ ref ごとの売上・ボーナスを算出
     @referral_stats = {}
@@ -68,7 +68,7 @@ class Admin::UsersController < Admin::BaseController
     @referrals.each do |ref|
       # ref自身の購入（選択月）
       purchases = ref.purchases.in_period(@selected_month_start, @selected_month_end)
-      sales = purchases.joins(:product).sum('products.base_price * purchases.quantity')
+      sales = purchases.joins(purchase_items: :product).sum('purchase_items.unit_price * purchase_items.quantity')
 
       # ✅ refに起因する全購入（その子孫含む）
       descendant_ids = ref.descendant_ids
@@ -87,15 +87,37 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def edit
-    @levels = Level.all.order(:value)
+    @levels = Level.where.not(name: 'アジアビジネストラスト').order(:value)
     @users = User.where.not(id: @user.id).order(:name, :email)
+    @level_histories = @user.user_level_histories.includes(:level, :changed_by).recent.limit(10)
   end
 
   def update
-    if @user.update(user_params)
-      redirect_to admin_user_path(@user), notice: 'ユーザー情報が更新されました。'
+    # レベル変更があるかチェック
+    level_changed = params[:user][:level_id].present? && 
+                   params[:user][:level_id].to_i != @user.level_id
+
+    if level_changed
+      # レベル変更時の認証とバリデーション
+      unless validate_level_change
+        render :edit and return
+      end
+      
+      # レベル変更処理
+      if process_level_change
+        redirect_to admin_user_path(@user), 
+                   notice: "ユーザー情報とレベルが更新されました。レベル変更履歴が記録されました。"
+      else
+        flash.now[:error] = "レベル変更に失敗しました。"
+        render :edit
+      end
     else
-      render :edit
+      # 通常の更新処理
+      if @user.update(user_params)
+        redirect_to admin_user_path(@user), notice: 'ユーザー情報が更新されました。'
+      else
+        render :edit
+      end
     end
   end
 
@@ -132,5 +154,71 @@ class Admin::UsersController < Admin::BaseController
 
   def user_params
     params.require(:user).permit(:name, :email, :lstep_user_id, :level_id, :referred_by_id)
+  end
+
+  def validate_level_change
+    # 管理者パスワードの確認
+    admin_password = params[:admin_password]
+    if admin_password.blank?
+      flash.now[:error] = "レベル変更には管理者パスワードが必要です。"
+      return false
+    end
+
+    # 現在のユーザー（管理者）のパスワード認証
+    unless current_user.valid_password?(admin_password)
+      flash.now[:error] = "管理者パスワードが正しくありません。"
+      return false
+    end
+
+    # 変更理由の確認
+    change_reason = params[:level_change_reason]
+    if change_reason.blank?
+      flash.now[:error] = "レベル変更の理由を入力してください。"
+      return false
+    end
+
+    # 自己変更の禁止
+    if @user == current_user
+      flash.now[:error] = "自分自身のレベルを変更することはできません。"
+      return false
+    end
+
+    # 管理者権限の確認
+    unless current_user.admin?
+      flash.now[:error] = "レベル変更の権限がありません。"
+      return false
+    end
+
+    true
+  end
+
+  def process_level_change
+    new_level_id = params[:user][:level_id].to_i
+    change_reason = params[:level_change_reason]
+    ip_address = request.remote_ip
+
+    # レベル変更履歴の更新
+    success = @user.update_level_history(
+      new_level_id,
+      change_reason,
+      current_user,
+      ip_address
+    )
+
+    if success
+      # 他のユーザー情報も更新
+      other_params = user_params.except(:level_id)
+      @user.update(other_params) if other_params.present?
+      
+      # ログ記録
+      Rails.logger.info "Level changed: User #{@user.id} (#{@user.name}) " \
+                       "from #{@user.level_id} to #{new_level_id} " \
+                       "by #{current_user.id} (#{current_user.name}) " \
+                       "from IP #{ip_address}. Reason: #{change_reason}"
+      
+      true
+    else
+      false
+    end
   end
 end

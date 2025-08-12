@@ -224,52 +224,70 @@ class InvoicesController < ApplicationController
     Rails.logger.info "Date range: #{start_date} to #{end_date}"
     
     # 自分の販売に対するボーナス
-    self_purchases = current_user.purchases.includes(:product).where(purchased_at: start_date..end_date)
+    self_purchases = current_user.purchases.includes(purchase_items: :product).where(purchased_at: start_date..end_date)
     Rails.logger.info "Self purchases found: #{self_purchases.count}"
     
     self_purchases.each do |purchase|
-      product = purchase.product
-      base_price = product.base_price
-      my_price = product.product_prices.find_by(level_id: current_user.level_id)&.price || 0
-      bonus = (base_price - my_price) * purchase.quantity
-      
-      Rails.logger.info "Purchase: #{product.name}, base_price: #{base_price}, my_price: #{my_price}, bonus: #{bonus}"
-      
-      if bonus > 0
-        details << {
-          type: '自己販売',
-          user_name: current_user.name || current_user.email,
-          product_name: product.name,
-          quantity: purchase.quantity,
-          unit_bonus: bonus / purchase.quantity,
-          total_bonus: bonus,
-          purchased_at: purchase.purchased_at
-        }
+      purchase.purchase_items.each do |item|
+        product = item.product
+        base_price = product.base_price
+        my_price = product.product_prices.find_by(level_id: current_user.level_id)&.price || 0
+        bonus = (base_price - my_price) * item.quantity
+        
+        Rails.logger.info "Purchase Item: #{product.name}, base_price: #{base_price}, my_price: #{my_price}, bonus: #{bonus}"
+        
+        if bonus > 0
+          details << {
+            type: '自己販売',
+            user_name: current_user.name || current_user.email,
+            product_name: product.name,
+            quantity: item.quantity,
+            unit_bonus: bonus / item.quantity,
+            total_bonus: bonus,
+            purchased_at: purchase.purchased_at
+          }
+        end
       end
     end
     
     # 子孫の販売に対するボーナス
-    descendant_purchases = Purchase.includes(:product, :user)
+    descendant_purchases = Purchase.includes(purchase_items: :product, user: :level)
                                    .where(user_id: current_user.descendant_ids)
                                    .where(purchased_at: start_date..end_date)
     
     Rails.logger.info "Descendant purchases found: #{descendant_purchases.count}"
     
     descendant_purchases.each do |purchase|
-      bonus = current_user.bonus_for_purchase(purchase)
-      
-      Rails.logger.info "Descendant purchase: #{purchase.product.name} by #{purchase.user.name}, bonus: #{bonus}"
-      
-      if bonus > 0
-        details << {
-          type: '下位販売',
-          user_name: purchase.user.name || purchase.user.email,
-          product_name: purchase.product.name,
-          quantity: purchase.quantity,
-          unit_bonus: bonus / purchase.quantity,
-          total_bonus: bonus,
+      purchase.purchase_items.each do |item|
+        # 各アイテムに対するボーナスを個別に計算
+        temp_purchase = Purchase.new(
+          user: purchase.user,
+          customer: purchase.customer,
           purchased_at: purchase.purchased_at
-        }
+        )
+        temp_item = PurchaseItem.new(
+          purchase: temp_purchase,
+          product: item.product,
+          quantity: item.quantity,
+          unit_price: item.unit_price
+        )
+        temp_purchase.purchase_items = [temp_item]
+        
+        bonus = current_user.bonus_for_purchase(temp_purchase)
+        
+        Rails.logger.info "Descendant purchase item: #{item.product.name} by #{purchase.user.name}, bonus: #{bonus}"
+        
+        if bonus > 0
+          details << {
+            type: '下位販売',
+            user_name: purchase.user.name || purchase.user.email,
+            product_name: item.product.name,
+            quantity: item.quantity,
+            unit_bonus: bonus / item.quantity,
+            total_bonus: bonus,
+            purchased_at: purchase.purchased_at
+          }
+        end
       end
     end
     

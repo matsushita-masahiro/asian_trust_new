@@ -6,7 +6,7 @@ class Admin::PurchasesController < Admin::BaseController
     @selected_month = params[:month] || Time.current.strftime('%Y-%m')
     
     # 月別の購入履歴を取得
-    @purchases = Purchase.includes(:user, :product, :customer)
+    @purchases = Purchase.includes(:user, :customer, purchase_items: :product)
                         .in_month_tokyo(@selected_month)
                         .order(purchased_at: :desc)
     
@@ -22,6 +22,12 @@ class Admin::PurchasesController < Admin::BaseController
   end
 
   def edit
+    # 複数商品の購入は編集不可
+    if @purchase.purchase_items.count > 1
+      redirect_to admin_purchases_path, alert: '複数商品を含む購入は編集できません。'
+      return
+    end
+    
     # 編集画面で必要な情報を準備
   end
 
@@ -35,6 +41,7 @@ class Admin::PurchasesController < Admin::BaseController
 
   def new
     @purchase = Purchase.new
+    @purchase.purchase_items.build  # 空のpurchase_itemを初期化
     @users = User.all.order(:name, :email)
     @products = Product.all.order(:name)
   end
@@ -45,8 +52,18 @@ class Admin::PurchasesController < Admin::BaseController
     customer = Customer.find_or_create_by(name: customer_name)
     
     # 購入情報を作成
-    purchase_params = create_purchase_params.merge(customer_id: customer.id)
-    @purchase = Purchase.new(purchase_params)
+    @purchase = Purchase.new(
+      user_id: params[:purchase][:user_id],
+      customer_id: customer.id,
+      purchased_at: params[:purchase][:purchased_at]
+    )
+    
+    # 購入アイテムを作成
+    @purchase.purchase_items.build(
+      product_id: params[:purchase][:product_id],
+      quantity: params[:purchase][:quantity],
+      unit_price: params[:purchase][:unit_price]
+    )
     
     if @purchase.save
       redirect_to admin_purchases_path, notice: '購入情報を作成しました。'
@@ -70,11 +87,11 @@ class Admin::PurchasesController < Admin::BaseController
   end
 
   def purchase_params
-    params.require(:purchase).permit(:quantity, :unit_price)
+    params.require(:purchase).permit(purchase_items_attributes: [:id, :quantity, :unit_price])
   end
 
   def create_purchase_params
-    params.require(:purchase).permit(:user_id, :product_id, :customer_id, :quantity, :unit_price, :purchased_at)
+    params.require(:purchase).permit(:user_id, :customer_id, :purchased_at, :product_id, :quantity, :unit_price)
   end
 
   def generate_month_options

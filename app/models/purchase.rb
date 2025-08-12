@@ -1,12 +1,21 @@
 class Purchase < ApplicationRecord
   # 🔗 関連
   belongs_to :user      # 購入を仲介した代理店
-  belongs_to :product
   belongs_to :customer
+  has_many :purchase_items, dependent: :destroy
+  has_many :products, through: :purchase_items
 
-  # 💰 合計金額（単価 × 数量）
+  # ネストした属性を受け入れる
+  accepts_nested_attributes_for :purchase_items, allow_destroy: true
+
+  # 💰 合計金額（全アイテムの合計）
   def total_price
-    (unit_price || 0) * (quantity || 0)
+    purchase_items.sum(&:total_price)
+  end
+
+  # 商品数の合計
+  def total_quantity
+    purchase_items.sum(:quantity)
   end
 
   # 📅 今月の購入（東京時間基準）

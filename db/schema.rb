@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_07_231049) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_09_130751) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -132,19 +132,45 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_07_231049) do
     t.string "unit_label"
   end
 
+  create_table "purchase_items", force: :cascade do |t|
+    t.integer "purchase_id", null: false
+    t.integer "product_id", null: false
+    t.integer "quantity", default: 1, null: false
+    t.integer "unit_price", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "seller_price"
+    t.index ["product_id"], name: "index_purchase_items_on_product_id"
+    t.index ["purchase_id"], name: "index_purchase_items_on_purchase_id"
+  end
+
   create_table "purchases", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.integer "product_id", null: false
-    t.integer "price"
     t.datetime "purchased_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "customer_id"
-    t.integer "quantity"
-    t.integer "unit_price"
     t.index ["customer_id"], name: "index_purchases_on_customer_id"
-    t.index ["product_id"], name: "index_purchases_on_product_id"
     t.index ["user_id"], name: "index_purchases_on_user_id"
+  end
+
+  create_table "user_level_histories", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "level_id", null: false
+    t.integer "previous_level_id"
+    t.datetime "effective_from", null: false
+    t.datetime "effective_to"
+    t.text "change_reason", null: false
+    t.integer "changed_by_id", null: false
+    t.string "ip_address", limit: 45
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["changed_by_id"], name: "index_user_level_histories_on_changed_by_id"
+    t.index ["created_at"], name: "index_user_level_histories_on_created_at"
+    t.index ["level_id"], name: "index_user_level_histories_on_level_id"
+    t.index ["previous_level_id"], name: "index_user_level_histories_on_previous_level_id"
+    t.index ["user_id", "effective_from", "effective_to"], name: "idx_user_level_histories_effective_dates"
+    t.index ["user_id"], name: "index_user_level_histories_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -192,8 +218,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_07_231049) do
   add_foreign_key "invoices", "users"
   add_foreign_key "product_prices", "levels"
   add_foreign_key "product_prices", "products"
+  add_foreign_key "purchase_items", "products"
+  add_foreign_key "purchase_items", "purchases"
   add_foreign_key "purchases", "customers"
-  add_foreign_key "purchases", "products"
   add_foreign_key "purchases", "users"
+  add_foreign_key "user_level_histories", "levels"
+  add_foreign_key "user_level_histories", "levels", column: "previous_level_id"
+  add_foreign_key "user_level_histories", "users"
+  add_foreign_key "user_level_histories", "users", column: "changed_by_id"
   add_foreign_key "users", "levels"
 end

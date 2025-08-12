@@ -14,26 +14,28 @@ class RestructurePurchasesForMultipleProducts < ActiveRecord::Migration[7.1]  # 
     end
     add_index :purchase_items, [:purchase_id, :product_id]
 
-    # 2) バックフィルは匿名モデルで（アプリのモデルは使わない）
-    PurchaseItemRow   = Class.new(ActiveRecord::Base) { self.table_name = "purchase_items" }
-    PurchaseRow       = Class.new(ActiveRecord::Base) { self.table_name = "purchases" }
-    ProductPriceRow   = Class.new(ActiveRecord::Base) { self.table_name = "product_prices" }
-    UserRow           = Class.new(ActiveRecord::Base) { self.table_name = "users" }
+    # OK: ローカル変数にする
+    purchase_item_row  = Class.new(ActiveRecord::Base) { self.table_name = "purchase_items" }
+    purchase_row       = Class.new(ActiveRecord::Base) { self.table_name = "purchases" }
+    product_price_row  = Class.new(ActiveRecord::Base) { self.table_name = "product_prices" }
+    user_row           = Class.new(ActiveRecord::Base) { self.table_name = "users" }
 
-    PurchaseRow.find_in_batches(batch_size: 1000) do |batch|
+    # 以降の処理もローカル変数名で呼び出す
+    purchase_row.find_in_batches(batch_size: 1000) do |batch|
       rows = batch.filter_map do |p|
-        next unless p.respond_to?(:product_id) && p.product_id.present?
+        product_id  = p.respond_to?(:product_id) ? p.product_id : nil
+        next unless product_id.present?
 
-        level_id    = UserRow.where(id: p.user_id).pick(:level_id)
-        quantity    = (p.try(:quantity)    || 1).to_i
-        unit_price  = (p.try(:unit_price)  || p.try(:price) || 0).to_i
+        level_id    = user_row.where(id: p.user_id).pick(:level_id)
+        quantity    = (p.try(:quantity) || 1).to_i
+        unit_price  = (p.try(:unit_price) || p.try(:price) || 0).to_i
         buyer_price = unit_price
-        seller_prc  = ProductPriceRow.where(product_id: p.product_id, level_id: level_id).pick(:price) || 0
+        seller_prc  = product_price_row.where(product_id: product_id, level_id: level_id).pick(:price) || 0
         subtotal    = quantity * unit_price
 
         {
           purchase_id:  p.id,
-          product_id:   p.product_id,
+          product_id:   product_id,
           quantity:     quantity,
           unit_price:   unit_price,
           buyer_price:  buyer_price,
@@ -43,7 +45,7 @@ class RestructurePurchasesForMultipleProducts < ActiveRecord::Migration[7.1]  # 
           updated_at:   Time.current
         }
       end
-      PurchaseItemRow.insert_all(rows) if rows.any?
+      purchase_item_row.insert_all(rows) if rows.any?
     end
 
     # 3) 旧カラムの削除は分けるのが無難（ここでやるなら存在チェック付きで）

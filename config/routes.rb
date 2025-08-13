@@ -5,10 +5,9 @@ Rails.application.routes.draw do
     post 'lstep/purchase', to: 'lstep#purchase'
   end
 
-  # Devise
-  devise_for :users, controllers: {
+  # Devise（登録機能は無効化 - Lステップからの自動登録のみ）
+  devise_for :users, skip: [:registrations], controllers: {
     sessions:      'users/sessions',
-    registrations: 'users/registrations',
     passwords:     'users/passwords',
     confirmations: 'users/confirmations',
     unlocks:       'users/unlocks'

@@ -1,8 +1,8 @@
 require 'set'
 
 class User < ApplicationRecord
-  # Devise（認証機能）
-  devise :database_authenticatable, :registerable,
+  # Devise（認証機能）- registrableは無効化（Lステップからの自動登録のみ）
+  devise :database_authenticatable,
          :recoverable, :rememberable, :validatable,
          :trackable, :confirmable, :lockable
 

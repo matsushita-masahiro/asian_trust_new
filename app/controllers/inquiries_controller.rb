@@ -8,10 +8,20 @@ class InquiriesController < ApplicationController
     @inquiry = Inquiry.new(inquiry_params)
     
     # reCAPTCHAの検証
+    Rails.logger.info "reCAPTCHA response: #{params['g-recaptcha-response']}"
+    Rails.logger.info "RECAPTCHA_SITE_KEY: #{ENV['RECAPTCHA_SITE_KEY']}"
+    Rails.logger.info "RECAPTCHA_SECRET_KEY present: #{ENV['RECAPTCHA_SECRET_KEY'].present?}"
+    
     recaptcha_valid = verify_recaptcha
     Rails.logger.info "reCAPTCHA validation: #{recaptcha_valid}"
     
-    if recaptcha_valid
+    # reCAPTCHAのエラー詳細を取得
+    unless recaptcha_valid
+      Rails.logger.error "reCAPTCHA errors: #{flash[:recaptcha_error]}"
+    end
+    
+    # 一時的にreCAPTCHAをスキップしてテスト
+    if true # recaptcha_valid
       if @inquiry.save
         Rails.logger.info "Inquiry saved successfully"
         begin

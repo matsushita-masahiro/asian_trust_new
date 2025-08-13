@@ -10,6 +10,6 @@ class InquiryMailer < ApplicationMailer
 
   def thanks_to_user(inquiry)
     @inquiry = inquiry
-    mail(to: ENV['ADMIN_EMAIL'], subject: "【#{ENV['COMPANY_NAME']}】お問い合わせありがとうございます")
+    mail(to: @inquiry.email, subject: "【#{ENV['COMPANY_NAME']}】お問い合わせありがとうございます")
   end
 end

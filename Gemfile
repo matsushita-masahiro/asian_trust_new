@@ -71,6 +71,7 @@ gem 'dotenv-rails', groups: [:development, :test]
 
 gem 'devise'
 gem 'seed-fu'
+gem 'recaptcha'
 
 gem 'wicked_pdf'
 

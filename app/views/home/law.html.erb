@@ -1,47 +1,99 @@
-<section id="law" class="container-fluid py-5 extra-padding">
-  <h2 class="title">特定商取引法に基づく表記</h2>
-  <table class="table mt-4">
-    <tbody>
-      <tr>
-        <th>販売業者</th>
-        <td><%= ENV['COMPANY_NAME']%></td>
-      </tr>
-      <tr>
-        <th>代表責任者</th>
-        <td>******</td>
-      </tr>
-      <tr>
-        <th>所在地</th>
-        <td>〒150-0045 ******************</td>
-      </tr>
-      <tr>
-        <th>電話番号</th>
-        <td>**************（お問合せはフォームからお願いします）</td>
-      </tr>
-      <tr>
-        <th>メールアドレス</th>
-        <td><%= ENV['ONAMAE_MAIL_USER'] %></td>
-      </tr>
-      <tr>
-        <th>販売価格</th>
-        <td>各サービスの紹介ページに記載</td>
-      </tr>
-      <tr>
-        <th>商品代金以外の必要料金</th>
-        <td>消費税、振込手数料など</td>
-      </tr>
-      <tr>
-        <th>お支払い方法</th>
-        <td>クレジットカード（Stripe / PayPal）・銀行振込</td>
-      </tr>
-      <tr>
-        <th>商品の引き渡し時期</th>
-        <td>各サービスページに記載。デジタルサービスは決済確認後即時提供。</td>
-      </tr>
-      <tr>
-        <th>返品・キャンセル</th>
-        <td>サービスの性質上、提供後の返品・キャンセルは不可。未提供分は全額返金。</td>
-      </tr>
-    </tbody>
-  </table>
-</section>
+<div class="container py-5 px-4 px-md-5" style="margin-top: 100px;">
+  <h2 class="mb-4">特定商取引法に基づく表記</h2>
+  
+  <div class="alert alert-info mb-4">
+    <h5><i class="fas fa-info-circle"></i> 重要なお知らせ</h5>
+    <p class="mb-0">当社では商品販売と併せて販売パートナー制度（特約代理店・代理店・アドバイザー等）を運営しております。各パートナー様には販売実績に応じたインセンティブをお支払いしており、以下に概要を記載しております。詳細については、当社との契約締結時にご説明いたします。</p>
+  </div>
+  
+  <div class="row">
+    <div class="col-12">
+      <table class="table table-bordered">
+        <tbody>
+          <tr>
+            <th class="bg-light" style="width: 200px;">販売業者</th>
+            <td>株式会社アジアビジネストラスト</td>
+          </tr>
+          <tr>
+            <th class="bg-light">代表責任者</th>
+            <td>道端泰代</td>
+          </tr>
+          <tr>
+            <th class="bg-light">所在地</th>
+            <td>〒104-0061<br>東京都中央区銀座4丁目8－1銀座鶴月ビル3階</td>
+          </tr>
+          <tr>
+            <th class="bg-light">電話番号</th>
+            <td>03-5904-8148</td>
+          </tr>
+          <tr>
+            <th class="bg-light">電話受付時間</th>
+            <td>10:00～17:00</td>
+          </tr>
+          <tr>
+            <th class="bg-light">メールアドレス</th>
+            <td>abt1@asia-b-t.com</td>
+          </tr>
+          <tr>
+            <th class="bg-light">サイトURL</th>
+            <td>https://www.abt-saisei.com</td>
+          </tr>
+          <tr>
+            <th class="bg-light">販売価格</th>
+            <td>各商品のご注文ページに記載している価格とします。</td>
+          </tr>
+          <tr>
+            <th class="bg-light">商品代金以外に必要な料金</th>
+            <td>消費税、送料（日本全国一律2,500円）</td>
+          </tr>
+          <tr>
+            <th class="bg-light">引き渡し時期</th>
+            <td>ご注文確定から3営業日以内に発送します。</td>
+          </tr>
+          <tr>
+            <th class="bg-light">お支払い方法とお支払いの時期</th>
+            <td>クレジットカード決済：ご注文時にお支払いが確定します。<br>
+                銀行振込：振込完了時にお支払いが確定します。</td>
+          </tr>
+          <tr>
+            <th class="bg-light">返品・交換・キャンセルについて</th>
+            <td>商品発送後の返品・交換・キャンセルには、基本的に対応しておりません。<br>
+                商品に初期不良がある場合のみ交換が可能ですので、ご連絡ください。</td>
+          </tr>
+          <tr>
+            <th class="bg-light">返品期限</th>
+            <td>商品到着から7日以内にご連絡ください。</td>
+          </tr>
+          <tr>
+            <th class="bg-light">返品送料</th>
+            <td>商品に初期不良がある場合は、弊社で負担いたします。<br>
+                それ以外は、お客様のご負担になります。</td>
+          </tr>
+          <tr>
+            <th class="bg-light">販売パートナー制度について</th>
+            <td>当社では販売パートナー制度を運営しており、特約代理店・代理店・アドバイザー等の各パートナー様には、<br>
+                販売実績に応じてインセンティブをお支払いしております。<br>
+                詳細な条件・インセンティブ率等については、契約締結時にご説明いたします。</td>
+          </tr>
+          <tr>
+            <th class="bg-light">インセンティブの支払い概要</th>
+            <td>支払い時期：毎月計算し、翌月末までにお支払い<br>
+                支払い方法：銀行振込<br>
+                振込手数料：弊社負担<br>
+                ※具体的な計算方法・条件は契約時にご説明いたします。</td>
+          </tr>
+          <tr>
+            <th class="bg-light">契約について</th>
+            <td>パートナー契約の詳細な条件、解除条件、インセンティブの詳細等については、<br>
+                契約締結時に個別にご説明し、契約書にて明確に定めております。</td>
+          </tr>
+          <tr>
+            <th class="bg-light">個人情報の取り扱い</th>
+            <td>お客様の個人情報は、商品の発送、パートナー管理、インセンティブの支払い等の目的でのみ使用し、<br>
+                適切に管理いたします。詳細は<a href="<%= privacy_path %>">プライバシーポリシー</a>をご確認ください。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

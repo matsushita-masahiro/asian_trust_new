@@ -129,7 +129,18 @@
                           <% elsif invoice.receipt_requested? %>
                             <span class="text-muted">領収書発行依頼済</span>
                           <% elsif invoice.receipt_sent? %>
-                            <span class="text-muted">発行済み</span>
+                            <% if invoice.receipt_file.attached? %>
+                              <div class="d-flex gap-1">
+                                <%= link_to show_receipt_admin_invoice_status_path(invoice), 
+                                    class: "btn btn-outline-primary btn-sm", 
+                                    title: "領収書PDF表示",
+                                    target: "_blank" do %>
+                                  <i class="fas fa-file-pdf"></i> PDF表示
+                                <% end %>
+                              </div>
+                            <% else %>
+                              <span class="text-danger">PDF未生成</span>
+                            <% end %>
                           <% end %>
                         </div>
                       </td>

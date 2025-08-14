@@ -19,11 +19,29 @@ class Admin::InvoiceStatusController < Admin::BaseController
   def show_receipt
     @invoice = Invoice.find(params[:id])
     
-    # 領収書発行依頼済みのみ表示可能
-    unless @invoice.receipt_requested?
+    # 領収書PDFが存在するかチェック
+    unless @invoice.receipt_file.attached?
       redirect_to admin_invoice_status_index_path, 
-                  alert: '領収書発行依頼済みの請求書のみ表示できます。'
+                  alert: '領収書PDFが見つかりません。'
       return
+    end
+    
+    # S3にファイルが実際に存在するかチェック
+    begin
+      if @invoice.receipt_file.blob.service.exist?(@invoice.receipt_file.blob.key)
+        # PDFの内容を取得して表示
+        respond_to do |format|
+          format.html { redirect_to rails_blob_path(@invoice.receipt_file, disposition: "inline") }
+          format.pdf { redirect_to rails_blob_path(@invoice.receipt_file, disposition: "attachment") }
+        end
+      else
+        redirect_to admin_invoice_status_index_path, 
+                    alert: '領収書PDFファイルがS3に存在しません。'
+      end
+    rescue => e
+      Rails.logger.error "Receipt PDF access error: #{e.message}"
+      redirect_to admin_invoice_status_index_path, 
+                  alert: '領収書PDFの取得に失敗しました。'
     end
     
     # インセンティブの詳細情報を取得

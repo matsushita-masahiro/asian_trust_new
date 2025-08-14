@@ -34,23 +34,22 @@
     
     .receipt-info {
       margin-bottom: 30px;
-    }
-    
-    .receipt-info .row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    
-    .receipt-info .left,
-    .receipt-info .right {
-      width: 48%;
+      text-align: left;
     }
     
     .recipient {
       font-size: 18px;
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .receipt-details {
+      margin-top: 20px;
+    }
+    
+    .receipt-details p {
+      margin-bottom: 8px;
+      font-size: 14px;
     }
     
     .amount-section {
@@ -98,27 +97,44 @@
     }
     
     .details-section {
-      margin: 30px 0;
+      margin: 20px 0;
+      page-break-inside: auto;
     }
     
     .details-section h3 {
-      font-size: 16px;
-      margin-bottom: 15px;
-      padding-bottom: 5px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      padding-bottom: 3px;
       border-bottom: 1px solid #333;
+      page-break-after: avoid;
     }
     
     .details-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
-      font-size: 10px;
+      margin-bottom: 15px;
+      font-size: 8px;
       font-family: 'Times New Roman', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho Pro', 'MS PMincho', serif;
+      page-break-inside: avoid;
+    }
+    
+    .details-table tbody {
+      page-break-inside: auto;
+    }
+    
+    .details-table tfoot {
+      page-break-inside: avoid;
+      page-break-before: avoid;
+    }
+    
+    .details-table tfoot tr {
+      page-break-inside: avoid;
+      page-break-before: avoid;
     }
     
     .details-table th,
     .details-table td {
-      padding: 8px;
+      padding: 4px;
       text-align: left;
       border: 1px solid #333;
       vertical-align: middle;
@@ -148,21 +164,17 @@
   </div>
 
   <div class="receipt-info">
-    <div class="row">
-      <div class="left">
-        <div class="recipient">
-          <%= invoice.invoice_recipient.name %> 様
-        </div>
-        <% if invoice.invoice_recipient.department.present? %>
-          <p><%= invoice.invoice_recipient.department %></p>
-        <% end %>
-      </div>
-      
-      <div class="right" style="text-align: right;">
-        <p><strong>領収書番号:</strong> REC-<%= invoice.id.to_s.rjust(6, '0') %></p>
-        <p><strong>発行日:</strong> <%= Date.current.strftime("%Y年%m月%d日") %></p>
-        <p><strong>対象月:</strong> <%= invoice.target_month_display %></p>
-      </div>
+    <div class="recipient">
+      <%= invoice.invoice_recipient.name %> 様
+    </div>
+    <% if invoice.invoice_recipient.department.present? %>
+      <p><%= invoice.invoice_recipient.department %></p>
+    <% end %>
+    
+    <div class="receipt-details">
+      <p><strong>領収書番号:</strong> REC-<%= invoice.id.to_s.rjust(6, '0') %></p>
+      <p><strong>発行日:</strong> <%= Date.current.strftime("%Y年%m月%d日") %></p>
+      <p><strong>対象月:</strong> <%= invoice.target_month_display %></p>
     </div>
   </div>
 
@@ -175,7 +187,8 @@
   <% if bonus_details.any? %>
   <div class="details-section">
     <h3>インセンティブ明細</h3>
-    <table class="details-table">
+    <div style="page-break-inside: avoid;">
+      <table class="details-table">
       <thead>
         <tr>
           <th>購入ID</th>
@@ -189,8 +202,8 @@
         </tr>
       </thead>
       <tbody>
-        <% bonus_details.each do |detail| %>
-        <tr>
+        <% bonus_details.each_with_index do |detail, index| %>
+        <tr<%= ' style="page-break-inside: avoid;"'.html_safe if index >= bonus_details.length - 3 %>>
           <td>#<%= detail[:purchase_id] %></td>
           <td><%= detail[:purchased_at].strftime("%m/%d") %></td>
           <td><%= detail[:type] %></td>
@@ -202,13 +215,20 @@
         </tr>
         <% end %>
       </tbody>
-      <tfoot>
-        <tr style="background-color: #f0f0f0; font-weight: bold;">
-          <td colspan="7">合計</td>
-          <td class="number">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:total_bonus] }) %></td>
-        </tr>
-      </tfoot>
     </table>
+    
+    <!-- 合計行を独立したテーブルとして配置 -->
+    <div style="page-break-inside: avoid; page-break-before: avoid;">
+      <table class="details-table" style="margin-top: 0; page-break-inside: avoid;">
+        <tfoot>
+          <tr style="background-color: #333; color: white; font-weight: bold;">
+            <td colspan="7" style="text-align: center; background-color: #333; color: white;">合計</td>
+            <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:total_bonus] }) %></td>
+          </tr>
+        </tfoot>
+        </table>
+      </div>
+    </div>
   </div>
   <% end %>
 

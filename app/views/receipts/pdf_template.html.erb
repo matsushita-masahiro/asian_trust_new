@@ -94,6 +94,40 @@
       padding-bottom: 5px;
     }
     
+    .details-section {
+      margin: 30px 0;
+    }
+    
+    .details-section h3 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #333;
+    }
+    
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 10px;
+    }
+    
+    .details-table th,
+    .details-table td {
+      padding: 6px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    
+    .details-table th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+    }
+    
+    .details-table .number {
+      text-align: right;
+    }
+    
     .footer {
       margin-top: 50px;
       text-align: center;
@@ -132,6 +166,46 @@
     <div class="amount">¥<%= number_with_delimiter(invoice.total_amount) %>-</div>
     <div class="amount-description">（<%= invoice.target_month_display %>分インセンティブ）</div>
   </div>
+
+  <% if bonus_details.any? %>
+  <div class="details-section">
+    <h3>インセンティブ明細</h3>
+    <table class="details-table">
+      <thead>
+        <tr>
+          <th>購入ID</th>
+          <th>日付</th>
+          <th>種別</th>
+          <th>販売者</th>
+          <th>商品名</th>
+          <th class="number">数量</th>
+          <th class="number">単価</th>
+          <th class="number">金額</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% bonus_details.each do |detail| %>
+        <tr>
+          <td>#<%= detail[:purchase_id] %></td>
+          <td><%= detail[:purchased_at].strftime("%m/%d") %></td>
+          <td><%= detail[:type] %></td>
+          <td><%= detail[:user_name] %></td>
+          <td><%= detail[:product_name] %></td>
+          <td class="number"><%= detail[:quantity] %></td>
+          <td class="number">¥<%= number_with_delimiter(detail[:unit_bonus].round) %></td>
+          <td class="number">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
+        </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr style="background-color: #f0f0f0; font-weight: bold;">
+          <td colspan="7">合計</td>
+          <td class="number">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:total_bonus] }) %></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <% end %>
 
   <div class="company-info">
     <div class="left">

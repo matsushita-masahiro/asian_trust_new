@@ -38,7 +38,8 @@ class ReceiptPdfService
       template: 'receipts/pdf_template',
       layout: 'pdf',
       locals: { 
-        invoice: @invoice
+        invoice: @invoice,
+        bonus_details: get_bonus_details
       },
       formats: [:html]
     )
@@ -138,5 +139,62 @@ class ReceiptPdfService
 
   def generate_filename
     "receipt_#{@invoice.id}_#{@invoice.target_month}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.pdf"
+  end
+
+  def get_bonus_details
+    return [] unless @invoice.target_month.present?
+    
+    selected_month_start = Date.strptime(@invoice.target_month, "%Y-%m").beginning_of_month
+    selected_month_end = Date.strptime(@invoice.target_month, "%Y-%m").end_of_month
+    
+    # InvoicePdfServiceと同じ計算ロジックを使用
+    details = []
+    user = @invoice.user
+    
+    # 自身 + 下位の購入履歴（選択月）
+    descendant_ids = user.descendants.pluck(:id)
+    purchases_with_descendants = Purchase.includes(purchase_items: :product, customer: [], user: [])
+                                        .where(user_id: [user.id] + descendant_ids)
+                                        .where(purchased_at: selected_month_start..selected_month_end)
+
+    purchases_with_descendants.each do |purchase|
+      purchase.purchase_items.each do |item|
+        # 管理画面と同じインセンティブ計算ロジック
+        if purchase.user == user
+          # 自分の販売の場合
+          item_bonus = user.bonus_for_purchase_item(item)
+          type = '自己販売'
+        else
+          # 子孫の販売の場合：階層差額計算
+          purchase_user_level = purchase.user.level_at(purchase.purchased_at)
+          my_level_at_purchase = user.level_at(purchase.purchased_at)
+          purchase_user_price = item.product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
+          my_price = item.product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+          
+          if purchase_user_price > my_price
+            item_bonus = (purchase_user_price - my_price) * item.quantity
+          else
+            item_bonus = 0
+          end
+          type = '下位販売'
+        end
+        
+        # インセンティブがある場合のみ詳細に追加
+        if item_bonus > 0
+          details << {
+            type: type,
+            user_name: purchase.user.name || purchase.user.email,
+            product_name: item.product.name,
+            quantity: item.quantity,
+            unit_bonus: item_bonus / item.quantity,
+            total_bonus: item_bonus,
+            purchased_at: purchase.purchased_at,
+            purchase_id: purchase.id
+          }
+        end
+      end
+    end
+
+    details.sort_by { |d| d[:purchased_at] }
   end
 end

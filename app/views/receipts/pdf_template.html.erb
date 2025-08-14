@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>領収書</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+    
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      margin: 0;
+      padding: 15px 0;
+      border-bottom: 3px solid #333;
+    }
+    
+    .receipt-info {
+      margin-bottom: 30px;
+    }
+    
+    .receipt-info .row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    
+    .receipt-info .left,
+    .receipt-info .right {
+      width: 48%;
+    }
+    
+    .recipient {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .amount-section {
+      text-align: center;
+      margin: 40px 0;
+      padding: 30px;
+      border: 3px solid #333;
+      background-color: #f9f9f9;
+    }
+    
+    .amount-section p {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+    }
+    
+    .amount {
+      font-size: 36px;
+      font-weight: bold;
+      color: #2e7d32;
+      margin: 15px 0;
+    }
+    
+    .amount-description {
+      font-size: 14px;
+      color: #666;
+      margin-top: 10px;
+    }
+    
+    .company-info {
+      margin-top: 40px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .company-info .left,
+    .company-info .right {
+      width: 48%;
+    }
+    
+    .company-info h4 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
+    }
+    
+    .footer {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 11px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>領収書</h1>
+    <p>Receipt</p>
+  </div>
+
+  <div class="receipt-info">
+    <div class="row">
+      <div class="left">
+        <div class="recipient">
+          <%= invoice.invoice_recipient.name %> 様
+        </div>
+        <% if invoice.invoice_recipient.department.present? %>
+          <p><%= invoice.invoice_recipient.department %></p>
+        <% end %>
+      </div>
+      
+      <div class="right" style="text-align: right;">
+        <p><strong>領収書番号:</strong> REC-<%= invoice.id.to_s.rjust(6, '0') %></p>
+        <p><strong>発行日:</strong> <%= Date.current.strftime("%Y年%m月%d日") %></p>
+        <p><strong>対象月:</strong> <%= invoice.target_month_display %></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="amount-section">
+    <p>下記の通り領収いたしました</p>
+    <div class="amount">¥<%= number_with_delimiter(invoice.total_amount) %>-</div>
+    <div class="amount-description">（<%= invoice.target_month_display %>分インセンティブ）</div>
+  </div>
+
+  <div class="company-info">
+    <div class="left">
+      <h4>発行者</h4>
+      <p><strong>株式会社アジアビジネストラスト</strong></p>
+      <p>〒104-0061</p>
+      <p>東京都中央区銀座4丁目8－1銀座鶴月ビル3階</p>
+      <p>TEL: 03-5904-8148</p>
+      <p>Email: abt1@asia-b-t.com</p>
+    </div>
+    
+    <div class="right">
+      <h4>但し書き</h4>
+      <p>インセンティブ報酬として</p>
+      
+      <h4 style="margin-top: 30px;">備考</h4>
+      <p>※ 本領収書は再発行いたしません。</p>
+      <p>※ 大切に保管してください。</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>この領収書は電子的に発行されたものです。</p>
+    <p>ご不明な点がございましたら、上記連絡先までお問い合わせください。</p>
+  </div>
+</body>
+</html>

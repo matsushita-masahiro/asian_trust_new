@@ -108,7 +108,7 @@ class InvoicesController < ApplicationController
     Rails.logger.info "Invoice errors: #{@invoice.errors.full_messages}" unless @invoice.valid?
     
     if @invoice.save
-      redirect_to invoice_path(@invoice), notice: '請求書が作成されました。内容を確認してください。'
+      redirect_to invoice_path(@invoice), notice: '請求書が作成されました。確認後に請求書を送付してください。'
     else
       @invoice_recipients = InvoiceRecipient.all
       # エラー時に必要な変数を再設定
@@ -152,17 +152,51 @@ class InvoicesController < ApplicationController
   def send_invoice
     @invoice = current_user.invoices.find(params[:id])
     
+    # 既に送付済みの場合は再送付として処理
+    is_resend = @invoice.sent?
+    
     begin
-      # メール送信
-      InvoiceMailer.send_invoice(@invoice).deliver_now
+      Rails.logger.info "Starting invoice send process for Invoice #{@invoice.id}"
       
-      # 送付処理
-      @invoice.update!(sent_at: Time.current, status: Invoice::SENT)
+      # PDF生成とS3アップロード
+      pdf_service = InvoicePdfService.new(@invoice)
+      Rails.logger.info "Generating PDF for Invoice #{@invoice.id}"
+      pdf_content = pdf_service.generate_and_upload_pdf
+      Rails.logger.info "PDF generated and uploaded successfully for Invoice #{@invoice.id}"
       
-      redirect_to invoice_path(@invoice), notice: '請求書を送付しました。'
+      # メール送信（PDFを添付）
+      Rails.logger.info "Sending email for Invoice #{@invoice.id}"
+      InvoiceMailer.send_invoice(@invoice, pdf_content).deliver_now
+      Rails.logger.info "Email sent successfully for Invoice #{@invoice.id}"
+      
+      # 送付処理（初回送付の場合のみステータス更新）
+      unless is_resend
+        @invoice.update!(sent_at: Time.current, status: Invoice::SENT)
+        Rails.logger.info "Invoice #{@invoice.id} status updated to SENT"
+      else
+        @invoice.update!(sent_at: Time.current)
+        Rails.logger.info "Invoice #{@invoice.id} resent, sent_at updated"
+      end
+      
+      Rails.logger.info "Invoice #{@invoice.id} sent successfully with PDF uploaded to S3"
+      
+      message = is_resend ? '請求書を再送付しました。PDFは保存されました。' : '請求書を送付しました。PDFは保存されました。'
+      redirect_to invoice_path(@invoice), notice: message
+      
     rescue => e
-      Rails.logger.error "Invoice send error: #{e.message}"
-      redirect_to invoice_path(@invoice), alert: '請求書の送付に失敗しました。管理者にお問い合わせください。'
+      Rails.logger.error "Invoice send error for Invoice #{@invoice.id}: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      
+      # エラーの詳細をログに記録
+      if e.message.include?('S3')
+        Rails.logger.error "S3 upload failed for Invoice #{@invoice.id}"
+      elsif e.message.include?('PDF')
+        Rails.logger.error "PDF generation failed for Invoice #{@invoice.id}"
+      elsif e.message.include?('Mail')
+        Rails.logger.error "Email sending failed for Invoice #{@invoice.id}"
+      end
+      
+      redirect_to invoice_path(@invoice), alert: "請求書の送付に失敗しました。エラー: #{e.message}"
     end
   end
 
@@ -209,20 +243,42 @@ class InvoicesController < ApplicationController
   def send_receipt
     @invoice = current_user.invoices.find(params[:id])
     
-    # 確認済みステータスのみ領収書発行可能
-    unless @invoice.confirmed?
-      redirect_to history_invoices_path, alert: '確認済みの請求書のみ領収書を発行できます。'
+    # 領収書発行依頼済みステータスのみ領収書発行可能
+    unless @invoice.receipt_requested?
+      redirect_to history_invoices_path, alert: '領収書発行依頼済みの請求書のみ領収書を発行できます。'
       return
     end
 
-    # 領収書PDF生成とメール送信
     begin
-      ReceiptMailer.send_receipt(@invoice).deliver_now
-      @invoice.update!(sent_at: Time.current)
-      redirect_to history_invoices_path, notice: '領収書を送付しました。'
+      Rails.logger.info "Starting receipt generation for Invoice #{@invoice.id}"
+      
+      # 領収書PDF生成とS3アップロード
+      receipt_service = ReceiptPdfService.new(@invoice)
+      Rails.logger.info "ReceiptPdfService initialized for Invoice #{@invoice.id}"
+      
+      pdf_content = receipt_service.generate_and_upload_pdf
+      Rails.logger.info "Receipt PDF generated and uploaded for Invoice #{@invoice.id}"
+      
+      # 領収書発行完了ステータスに更新
+      @invoice.receipt_sent!
+      Rails.logger.info "Invoice #{@invoice.id} status updated to receipt_sent"
+      
+      Rails.logger.info "Receipt #{@invoice.id} generated successfully with PDF uploaded to S3"
+      redirect_to history_invoices_path, notice: '領収書を発行しました。PDFは保存されました。'
     rescue => e
-      Rails.logger.error "領収書送付エラー: #{e.message}"
-      redirect_to receipt_invoice_path(@invoice), alert: '領収書の送付に失敗しました。'
+      Rails.logger.error "Receipt generation error for Invoice #{@invoice.id}: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      
+      # エラーの詳細をログに記録
+      if e.message.include?('S3')
+        Rails.logger.error "S3 upload failed for Receipt #{@invoice.id}"
+      elsif e.message.include?('PDF')
+        Rails.logger.error "PDF generation failed for Receipt #{@invoice.id}"
+      elsif e.message.include?('template')
+        Rails.logger.error "Template rendering failed for Receipt #{@invoice.id}"
+      end
+      
+      redirect_to history_invoices_path, alert: "領収書の発行に失敗しました。エラー: #{e.message}"
     end
   end
 
@@ -252,58 +308,14 @@ class InvoicesController < ApplicationController
     
     self_purchases.each do |purchase|
       purchase.purchase_items.each do |item|
-        product = item.product
-        base_price = product.base_price
-        my_price = product.product_prices.find_by(level_id: current_user.level_id)&.price || 0
-        bonus = (base_price - my_price) * item.quantity
+        bonus = current_user.bonus_for_purchase_item(item)
         
-        Rails.logger.info "Purchase Item: #{product.name}, base_price: #{base_price}, my_price: #{my_price}, bonus: #{bonus}"
+        Rails.logger.info "Purchase Item: #{item.product.name}, bonus: #{bonus}"
         
         if bonus > 0
           details << {
             type: '自己販売',
             user_name: current_user.name || current_user.email,
-            product_name: product.name,
-            quantity: item.quantity,
-            unit_bonus: bonus / item.quantity,
-            total_bonus: bonus,
-            purchased_at: purchase.purchased_at
-          }
-        end
-      end
-    end
-    
-    # 子孫の販売に対するボーナス
-    descendant_purchases = Purchase.includes(purchase_items: :product, user: :level)
-                                   .where(user_id: current_user.descendant_ids)
-                                   .where(purchased_at: start_date..end_date)
-    
-    Rails.logger.info "Descendant purchases found: #{descendant_purchases.count}"
-    
-    descendant_purchases.each do |purchase|
-      purchase.purchase_items.each do |item|
-        # 各アイテムに対するボーナスを個別に計算
-        temp_purchase = Purchase.new(
-          user: purchase.user,
-          customer: purchase.customer,
-          purchased_at: purchase.purchased_at
-        )
-        temp_item = PurchaseItem.new(
-          purchase: temp_purchase,
-          product: item.product,
-          quantity: item.quantity,
-          unit_price: item.unit_price
-        )
-        temp_purchase.purchase_items = [temp_item]
-        
-        bonus = current_user.bonus_for_purchase(temp_purchase)
-        
-        Rails.logger.info "Descendant purchase item: #{item.product.name} by #{purchase.user.name}, bonus: #{bonus}"
-        
-        if bonus > 0
-          details << {
-            type: '下位販売',
-            user_name: purchase.user.name || purchase.user.email,
             product_name: item.product.name,
             quantity: item.quantity,
             unit_bonus: bonus / item.quantity,
@@ -314,10 +326,85 @@ class InvoicesController < ApplicationController
       end
     end
     
+    # 子孫の販売に対するボーナス
+    descendant_user_ids = current_user.descendant_ids.reject { |uid| uid == current_user.id }
+    
+    if descendant_user_ids.any?
+      descendant_purchase_items = PurchaseItem.joins(:purchase)
+                                             .where(purchases: { user_id: descendant_user_ids, purchased_at: start_date..end_date })
+                                             .includes(:product, purchase: :user)
+      
+      Rails.logger.info "Descendant purchase items found: #{descendant_purchase_items.count}"
+      
+      descendant_purchase_items.each do |item|
+        purchase = item.purchase
+        purchase_user_level = purchase.user.level_at(purchase.purchased_at)
+        my_level_at_purchase = current_user.level_at(purchase.purchased_at)
+        
+        product = item.product
+        purchase_user_price = product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
+        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+        
+        if purchase_user_price > my_price
+          diff = purchase_user_price - my_price
+          bonus = diff * item.quantity
+          
+          Rails.logger.info "Descendant purchase item: #{item.product.name} by #{purchase.user.name}, bonus: #{bonus}"
+          
+          if bonus > 0
+            details << {
+              type: '下位販売',
+              user_name: purchase.user.name || purchase.user.email,
+              product_name: item.product.name,
+              quantity: item.quantity,
+              unit_bonus: diff,
+              total_bonus: bonus,
+              purchased_at: purchase.purchased_at
+            }
+          end
+        end
+      end
+    end
+    
+    # 直下の無資格者による販売に対するボーナス
+    descendant_user_ids_set = Set.new(current_user.descendant_ids)
+    
+    current_user.referrals.reject(&:bonus_eligible?).each do |child|
+      # 既に子孫として計算済みの場合はスキップ
+      next if descendant_user_ids_set.include?(child.id)
+      
+      child_purchase_items = PurchaseItem.joins(:purchase)
+                                        .where(purchases: { user_id: child.id, purchased_at: start_date..end_date })
+                                        .includes(:product, purchase: :user)
+      
+      child_purchase_items.each do |item|
+        purchase_date = item.purchase.purchased_at
+        my_level_at_purchase = current_user.level_at(purchase_date)
+        product = item.product
+        base_price = product.base_price
+        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+        diff = base_price - my_price
+        bonus = diff * item.quantity
+        
+        if bonus > 0
+          details << {
+            type: '無資格者販売',
+            user_name: child.name || child.email,
+            product_name: item.product.name,
+            quantity: item.quantity,
+            unit_bonus: diff,
+            total_bonus: bonus,
+            purchased_at: purchase_date
+          }
+        end
+      end
+    end
+    
     # 日付順でソート
     sorted_details = details.sort_by { |d| d[:purchased_at] }
     
     Rails.logger.info "Final bonus details count: #{sorted_details.count}"
+    Rails.logger.info "Total bonus from details: #{sorted_details.sum { |d| d[:total_bonus] }}"
     Rails.logger.info "=== End get_bonus_details Debug ==="
     
     sorted_details

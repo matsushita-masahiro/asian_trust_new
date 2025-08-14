@@ -1,5 +1,5 @@
 class InvoiceMailer < ApplicationMailer
-  def send_invoice(invoice)
+  def send_invoice(invoice, pdf_content = nil)
     @invoice = invoice
     @user = invoice.user
     @invoice_recipient = invoice.invoice_recipient
@@ -12,15 +12,20 @@ class InvoiceMailer < ApplicationMailer
       @bonus_details = []
     end
 
-    pdf = WickedPdf.new.pdf_from_string(
-      render_to_string(
-        template: 'invoices/pdf', # or 'invoices/pdf_new'
-        layout: 'pdf',
-        locals: { invoice: @invoice, user: @user }
-      ),
-      page_size: 'A4',
-      margin: { top: 20, bottom: 20, left: 20, right: 20 }
-    )
+    # 外部から渡されたPDFがあればそれを使用、なければ従来通り生成
+    if pdf_content
+      pdf = pdf_content
+    else
+      pdf = WickedPdf.new.pdf_from_string(
+        render_to_string(
+          template: 'invoices/pdf', # or 'invoices/pdf_new'
+          layout: 'pdf',
+          locals: { invoice: @invoice, user: @user }
+        ),
+        page_size: 'A4',
+        margin: { top: 20, bottom: 20, left: 20, right: 20 }
+      )
+    end
 
     attachments["請求書_INV-#{@invoice.id.to_s.rjust(6, '0')}.pdf"] = pdf
 

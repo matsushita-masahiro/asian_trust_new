@@ -72,6 +72,7 @@ gem 'dotenv-rails', groups: [:development, :test]
 gem 'devise'
 gem 'seed-fu'
 gem 'recaptcha'
+gem 'aws-sdk-s3', require: false
 
 gem 'wicked_pdf'
 

@@ -1,0 +1,192 @@
+class InvoicePdfService
+  include ApplicationHelper
+  require 'digest'
+  
+  def initialize(invoice)
+    @invoice = invoice
+  end
+
+  def generate_and_upload_pdf
+    Rails.logger.info "InvoicePdfService: Starting PDF generation for Invoice #{@invoice.id}"
+    
+    # PDF生成
+    pdf_content = generate_pdf
+    Rails.logger.info "InvoicePdfService: PDF generated successfully for Invoice #{@invoice.id}, size: #{pdf_content.bytesize} bytes"
+    
+    # S3にアップロード
+    upload_to_s3(pdf_content)
+    Rails.logger.info "InvoicePdfService: PDF uploaded to S3 successfully for Invoice #{@invoice.id}"
+    
+    pdf_content
+  end
+
+  private
+
+  def generate_pdf
+    # ApplicationControllerを使用してPDFを生成
+    controller = ApplicationController.new
+    controller.request = ActionDispatch::Request.new({})
+    controller.response = ActionDispatch::Response.new
+    
+    html_content = controller.render_to_string(
+      template: 'invoices/pdf_template',
+      layout: 'pdf',
+      locals: { 
+        invoice: @invoice,
+        bonus_details: get_bonus_details
+      },
+      formats: [:html]
+    )
+    
+    WickedPdf.new.pdf_from_string(
+      html_content,
+      page_size: 'A4',
+      margin: {
+        top: 15,
+        bottom: 15,
+        left: 15,
+        right: 15
+      },
+      encoding: 'UTF-8',
+      disable_smart_shrinking: true,
+      print_media_type: true,
+      no_background: false,
+      page_height: '297mm',
+      page_width: '210mm'
+    )
+  end
+
+  def upload_to_s3(pdf_content)
+    filename = generate_filename
+    Rails.logger.info "InvoicePdfService: Uploading PDF to S3 invoices bucket with filename: #{filename}"
+    
+    begin
+      # 環境変数から直接設定を取得
+      Rails.logger.info "InvoicePdfService: Using environment variables for S3 configuration"
+      
+      access_key_id = ENV['AWS_ACCESS_KEY_ID']
+      secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
+      region = ENV['AWS_REGION']
+      bucket_name = ENV['AWS_INVOICE_BUCKET']
+      
+      Rails.logger.info "InvoicePdfService: Bucket name: #{bucket_name}"
+      
+      if access_key_id.present? && secret_access_key.present? && region.present? && bucket_name.present?
+        # AWS S3クライアントを直接使用
+        require 'aws-sdk-s3'
+        
+        s3_client = Aws::S3::Client.new(
+          access_key_id: access_key_id,
+          secret_access_key: secret_access_key,
+          region: region
+        )
+        
+        # 該当月のフォルダに直接保存（例: 2025-08/filename.pdf）
+        target_month = @invoice.target_month || Time.current.strftime("%Y-%m")
+        key = "#{target_month}/#{filename}"
+        
+        Rails.logger.info "InvoicePdfService: Uploading to bucket: #{bucket_name}, key: #{key}"
+        
+        # S3に直接アップロード
+        s3_client.put_object(
+          bucket: bucket_name,
+          key: key,
+          body: pdf_content,
+          content_type: 'application/pdf',
+          server_side_encryption: 'AES256'
+        )
+        
+        Rails.logger.info "InvoicePdfService: Direct S3 upload completed to #{bucket_name}"
+        
+        # Active Storageのblobを作成
+        blob = ActiveStorage::Blob.create!(
+          key: key,
+          filename: filename,
+          content_type: 'application/pdf',
+          byte_size: pdf_content.bytesize,
+          checksum: Digest::MD5.base64digest(pdf_content),
+          service_name: 's3_invoices'
+        )
+        
+        # Invoiceに添付
+        @invoice.pdf_file.attach(blob)
+        
+        Rails.logger.info "InvoicePdfService: PDF uploaded to invoices bucket successfully: #{filename}"
+      else
+        missing_vars = []
+        missing_vars << "AWS_ACCESS_KEY_ID" unless access_key_id.present?
+        missing_vars << "AWS_SECRET_ACCESS_KEY" unless secret_access_key.present?
+        missing_vars << "AWS_REGION" unless region.present?
+        missing_vars << "AWS_INVOICE_BUCKET" unless bucket_name.present?
+        
+        raise "Missing environment variables: #{missing_vars.join(', ')}"
+      end
+      
+    rescue => e
+      Rails.logger.error "InvoicePdfService: S3 upload failed for #{filename}: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      raise e
+    end
+  end
+
+  def generate_filename
+    "invoice_#{@invoice.id}_#{@invoice.target_month}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.pdf"
+  end
+
+  def get_bonus_details
+    return [] unless @invoice.target_month.present?
+    
+    selected_month_start = Date.strptime(@invoice.target_month, "%Y-%m").beginning_of_month
+    selected_month_end = Date.strptime(@invoice.target_month, "%Y-%m").end_of_month
+    
+    # 管理画面と同じ正確な計算ロジックを使用
+    details = []
+    user = @invoice.user
+    
+    # 自身 + 下位の購入履歴（選択月）
+    descendant_ids = user.descendants.pluck(:id)
+    purchases_with_descendants = Purchase.includes(purchase_items: :product, customer: [], user: [])
+                                        .where(user_id: [user.id] + descendant_ids)
+                                        .where(purchased_at: selected_month_start..selected_month_end)
+
+    purchases_with_descendants.each do |purchase|
+      purchase.purchase_items.each do |item|
+        # 管理画面と同じインセンティブ計算ロジック
+        if purchase.user == user
+          # 自分の販売の場合
+          item_bonus = user.bonus_for_purchase_item(item)
+          type = '自己販売'
+        else
+          # 子孫の販売の場合：階層差額計算
+          purchase_user_level = purchase.user.level_at(purchase.purchased_at)
+          my_level_at_purchase = user.level_at(purchase.purchased_at)
+          purchase_user_price = item.product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
+          my_price = item.product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+          
+          if purchase_user_price > my_price
+            item_bonus = (purchase_user_price - my_price) * item.quantity
+          else
+            item_bonus = 0
+          end
+          type = '下位販売'
+        end
+        
+        # インセンティブがある場合のみ詳細に追加
+        if item_bonus > 0
+          details << {
+            type: type,
+            user_name: purchase.user.name || purchase.user.email,
+            product_name: item.product.name,
+            quantity: item.quantity,
+            unit_bonus: item_bonus / item.quantity,
+            total_bonus: item_bonus,
+            purchased_at: purchase.purchased_at,
+            purchase_id: purchase.id
+          }
+        end
+      end
+    end
+
+    details.sort_by { |d| d[:purchased_at] }
+  end
+end

@@ -116,19 +116,18 @@
                             <%= button_to "振込完了", 
                                 update_status_admin_invoice_status_path(invoice), 
                                 method: :patch, 
-                                params: { status: 'confirmed' },
+                                params: { status: 'confirmed', original_status: @selected_status },
                                 class: "btn btn-sm btn-success",
                                 data: { confirm: "振込済みに変更しますか？" } %>
                           <% elsif invoice.confirmed? %>
-                            <%= button_to "請求書受信済に戻す", 
+                            <%= button_to "領収書発行依頼", 
                                 update_status_admin_invoice_status_path(invoice), 
                                 method: :patch, 
-                                params: { status: 'sent' },
-                                class: "btn btn-sm btn-warning",
-                                data: { confirm: "請求書受信済に戻しますか？" } %>
+                                params: { status: 'receipt_requested', original_status: @selected_status },
+                                class: "btn btn-success",
+                                data: { confirm: "領収書発行依頼しますか？" } %>
                           <% elsif invoice.receipt_requested? %>
-                            <%= link_to "領収書発行", show_receipt_admin_invoice_status_path(invoice), 
-                                class: "btn btn-sm btn-primary" %>
+                            <span class="text-muted">領収書発行依頼済</span>
                           <% elsif invoice.receipt_sent? %>
                             <span class="text-muted">発行済み</span>
                           <% end %>

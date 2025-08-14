@@ -77,8 +77,10 @@ class Admin::InvoiceStatusController < Admin::BaseController
                    when 'draft' then '下書き'
                    else params[:status]
                    end
-      redirect_to admin_invoice_status_index_path(status: params[:status]), 
-                  notice: "請求書のステータスを#{status_text}に更新しました。"
+      # 元のフィルター状態を保持してリダイレクト
+      original_status = params[:original_status] || 'sent'
+      redirect_to admin_invoice_status_index_path(status: original_status), 
+                  notice: "請求書INV-#{@invoice.id.to_s.rjust(6, '0')}のステータスを#{status_text}に更新しました。"
     else
       redirect_to admin_invoice_status_index_path, 
                   alert: 'ステータスの更新に失敗しました。'

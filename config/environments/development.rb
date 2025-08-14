@@ -28,8 +28,11 @@ Rails.application.configure do
   # Change to :null_store to avoid any caching.
   config.cache_store = :memory_store
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Store uploaded files on S3 for invoices (see config/storage.yml for options).
+  config.active_storage.service = :s3_invoices
+  
+  # 複数のActive Storageサービスを有効化
+  config.active_storage.variant_processor = :mini_magick
 
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = true

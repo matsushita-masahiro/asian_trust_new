@@ -2,6 +2,10 @@ class Invoice < ApplicationRecord
   belongs_to :user
   belongs_to :invoice_recipient
   
+  # Active Storage for PDF files
+  has_one_attached :pdf_file
+  has_one_attached :receipt_file
+  
   # バリデーション
   validates :target_month, presence: true, format: { with: /\A\d{4}-\d{2}\z/, message: "は YYYY-MM 形式で入力してください" }, allow_blank: false
 

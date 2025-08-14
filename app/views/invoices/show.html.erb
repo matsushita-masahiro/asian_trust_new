@@ -371,14 +371,20 @@
               </small>
             </div>
             <div>
-              <% if @invoice.sent_at.present? %>
+              <% if @invoice.sent? %>
                 <%= button_to "再送付", send_invoice_invoice_path(@invoice), method: :patch, 
                     class: "btn btn-outline-primary", 
-                    data: { confirm: "請求書を再送付しますか？" } %>
+                    data: { 
+                      confirm: "請求書を再送付しますか？", 
+                      disable_with: "送付中..." 
+                    } %>
               <% else %>
                 <%= button_to "請求書を送付", send_invoice_invoice_path(@invoice), method: :patch, 
                     class: "btn btn-success btn-lg", 
-                    data: { confirm: "請求書を送付しますか？送付後は編集できません。" } %>
+                    data: { 
+                      confirm: "請求書を送付しますか？送付後は編集できません。", 
+                      disable_with: "送付中..." 
+                    } %>
               <% end %>
             </div>
           </div>

@@ -21,6 +21,7 @@
     .header {
       text-align: center;
       margin-bottom: 30px;
+      page-break-after: avoid;
     }
     
     .header h1 {
@@ -97,13 +98,13 @@
     }
     
     .details-section {
-      margin: 20px 0;
+      margin: 10px 0;
       page-break-inside: auto;
     }
     
     .details-section h3 {
       font-size: 14px;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
       padding-bottom: 3px;
       border-bottom: 1px solid #333;
       page-break-after: avoid;
@@ -112,10 +113,14 @@
     .details-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 15px;
+      margin: 0 0 15px 0;
       font-size: 8px;
       font-family: 'Times New Roman', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho Pro', 'MS PMincho', serif;
-      page-break-inside: avoid;
+      page-break-inside: auto;
+    }
+    
+    .details-table thead {
+      display: table-header-group;
     }
     
     .details-table tbody {
@@ -125,6 +130,7 @@
     .details-table tfoot {
       page-break-inside: avoid;
       page-break-before: avoid;
+      display: table-footer-group;
     }
     
     .details-table tfoot tr {
@@ -187,8 +193,7 @@
   <% if bonus_details.any? %>
   <div class="details-section">
     <h3>インセンティブ明細</h3>
-    <div style="page-break-inside: avoid;">
-      <table class="details-table">
+    <table class="details-table">
       <thead>
         <tr>
           <th>購入ID</th>
@@ -202,8 +207,8 @@
         </tr>
       </thead>
       <tbody>
-        <% bonus_details.each_with_index do |detail, index| %>
-        <tr<%= ' style="page-break-inside: avoid;"'.html_safe if index >= bonus_details.length - 3 %>>
+        <% bonus_details.each do |detail| %>
+        <tr>
           <td>#<%= detail[:purchase_id] %></td>
           <td><%= detail[:purchased_at].strftime("%m/%d") %></td>
           <td><%= detail[:type] %></td>
@@ -215,24 +220,17 @@
         </tr>
         <% end %>
       </tbody>
+      <tfoot>
+        <tr style="background-color: #333; color: white; font-weight: bold;">
+          <td colspan="7" style="text-align: center; background-color: #333; color: white;">合計</td>
+          <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:total_bonus] }) %></td>
+        </tr>
+      </tfoot>
     </table>
-    
-    <!-- 合計行を独立したテーブルとして配置 -->
-    <div style="page-break-inside: avoid; page-break-before: avoid;">
-      <table class="details-table" style="margin-top: 0; page-break-inside: avoid;">
-        <tfoot>
-          <tr style="background-color: #333; color: white; font-weight: bold;">
-            <td colspan="7" style="text-align: center; background-color: #333; color: white;">合計</td>
-            <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:total_bonus] }) %></td>
-          </tr>
-        </tfoot>
-        </table>
-      </div>
-    </div>
   </div>
   <% end %>
 
-  <div class="company-info">
+  <div class="company-info" style="page-break-inside: avoid;">
     <div class="left">
       <h4>発行者</h4>
       <p><strong>株式会社アジアビジネストラスト</strong></p>
@@ -252,7 +250,7 @@
     </div>
   </div>
 
-  <div class="footer">
+  <div class="footer" style="page-break-inside: avoid;">
     <p>この領収書は電子的に発行されたものです。</p>
     <p>ご不明な点がございましたら、上記連絡先までお問い合わせください。</p>
   </div>

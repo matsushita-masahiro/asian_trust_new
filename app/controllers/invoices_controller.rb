@@ -320,7 +320,8 @@ class InvoicesController < ApplicationController
             quantity: item.quantity,
             unit_bonus: bonus / item.quantity,
             total_bonus: bonus,
-            purchased_at: purchase.purchased_at
+            purchased_at: purchase.purchased_at,
+            purchase_id: purchase.id
           }
         end
       end
@@ -359,7 +360,8 @@ class InvoicesController < ApplicationController
               quantity: item.quantity,
               unit_bonus: diff,
               total_bonus: bonus,
-              purchased_at: purchase.purchased_at
+              purchased_at: purchase.purchased_at,
+              purchase_id: purchase.id
             }
           end
         end
@@ -394,14 +396,15 @@ class InvoicesController < ApplicationController
             quantity: item.quantity,
             unit_bonus: diff,
             total_bonus: bonus,
-            purchased_at: purchase_date
+            purchased_at: purchase_date,
+            purchase_id: item.purchase.id
           }
         end
       end
     end
     
-    # 日付順でソート
-    sorted_details = details.sort_by { |d| d[:purchased_at] }
+    # 購入ID順でソート
+    sorted_details = details.sort_by { |d| d[:purchase_id] }
     
     Rails.logger.info "Final bonus details count: #{sorted_details.count}"
     Rails.logger.info "Total bonus from details: #{sorted_details.sum { |d| d[:total_bonus] }}"

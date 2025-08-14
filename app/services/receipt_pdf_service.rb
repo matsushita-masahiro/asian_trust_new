@@ -195,6 +195,6 @@ class ReceiptPdfService
       end
     end
 
-    details.sort_by { |d| d[:purchased_at] }
+    details.sort_by { |d| d[:purchase_id] }
   end
 end

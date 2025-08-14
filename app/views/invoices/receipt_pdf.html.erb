@@ -143,6 +143,19 @@
       /* ヘッダーの繰り返し表示を無効化 */
     }
     
+    @media print {
+      .details-table thead {
+        display: none !important;
+      }
+      .details-table thead:first-child {
+        display: table-header-group !important;
+      }
+    }
+    
+    .details-table tr {
+      page-break-inside: avoid;
+    }
+    
     .total-row {
       page-break-inside: avoid;
       page-break-before: avoid;

@@ -128,12 +128,18 @@
     }
     
     .details-table tfoot {
+      display: table-footer-group;
       page-break-inside: avoid;
       page-break-before: avoid;
-      display: table-footer-group;
     }
     
     .details-table tfoot tr {
+      page-break-inside: avoid;
+      page-break-before: avoid;
+    }
+    
+    /* 合計行が明細の最後に確実に表示されるように */
+    .total-row {
       page-break-inside: avoid;
       page-break-before: avoid;
     }
@@ -221,7 +227,7 @@
         <% end %>
       </tbody>
       <tfoot>
-        <tr style="background-color: #333; color: white; font-weight: bold;">
+        <tr class="total-row" style="background-color: #333; color: white; font-weight: bold;">
           <td colspan="7" style="text-align: center; background-color: #333; color: white;">合計</td>
           <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(bonus_details.sum { |d| d[:total_bonus] }) %></td>
         </tr>

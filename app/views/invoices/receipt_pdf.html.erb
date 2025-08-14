@@ -127,11 +127,30 @@
       background-color: #333 !important;
       color: white !important;
       font-weight: bold;
+      page-break-inside: avoid;
     }
 
     .details-table tfoot td {
       background-color: #333 !important;
       color: white !important;
+    }
+    
+    .details-table {
+      page-break-inside: auto;
+    }
+    
+    .details-table thead {
+      display: table-header-group;
+    }
+    
+    .details-table tfoot {
+      display: table-footer-group;
+      page-break-inside: avoid;
+    }
+    
+    .total-row {
+      page-break-inside: avoid;
+      page-break-before: avoid;
     }
   </style>
 </head>
@@ -206,7 +225,7 @@
         </tbody>
         <% if defined?(@bonus_details) && @bonus_details.present? %>
           <tfoot>
-            <tr style="background-color: #333; color: white; font-weight: bold;">
+            <tr class="total-row" style="background-color: #333; color: white; font-weight: bold;">
               <td colspan="4" style="text-align: center;">合計</td>
               <td class="bonus">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:total_bonus] }) %></td>
             </tr>

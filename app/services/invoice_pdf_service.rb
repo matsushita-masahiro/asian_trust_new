@@ -34,6 +34,7 @@ class InvoicePdfService
       layout: 'pdf',
       locals: { 
         invoice: @invoice,
+        user: @invoice.user,
         bonus_details: get_bonus_details
       },
       formats: [:html]

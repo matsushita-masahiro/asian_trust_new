@@ -32,10 +32,32 @@
                 <p class="mb-0">請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
               </div>
               <div class="col-6 text-end">
+                <!-- 発行者情報（右上に表示） -->
+                <% if current_user.invoice_base %>
+                  <h5><%= current_user.invoice_base.company_name %></h5>
+                  <% if current_user.invoice_base.department.present? %>
+                    <p class="mb-1"><%= current_user.invoice_base.department %></p>
+                  <% end %>
+                  <% if current_user.invoice_base.address.present? %>
+                    <p class="mb-1"><%= current_user.invoice_base.address %></p>
+                  <% end %>
+                  <% if current_user.invoice_base.email.present? %>
+                    <p class="mb-0"><%= current_user.invoice_base.email %></p>
+                  <% end %>
+                <% else %>
+                  <h5><%= current_user.name || current_user.email %></h5>
+                <% end %>
+              </div>
+            </div>
+
+            <!-- 受領者情報 -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h6 class="text-muted">受領者</h6>
                 <% if @invoice.invoice_recipient %>
-                  <h5><%= @invoice.invoice_recipient.name %></h5>
+                  <p class="mb-1"><strong><%= @invoice.invoice_recipient.name %> 様</strong></p>
                   <% if @invoice.invoice_recipient.representative_name.present? %>
-                    <p class="mb-1"><%= @invoice.invoice_recipient.representative_name %> 様</p>
+                    <p class="mb-1"><%= @invoice.invoice_recipient.representative_name %></p>
                   <% end %>
                   <% if @invoice.invoice_recipient.department.present? %>
                     <p class="mb-1"><%= @invoice.invoice_recipient.department %></p>
@@ -126,26 +148,7 @@
               </div>
             </div>
 
-            <!-- 発行者情報 -->
-            <div class="row">
-              <div class="col-12 text-end">
-                <h6 class="text-muted">発行者</h6>
-                <% if current_user.invoice_base %>
-                  <p class="mb-1"><strong><%= current_user.invoice_base.company_name %></strong></p>
-                  <% if current_user.invoice_base.department.present? %>
-                    <p class="mb-1"><%= current_user.invoice_base.department %></p>
-                  <% end %>
-                  <% if current_user.invoice_base.address.present? %>
-                    <p class="mb-1"><%= current_user.invoice_base.address %></p>
-                  <% end %>
-                  <% if current_user.invoice_base.email.present? %>
-                    <p class="mb-0"><%= current_user.invoice_base.email %></p>
-                  <% end %>
-                <% else %>
-                  <p class="mb-0"><%= current_user.name || current_user.email %></p>
-                <% end %>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>

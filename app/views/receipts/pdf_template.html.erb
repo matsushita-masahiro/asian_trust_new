@@ -199,8 +199,6 @@
   </div>
 
   <% if bonus_details.any? %>
-  <!-- デバッグ情報（本番では削除） -->
-  <p style="font-size: 8px; color: red;">Debug: Total details = <%= bonus_details.count %></p>
   <div class="details-section">
     <h3>インセンティブ明細</h3>
     <table class="details-table">
@@ -242,11 +240,20 @@
   <div class="company-info" style="page-break-inside: avoid;">
     <div class="left">
       <h4>発行者</h4>
-      <p><strong>株式会社アジアビジネストラスト</strong></p>
-      <p>〒104-0061</p>
-      <p>東京都中央区銀座4丁目8－1銀座鶴月ビル3階</p>
-      <p>TEL: 03-5904-8148</p>
-      <p>Email: abt1@asia-b-t.com</p>
+      <% if user.invoice_base %>
+        <p><strong><%= user.invoice_base.company_name %></strong></p>
+        <% if user.invoice_base.department.present? %>
+          <p><%= user.invoice_base.department %></p>
+        <% end %>
+        <% if user.invoice_base.address.present? %>
+          <p><%= user.invoice_base.address %></p>
+        <% end %>       
+        <% if user.invoice_base.email.present? %>
+          <p>Email: <%= user.invoice_base.email %></p>
+        <% end %>
+      <% else %>
+        <p><strong><%= user.name || user.email %></strong></p>
+      <% end %>
     </div>
     
     <div class="right">

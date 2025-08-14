@@ -120,7 +120,7 @@
     }
     
     .details-table thead {
-      display: table-header-group;
+      /* ヘッダーの繰り返し表示を無効化 */
     }
     
     .details-table tbody {
@@ -186,6 +186,8 @@
   </div>
 
   <% if bonus_details.any? %>
+  <!-- デバッグ情報（本番では削除） -->
+  <p style="font-size: 8px; color: red;">Debug: Total details = <%= bonus_details.count %></p>
   <div class="details-section">
     <h3>インセンティブ明細</h3>
     <table class="details-table">

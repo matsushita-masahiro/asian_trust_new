@@ -238,6 +238,15 @@ class InvoicePdfService
       end
     end
 
-    details.sort_by { |d| d[:purchase_id] }
+    sorted_details = details.sort_by { |d| d[:purchase_id] }
+    
+    Rails.logger.info "=== Invoice PDF Service Debug ==="
+    Rails.logger.info "Total details found: #{sorted_details.count}"
+    sorted_details.each_with_index do |detail, index|
+      Rails.logger.info "#{index + 1}. Purchase ID: #{detail[:purchase_id]}, User: #{detail[:user_name]}, Amount: #{detail[:total_bonus]}"
+    end
+    Rails.logger.info "=== End Invoice PDF Service Debug ==="
+    
+    sorted_details
   end
 end

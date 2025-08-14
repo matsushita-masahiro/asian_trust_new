@@ -143,11 +143,6 @@
       display: table-header-group;
     }
     
-    .details-table tfoot {
-      display: table-footer-group;
-      page-break-inside: avoid;
-    }
-    
     .total-row {
       page-break-inside: avoid;
       page-break-before: avoid;
@@ -219,18 +214,15 @@
                 <td class="bonus">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
               </tr>
             <% end %>
-          <% else %>
-            <tr><td colspan="5" style="text-align: center;">インセンティブ情報が見つかりません</td></tr>
-          <% end %>
-        </tbody>
-        <% if defined?(@bonus_details) && @bonus_details.present? %>
-          <tfoot>
+            <!-- 合計行を tbody 内の最後の行として配置 -->
             <tr class="total-row" style="background-color: #333; color: white; font-weight: bold;">
               <td colspan="4" style="text-align: center;">合計</td>
               <td class="bonus">¥<%= number_with_delimiter(@bonus_details.sum { |d| d[:total_bonus] }) %></td>
             </tr>
-          </tfoot>
-        <% end %>
+          <% else %>
+            <tr><td colspan="5" style="text-align: center;">インセンティブ情報が見つかりません</td></tr>
+          <% end %>
+        </tbody>
       </table>
     </div>
   </div>

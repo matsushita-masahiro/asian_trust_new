@@ -12,10 +12,10 @@
             <% end %>
           <% end %>
           <% if @pending_payments_count > 0 %>
-            <div class="alert alert-warning text-dark mb-0 py-1 px-2" style="font-size: 0.8rem;">
+            <%= link_to admin_purchases_path(status: 'pending'), class: "alert alert-warning text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
               <i class="fas fa-exclamation-triangle"></i>
               未入金注文: <strong><%= @pending_payments_count %>件</strong>
-            </div>
+            <% end %>
           <% end %>
           <div class="text-muted">
             <%= Time.current.strftime("%Y/%m/%d") %> (<%= %w[日 月 火 水 木 金 土][Time.current.wday] %>)

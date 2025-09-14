@@ -16,8 +16,64 @@ end
 user_id_seq = 1
 lstep_id_seq = 1
 
+# Levelデータを作成または取得
+level_data = [
+  { name: "アジアビジネストラスト", value: 0 },
+  { name: "特約代理店", value: 1 },
+  { name: "代理店", value: 2 },
+  { name: "アドバイザー", value: 3 },
+  { name: "サロン", value: 4 },
+  { name: "クリニック", value: 5 },
+  { name: "お客様", value: 6 }
+]
+
+level_data.each do |data|
+  Level.find_or_create_by(name: data[:name]) do |level|
+    level.value = data[:value]
+  end
+end
+
 # Levelデータを取得（nameで検索）
 levels = Level.all.index_by(&:name)
+
+# デバッグ用：作成されたLevelを確認
+puts "Created levels:"
+levels.each do |name, level|
+  puts "  #{name}: #{level.id} (value: #{level.value})"
+end
+
+# エラーハンドリング
+if levels["アジアビジネストラスト"].nil?
+  puts "❌ Error: 'アジアビジネストラスト' level not found!"
+  exit 1
+end
+
+# Productデータを作成
+product = Product.find_or_create_by(name: "再生医療製品") do |p|
+  p.base_price = 50000
+  p.display_unit = "本"
+  p.description = "再生医療用製品"
+end
+
+# ProductPriceデータを作成（各レベルの価格設定）
+price_data = [
+  { level_name: "アジアビジネストラスト", price: 40000 },
+  { level_name: "特約代理店", price: 45000 },
+  { level_name: "代理店", price: 47000 },
+  { level_name: "アドバイザー", price: 49000 },
+  { level_name: "サロン", price: 50000 },
+  { level_name: "クリニック", price: 50000 },
+  { level_name: "お客様", price: 50000 }
+]
+
+price_data.each do |data|
+  level = levels[data[:level_name]]
+  if level
+    ProductPrice.find_or_create_by(product: product, level: level) do |pp|
+      pp.price = data[:price]
+    end
+  end
+end
 
 # 最上位
 company = User.create!(

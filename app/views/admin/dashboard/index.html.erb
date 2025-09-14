@@ -11,6 +11,12 @@
               未確認請求書有（<%= unconfirmed_invoices_count %>）
             <% end %>
           <% end %>
+          <% if @pending_payments_count > 0 %>
+            <div class="alert alert-warning text-dark mb-0 py-1 px-2" style="font-size: 0.8rem;">
+              <i class="fas fa-exclamation-triangle"></i>
+              未入金注文: <strong><%= @pending_payments_count %>件</strong>
+            </div>
+          <% end %>
           <div class="text-muted">
             <%= Time.current.strftime("%Y/%m/%d") %> (<%= %w[日 月 火 水 木 金 土][Time.current.wday] %>)
           </div>
@@ -56,12 +62,6 @@
     <div class="col-md-3 mb-4">
       <div class="card bg-info text-white">
         <div class="card-body">
-          <% if @pending_payments_count > 0 %>
-            <div class="alert alert-warning text-dark mb-2 py-1 px-2" style="font-size: 0.8rem;">
-              <i class="fas fa-exclamation-triangle"></i>
-              未入金注文: <strong><%= @pending_payments_count %>件</strong>
-            </div>
-          <% end %>
           <div class="d-flex justify-content-between">
             <div>
               <h6 class="card-title">今日のアクセス</h6>

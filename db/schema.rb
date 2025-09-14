@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_14_185449) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_14_194605) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -187,7 +187,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_14_185449) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "buyer_id"
+    t.string "payment_type", default: "cash", null: false
+    t.string "status", default: "built", null: false
     t.index ["buyer_id"], name: "index_purchases_on_buyer_id"
+    t.index ["payment_type", "status"], name: "index_purchases_on_payment_type_and_status"
+    t.index ["payment_type"], name: "index_purchases_on_payment_type"
+    t.index ["status"], name: "index_purchases_on_status"
     t.index ["user_id", "buyer_id"], name: "index_purchases_on_user_id_and_buyer_id"
     t.index ["user_id"], name: "index_purchases_on_user_id"
   end

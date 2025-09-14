@@ -11,7 +11,7 @@ class PaymentsController < ApplicationController
     @cart = current_user.cart
     
     # 購入処理を実行
-    result = process_purchase('bank_transfer')
+    result = process_purchase('cash')
     
     if result[:success]
       # 銀行振込案内メールを送信
@@ -31,7 +31,7 @@ class PaymentsController < ApplicationController
     @cart = current_user.cart
     
     # 購入処理を実行
-    result = process_purchase('credit_card')
+    result = process_purchase('credit')
     
     if result[:success]
       redirect_to orders_path, notice: '注文が完了しました。クレジットカード決済を処理中です。'
@@ -49,14 +49,15 @@ class PaymentsController < ApplicationController
     end
   end
 
-  def process_purchase(payment_method)
+  def process_purchase(payment_type)
     begin
       ActiveRecord::Base.transaction do
         # Purchaseレコードを作成
         purchase = Purchase.create!(
           user: current_user,
           buyer: current_user,
-          purchased_at: Time.current
+          purchased_at: Time.current,
+          payment_type: payment_type
         )
 
         # PurchaseItemsを作成

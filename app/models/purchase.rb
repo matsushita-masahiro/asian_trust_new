@@ -9,6 +9,32 @@ class Purchase < ApplicationRecord
   # ネストした属性を受け入れる
   accepts_nested_attributes_for :purchase_items, allow_destroy: true
 
+  # 💳 支払い方法のenum
+  enum payment_type: {
+    cash: 'cash',      # 銀行振込
+    credit: 'credit'   # クレジットカード
+  }
+
+  # 📊 ステータスのenum
+  enum status: {
+    built: 'built',       # 注文作成済み（銀行振込の場合の初期状態）
+    paid: 'paid',         # 支払い完了（クレジットカードの場合の初期状態、または銀行振込確認後）
+    reserved: 'reserved'  # クリニック予約完了
+  }
+
+  # コールバック：支払い方法に応じて初期ステータスを設定
+  before_validation :set_initial_status, on: :create
+
+  private
+
+  def set_initial_status
+    if credit?
+      self.status = 'paid'
+    else
+      self.status = 'built'
+    end
+  end
+
   # 💰 合計金額（全アイテムの合計）
   def total_price
     purchase_items.sum(Arel.sql('quantity * unit_price'))

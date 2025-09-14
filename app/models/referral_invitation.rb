@@ -30,17 +30,14 @@ class ReferralInvitation < ApplicationRecord
     update!(used_at: Time.current, invited_user: user)
   end
 
-  def referral_url(request = nil)
-    if request
-      # リクエストが渡された場合は現在のホストを使用
-      "#{request.protocol}#{request.host_with_port}/users/sign_up?ref=#{referral_token}"
-    else
-      # フォールバック: 設定から取得
-      host = Rails.application.config.action_mailer.default_url_options&.dig(:host) || 'localhost:3000'
-      protocol = Rails.application.config.action_mailer.default_url_options&.dig(:protocol) || 
-                 (Rails.application.config.force_ssl ? 'https' : 'http')
-      "#{protocol}://#{host}/users/sign_up?ref=#{referral_token}"
-    end
+  def referral_url
+    # Rails設定から動的にホストとプロトコルを取得
+    default_url_options = Rails.application.config.action_mailer.default_url_options || {}
+    
+    host = default_url_options[:host] || 'localhost:3000'
+    protocol = default_url_options[:protocol] || (Rails.application.config.force_ssl ? 'https' : 'http')
+    
+    "#{protocol}://#{host}/users/sign_up?ref=#{referral_token}"
   end
 
   private

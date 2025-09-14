@@ -1,0 +1,88 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>幹細胞培養上精液 商品一覧</h3>
+    <div>
+      <%= link_to "カートを見る (#{@cart.total_items})", cart_path, class: "btn btn-outline-primary" %>
+      <%= link_to "戻る", orders_path, class: "btn btn-secondary" %>
+    </div>
+  </div>
+  
+  <% if @products.any? %>
+    <div class="row">
+      <% @products.each do |product| %>
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title"><%= product.name %></h5>
+              <p class="text-muted">単位: <%= product.display_unit %></p>
+              
+              <% user_price = product.price_for(current_user.level_symbol) %>
+              <% if user_price %>
+                <p class="h5 text-success">¥<%= number_with_delimiter(user_price) %></p>
+              <% else %>
+                <p class="text-danger">価格情報がありません</p>
+              <% end %>
+              
+              <%= form_with url: add_item_cart_path, method: :post, local: true, class: "mt-3" do |f| %>
+                <%= f.hidden_field :product_id, value: product.id %>
+                
+                <div class="mb-3">
+                  <%= f.label :quantity, "数量", class: "form-label" %>
+                  <%= f.select :quantity, options_for_select((1..10).map { |i| [i, i] }), 
+                      { prompt: "数量を選択" }, 
+                      { class: "form-select" } %>
+                </div>
+                
+                <div class="d-grid gap-2">
+                  <%= f.submit "カートに入れる", class: "btn btn-outline-success" %>
+                </div>
+              <% end %>
+              
+              <button type="button" class="btn btn-success w-100 mt-2" 
+                      onclick="directPurchase(<%= product.id %>)">
+                今すぐ購入
+              </button>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="alert alert-info">
+      現在、商品がありません。
+    </div>
+  <% end %>
+</div>
+
+<script>
+function directPurchase(productId) {
+  const card = event.target.closest('.card-body');
+  const quantitySelect = card.querySelector('select[name="quantity"]');
+  const quantity = quantitySelect.value;
+  
+  if (!quantity) {
+    alert('数量を選択してください');
+    return;
+  }
+  
+  // 今すぐ購入用のフォームを動的に作成して送信
+  const form = document.createElement('form');
+  form.method = 'GET';
+  form.action = '<%= orders_checkout_path %>';
+  
+  const productIdInput = document.createElement('input');
+  productIdInput.type = 'hidden';
+  productIdInput.name = 'product_id';
+  productIdInput.value = productId;
+  
+  const quantityInput = document.createElement('input');
+  quantityInput.type = 'hidden';
+  quantityInput.name = 'quantity';
+  quantityInput.value = quantity;
+  
+  form.appendChild(productIdInput);
+  form.appendChild(quantityInput);
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>

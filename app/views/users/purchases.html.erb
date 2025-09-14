@@ -1,16 +1,28 @@
 <div id="purchases-index">
   <div class="container mt-5 pt-5">
   
-    <!-- 年月度プルダウン（固定） -->
+    <!-- ナビゲーションとコントロール -->
     <div class="sticky-top bg-white z-index-sticky month-selector-wrapper">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
+        <div class="d-flex gap-2">
           <%= link_to "ユーザー詳細に戻る", user_path(@user, month: @selected_month), 
               class: "btn btn-outline-secondary btn-sm" %>
+          
+          <!-- 表示切り替えボタン -->
+          <% unless @user.level.value == 6 %>
+            <% if @is_own_purchases %>
+              <%= link_to "販売履歴を見る", purchases_user_path(@user, month: @selected_month), 
+                  class: "btn btn-outline-primary btn-sm" %>
+            <% else %>
+              <%= link_to "購入履歴を見る", purchases_user_path(@user, month: @selected_month, view: 'own_purchases'), 
+                  class: "btn btn-outline-info btn-sm" %>
+            <% end %>
+          <% end %>
         </div>
         
         <div>
           <%= form_with url: purchases_user_path(@user), method: :get, local: true do %>
+            <%= hidden_field_tag :view, params[:view] if params[:view] %>
             <%= select_tag :month, options_for_select(@month_options, @selected_month),
                 class: "form-select d-inline-block w-auto", onchange: "this.form.submit();" %>
           <% end %>
@@ -18,11 +30,21 @@
       </div>
     </div>
   
+    <!-- エラーメッセージ表示 -->
+    <% if flash[:alert] %>
+      <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <%= flash[:alert] %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% end %>
+
     <!-- ヘッダー -->
     <div class="bg-light p-3 rounded shadow-sm mb-4">
-      <h4 class="mb-2 fw-bold text-dark"><%= @user.name %>の販売履歴</h4>
+      <h4 class="mb-2 fw-bold text-dark">
+        <%= @user.name %>の<%= @is_own_purchases ? '購入履歴' : (@is_customer_view ? '購入履歴' : '販売履歴') %>
+      </h4>
       <div class="text-muted fs-6">
-        📅 （<%= @selected_month_name %>）販売実績
+        📅 （<%= @selected_month_name %>）<%= @is_own_purchases ? '購入実績' : (@is_customer_view ? '購入実績' : '販売実績') %>
       </div>
     </div>
   
@@ -31,17 +53,26 @@
         <table class="table table-bordered table-hover align-middle text-nowrap">
           <thead class="table-secondary text-white">
             <tr>
-              <th>購入者名</th>
-              <th>商品名</th>
-              <th class="text-end">単価（円）</th>
-              <th class="text-end">数量</th>
-              <th class="text-end">合計（円）</th>
-              <th class="text-end">購入単価（円）</th>
-              <th class="text-end">インセンティブ（円）</th>
-              <th>メール</th>
-              <th>電話番号</th>
-              <th>住所</th>
-              <th>購入日時</th>
+              <% if @is_customer_view %>
+                <th>商品名</th>
+                <th class="text-end">単価（円）</th>
+                <th class="text-end">数量</th>
+                <th class="text-end">合計（円）</th>
+                <th>仲介者</th>
+                <th>購入日時</th>
+              <% else %>
+                <th>購入者名</th>
+                <th>商品名</th>
+                <th class="text-end">単価（円）</th>
+                <th class="text-end">数量</th>
+                <th class="text-end">合計（円）</th>
+                <th class="text-end">購入単価（円）</th>
+                <th class="text-end">インセンティブ（円）</th>
+                <th>メール</th>
+                <th>電話番号</th>
+                <th>住所</th>
+                <th>購入日時</th>
+              <% end %>
             </tr>
           </thead>
           <tbody>
@@ -50,32 +81,51 @@
   
             <% @purchases.each do |purchase| %>
               <% total = purchase.total_price %>
-              <% bonus = @user.bonus_for_purchase(purchase) %>
+              <% unless @is_customer_view %>
+                <% bonus = @user.bonus_for_purchase(purchase) %>
+                <% total_bonus += bonus %>
+              <% end %>
               <% total_sum += total %>
-              <% total_bonus += bonus %>
+              
               <% purchase.purchase_items.each_with_index do |item, index| %>
-                <% 
-                  # 各アイテムに対するボーナスを個別計算
-                  temp_purchase = Purchase.new(user: purchase.user, customer: purchase.customer, purchased_at: purchase.purchased_at)
-                  temp_item = PurchaseItem.new(purchase: temp_purchase, product: item.product, quantity: item.quantity, unit_price: item.unit_price, seller_price: item.seller_price)
-                  temp_purchase.purchase_items = [temp_item]
-                  item_bonus = @user.bonus_for_purchase(temp_purchase)
-                %>
+                <% unless @is_customer_view %>
+                  <% 
+                    # 各アイテムに対するボーナスを個別計算
+                    temp_purchase = Purchase.new(user: purchase.user, buyer: purchase.buyer, purchased_at: purchase.purchased_at)
+                    temp_item = PurchaseItem.new(purchase: temp_purchase, product: item.product, quantity: item.quantity, unit_price: item.unit_price, seller_price: item.seller_price)
+                    temp_purchase.purchase_items = [temp_item]
+                    item_bonus = @user.bonus_for_purchase(temp_purchase)
+                  %>
+                <% end %>
+                
                 <tr>
-                  <% if index == 0 %>
-                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.customer&.name || "-" %></td>
-                  <% end %>
-                  <td><%= item.product.name %></td>
-                  <td class="text-end"><%= number_with_delimiter(item.unit_price) %></td>
-                  <td class="text-end"><%= item.quantity %></td>
-                  <td class="text-end text-danger fw-bold"><%= number_with_delimiter(item.total_price) %></td>
-                  <td class="text-end text-info fw-bold"><%= number_with_delimiter(item.seller_price) %></td>
-                  <td class="text-end text-success fw-bold"><%= number_with_delimiter(item_bonus) %></td>
-                  <% if index == 0 %>
-                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.customer&.email || "-" %></td>
-                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.customer&.phone || "-" %></td>
-                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.customer&.address || "-" %></td>
-                    <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
+                  <% if @is_customer_view %>
+                    <!-- お客様の購入履歴表示 -->
+                    <td><%= item.product.name %></td>
+                    <td class="text-end"><%= number_with_delimiter(item.unit_price) %></td>
+                    <td class="text-end"><%= item.quantity %></td>
+                    <td class="text-end text-danger fw-bold"><%= number_with_delimiter(item.total_price) %></td>
+                    <% if index == 0 %>
+                      <td rowspan="<%= purchase.purchase_items.count %>">-</td>
+                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
+                    <% end %>
+                  <% else %>
+                    <!-- 販売履歴表示 -->
+                    <% if index == 0 %>
+                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.buyer&.name || "-" %></td>
+                    <% end %>
+                    <td><%= item.product.name %></td>
+                    <td class="text-end"><%= number_with_delimiter(item.unit_price) %></td>
+                    <td class="text-end"><%= item.quantity %></td>
+                    <td class="text-end text-danger fw-bold"><%= number_with_delimiter(item.total_price) %></td>
+                    <td class="text-end text-info fw-bold"><%= number_with_delimiter(item.seller_price) %></td>
+                    <td class="text-end text-success fw-bold"><%= number_with_delimiter(item_bonus) %></td>
+                    <% if index == 0 %>
+                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.buyer&.email || "-" %></td>
+                      <td rowspan="<%= purchase.purchase_items.count %>">-</td>
+                      <td rowspan="<%= purchase.purchase_items.count %>">-</td>
+                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
+                    <% end %>
                   <% end %>
                 </tr>
               <% end %>
@@ -83,17 +133,36 @@
   
             <!-- 合計行 -->
             <tr class="table-primary fw-bold text-end">
-              <td colspan="4" class="text-end">合計</td>
-              <td class="text-end text-danger"><%= number_with_delimiter(total_sum) %></td>
-              <td class="text-end"></td> <!-- 販売店購入単価列（空） -->
-              <td class="text-end text-success"><%= number_with_delimiter(total_bonus) %></td>
-              <td colspan="4"></td> <!-- メール、電話、住所、購入日時列（空） -->
+              <% if @is_customer_view %>
+                <td colspan="3" class="text-end">合計</td>
+                <td class="text-end text-danger"><%= number_with_delimiter(total_sum) %></td>
+                <td colspan="2"></td>
+              <% else %>
+                <td colspan="4" class="text-end">合計</td>
+                <td class="text-end text-danger"><%= number_with_delimiter(total_sum) %></td>
+                <td class="text-end"></td> <!-- 販売店購入単価列（空） -->
+                <td class="text-end text-success"><%= number_with_delimiter(total_bonus) %></td>
+                <td colspan="4"></td> <!-- メール、電話、住所、購入日時列（空） -->
+              <% end %>
             </tr>
           </tbody>
         </table>
       </div>
     <% else %>
-      <p class="text-muted">この月の販売履歴はありません。</p>
+      <div class="text-center py-5">
+        <div class="mb-3">
+          <i class="fas fa-inbox fa-3x text-muted"></i>
+        </div>
+        <h5 class="text-muted">データがありません</h5>
+        <p class="text-muted">
+          <%= @selected_month_name %>の<%= @is_own_purchases ? '購入履歴' : (@is_customer_view ? '購入履歴' : '販売履歴') %>はありません。
+        </p>
+        <% unless @is_own_purchases || @is_customer_view %>
+          <p class="text-muted small">
+            他の月を選択するか、<%= link_to "購入履歴", purchases_user_path(@user, month: @selected_month, view: 'own_purchases'), class: "text-decoration-none" %>をご確認ください。
+          </p>
+        <% end %>
+      </div>
     <% end %>
   
 
@@ -136,6 +205,16 @@
       margin-bottom: 0.5rem;
     }
     
+    .d-flex.gap-2 {
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    .d-flex.gap-2 .btn {
+      width: 100%;
+      margin-bottom: 0.25rem;
+    }
+    
     .table-responsive {
       font-size: 0.8rem;
     }
@@ -143,6 +222,10 @@
     .container {
       padding-left: 0.5rem;
       padding-right: 0.5rem;
+    }
+    
+    .month-selector-wrapper {
+      padding: 0.5rem 0;
     }
   }
 </style>

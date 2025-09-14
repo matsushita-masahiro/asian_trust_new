@@ -150,6 +150,7 @@ class Admin::UsersController < Admin::BaseController
     @selected_month = selected_month
     @selected_month_start = Date.strptime(selected_month, "%Y-%m").beginning_of_month
     @selected_month_end   = Date.strptime(selected_month, "%Y-%m").end_of_month
+    @selected_month_display = @selected_month_start.strftime("%Y/%m")
   end
 
   def user_params

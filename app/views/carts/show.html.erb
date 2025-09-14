@@ -1,0 +1,78 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>カート</h3>
+    <%= link_to "商品一覧に戻る", orders_products_path, class: "btn btn-primary" %>
+  </div>
+  
+  <% if @cart_items.any? %>
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-body">
+            <% @cart_items.each do |item| %>
+              <div class="row mb-3 pb-3 border-bottom align-items-center">
+                <div class="col-md-4">
+                  <h6><%= item.product.name %></h6>
+                  <p class="text-muted mb-0 small">単位: <%= item.product.display_unit %></p>
+                </div>
+                <div class="col-md-2">
+                  <%= form_with url: update_item_cart_path, method: :patch, local: true, class: "d-flex align-items-center" do |f| %>
+                    <%= f.hidden_field :cart_item_id, value: item.id %>
+                    <%= f.select :quantity, options_for_select((1..10).map { |i| [i, i] }, item.quantity), 
+                        {}, { class: "form-select form-select-sm", onchange: "this.form.submit();" } %>
+                  <% end %>
+                </div>
+                <div class="col-md-2 text-end">
+                  ¥<%= number_with_delimiter(item.product.price_for(current_user.level_symbol) || 0) %>
+                </div>
+                <div class="col-md-2 text-end">
+                  <strong>¥<%= number_with_delimiter(item.subtotal(current_user.level_symbol)) %></strong>
+                </div>
+                <div class="col-md-2 text-end">
+                  <%= form_with url: remove_item_cart_path, method: :delete, local: true do |f| %>
+                    <%= f.hidden_field :cart_item_id, value: item.id %>
+                    <%= f.submit "削除", class: "btn btn-outline-danger btn-sm", 
+                        confirm: "この商品をカートから削除しますか？" %>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h5>カート合計</h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+              <span>商品数:</span>
+              <span><%= @cart.total_items %>個</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+              <span>小計:</span>
+              <span>¥<%= number_with_delimiter(@cart.total_amount(current_user.level_symbol)) %></span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between mb-3">
+              <strong>合計:</strong>
+              <strong class="text-success">¥<%= number_with_delimiter(@cart.total_amount(current_user.level_symbol)) %></strong>
+            </div>
+            
+            <div class="d-grid">
+              <%= link_to "購入手続きへ", orders_checkout_path, class: "btn btn-success btn-lg" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="alert alert-info text-center">
+      <h4>カートは空です</h4>
+      <p>商品を選んでカートに追加してください。</p>
+      <%= link_to "商品一覧を見る", orders_products_path, class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>

@@ -75,6 +75,7 @@ gem 'recaptcha'
 gem 'aws-sdk-s3', require: false
 
 gem 'wicked_pdf'
+gem 'rqrcode'
 
 group :development do
   gem 'wkhtmltopdf-binary'

@@ -7,20 +7,15 @@ class Product < ApplicationRecord
       "#{unit_quantity}#{unit_label}"
     end
     
-    # app/models/product.rb
     def price_for(level_symbol)
-      case level_symbol&.to_sym
-      when :salon
-        price_for_salon
-      when :advisor
-        price_for_advisor
-      when :agent
-        price_for_agent
-      when :special_agent
-        price_for_special_agent
-      else
-        nil
-      end
+      return nil unless level_symbol
+      
+      # レベルシンボルからレベルを検索
+      level = Level.all.find { |l| l.symbol == level_symbol.to_sym }
+      return nil unless level
+      
+      product_price = product_prices.find_by(level: level)
+      product_price&.price
     end
 
 

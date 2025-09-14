@@ -55,7 +55,7 @@
       <div class="card bg-warning text-white">
         <div class="card-body text-center">
           <h6 class="card-title">購入ユーザー数</h6>
-          <h3 class="mb-0"><%= @purchases.map(&:user_id).uniq.count %>人</h3>
+          <h3 class="mb-0"><%= @purchases.map(&:buyer_id).uniq.count %>人</h3>
         </div>
       </div>
     </div>
@@ -97,7 +97,7 @@
                       </td>
                       <td>
                         <div class="fw-bold">
-                          <%= purchase.customer.name %>
+                          <%= purchase.buyer&.name || purchase.buyer&.email || '不明' %>
                         </div>
                       </td>
                       <td>

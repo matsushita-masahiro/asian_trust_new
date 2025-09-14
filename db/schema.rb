@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_14_013039) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_14_105228) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -60,13 +60,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_14_013039) do
     t.index ["inquiry_id"], name: "index_answers_on_inquiry_id"
   end
 
-  create_table "customers", force: :cascade do |t|
-    t.string "name"
-    t.string "email"
-    t.string "phone"
-    t.string "address"
+  create_table "cart_items", force: :cascade do |t|
+    t.integer "cart_id", null: false
+    t.integer "product_id", null: false
+    t.integer "quantity"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["cart_id"], name: "index_cart_items_on_cart_id"
+    t.index ["product_id"], name: "index_cart_items_on_product_id"
+  end
+
+  create_table "carts", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_carts_on_user_id"
   end
 
   create_table "inquiries", force: :cascade do |t|
@@ -177,9 +185,27 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_14_013039) do
     t.datetime "purchased_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "customer_id"
-    t.index ["customer_id"], name: "index_purchases_on_customer_id"
+    t.integer "buyer_id"
+    t.index ["buyer_id"], name: "index_purchases_on_buyer_id"
+    t.index ["user_id", "buyer_id"], name: "index_purchases_on_user_id_and_buyer_id"
     t.index ["user_id"], name: "index_purchases_on_user_id"
+  end
+
+  create_table "referral_invitations", force: :cascade do |t|
+    t.integer "referrer_id", null: false
+    t.string "referral_token", null: false
+    t.integer "target_level_id", null: false
+    t.string "passcode", null: false
+    t.datetime "expires_at"
+    t.datetime "used_at"
+    t.integer "invited_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["invited_user_id"], name: "index_referral_invitations_on_invited_user_id"
+    t.index ["referral_token", "passcode"], name: "index_referral_invitations_on_referral_token_and_passcode"
+    t.index ["referral_token"], name: "index_referral_invitations_on_referral_token", unique: true
+    t.index ["referrer_id"], name: "index_referral_invitations_on_referrer_id"
+    t.index ["target_level_id"], name: "index_referral_invitations_on_target_level_id"
   end
 
   create_table "user_level_histories", force: :cascade do |t|
@@ -228,10 +254,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_14_013039) do
     t.integer "level_id"
     t.boolean "admin"
     t.string "status", default: "active", null: false
+    t.string "referral_token"
+    t.string "phone"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["level_id"], name: "index_users_on_level_id"
     t.index ["lstep_user_id"], name: "index_users_on_lstep_user_id", unique: true
+    t.index ["referral_token"], name: "index_users_on_referral_token"
     t.index ["referred_by_id"], name: "index_users_on_referred_by_id"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["status"], name: "index_users_on_status"
@@ -242,6 +271,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_14_013039) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "answers", "inquiries"
+  add_foreign_key "cart_items", "carts"
+  add_foreign_key "cart_items", "products"
+  add_foreign_key "carts", "users"
   add_foreign_key "invoice_bases", "users"
   add_foreign_key "invoice_recipients", "users"
   add_foreign_key "invoices", "invoice_recipients"
@@ -250,8 +282,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_14_013039) do
   add_foreign_key "product_prices", "products"
   add_foreign_key "purchase_items", "products"
   add_foreign_key "purchase_items", "purchases"
-  add_foreign_key "purchases", "customers"
   add_foreign_key "purchases", "users"
+  add_foreign_key "purchases", "users", column: "buyer_id"
+  add_foreign_key "referral_invitations", "levels", column: "target_level_id"
+  add_foreign_key "referral_invitations", "users", column: "invited_user_id"
+  add_foreign_key "referral_invitations", "users", column: "referrer_id"
   add_foreign_key "user_level_histories", "levels"
   add_foreign_key "user_level_histories", "levels", column: "previous_level_id"
   add_foreign_key "user_level_histories", "users"

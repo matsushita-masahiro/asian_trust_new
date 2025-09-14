@@ -1,0 +1,53 @@
+<% content_for :title, "新しい紹介招待を作成" %>
+
+<div class="container-fluid" style="margin-top: 80px;">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title mb-0">新しい紹介招待を作成</h2>
+        </div>
+        <div class="card-body">
+          <%= form_with model: @referral_invitation, local: true do |f| %>
+            <% if @referral_invitation.errors.any? %>
+              <div class="alert alert-danger">
+                <h4><%= pluralize(@referral_invitation.errors.count, "error") %> prohibited this invitation from being saved:</h4>
+                <ul class="mb-0">
+                  <% @referral_invitation.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <div class="mb-4">
+              <%= f.label :target_level_id, "被紹介者のレベル", class: "form-label" %>
+              <%= f.select :target_level_id, 
+                          options_from_collection_for_select(@levels, :id, :name, @referral_invitation.target_level_id),
+                          { prompt: "レベルを選択してください" },
+                          { class: "form-select" } %>
+              <div class="form-text">新規登録者に設定するレベルを選択してください。（あなたより低いレベルのみ選択可能）</div>
+            </div>
+
+            <div class="alert alert-info">
+              <h6 class="alert-heading">
+                <i class="fas fa-info-circle me-2"></i>招待の仕組み
+              </h6>
+              <ul class="mb-0">
+                <li>招待を作成すると、専用の<strong>紹介URL</strong>と<strong>4桁の暗証番号</strong>が自動生成されます</li>
+                <li>被紹介者には<strong>紹介URL</strong>と<strong>暗証番号</strong>の両方をお伝えください</li>
+                <li>被紹介者は紹介URLから登録画面にアクセスし、暗証番号を入力して登録します</li>
+                <li>招待の有効期限は7日間です</li>
+              </ul>
+            </div>
+
+            <div class="d-grid gap-2">
+              <%= f.submit "招待を作成", class: "btn btn-primary" %>
+              <%= link_to "キャンセル", referrals_path, class: "btn btn-outline-secondary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -10,6 +10,14 @@
           <% end %>
         </div>
         <div class="mobile-nav-buttons">
+          <% if @user == current_user && current_user&.level&.value && ![4, 5, 6].include?(current_user.level.value) %>
+            <%= link_to referrals_path, class: "btn btn-primary me-2" do %>
+              <i class="fas fa-qrcode me-1"></i>紹介機能
+            <% end %>
+          <% end %>
+          <%= link_to purchases_user_path(@user, month: @selected_month, view: 'own_purchases'), class: "btn btn-info me-2" do %>
+            <i class="fas fa-shopping-cart me-1"></i>購入履歴を見る
+          <% end %>
           <%= link_to "🏠 マイページに戻る", mysales_path, class: "btn btn-outline-secondary me-2" %>
           <% if @user.referrer.present? && (@user.referrer == current_user || current_user.descendants.include?(@user.referrer)) %>
             <%= link_to "🔼 1つ上位に戻る", user_path(@user.referrer), class: "btn btn-outline-primary" %>
@@ -21,7 +29,7 @@
 
   <!-- 基本情報 -->
   <div class="row mb-4 mobile-cards">
-    <div class="col-md-6">
+    <div class="<%= @user.level.value.in?([4, 5, 6]) ? 'col-12' : 'col-md-6' %>">
       <div class="card">
         <div class="card-header">
           <h5 class="card-title mb-0">基本情報</h5>
@@ -65,61 +73,66 @@
       </div>
     </div>
 
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">統計情報</h5>
-        </div>
-        <div class="card-body">
-          <div class="row g-3">
-            <!-- 直接紹介数 -->
-            <div class="col-6">
-              <div class="stats-card bg-primary bg-gradient text-white rounded-3 p-3 text-center">
-                <div class="stats-icon mb-2">
-                  <i class="fas fa-users fa-2x"></i>
+    <!-- 統計情報（サロン・クリニック・お客様レベルは非表示） -->
+    <% unless @user.level.value.in?([4, 5, 6]) %>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">統計情報</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <!-- 直接紹介数 -->
+              <div class="col-6">
+                <div class="stats-card bg-primary bg-gradient text-white rounded-3 p-3 text-center">
+                  <div class="stats-icon mb-2">
+                    <i class="fas fa-users fa-2x"></i>
+                  </div>
+                  <div class="stats-number display-6 fw-bold"><%= @user.referrals.count %></div>
+                  <div class="stats-label small">直接紹介数</div>
                 </div>
-                <div class="stats-number display-6 fw-bold"><%= @user.referrals.count %></div>
-                <div class="stats-label small">直接紹介数</div>
               </div>
-            </div>
-            
-            <!-- 総紹介数 -->
-            <div class="col-6">
-              <div class="stats-card bg-info bg-gradient text-white rounded-3 p-3 text-center">
-                <div class="stats-icon mb-2">
-                  <i class="fas fa-network-wired fa-2x"></i>
+              
+              <!-- 総紹介数 -->
+              <div class="col-6">
+                <div class="stats-card bg-info bg-gradient text-white rounded-3 p-3 text-center">
+                  <div class="stats-icon mb-2">
+                    <i class="fas fa-network-wired fa-2x"></i>
+                  </div>
+                  <div class="stats-number display-6 fw-bold"><%= @user.descendants.count %></div>
+                  <div class="stats-label small">総紹介数</div>
                 </div>
-                <div class="stats-number display-6 fw-bold"><%= @user.descendants.count %></div>
-                <div class="stats-label small">総紹介数</div>
               </div>
-            </div>
-            
-            <!-- 当月売上 -->
-            <div class="col-6">
-              <div class="stats-card bg-success bg-gradient text-white rounded-3 p-3 text-center">
-                <div class="stats-icon mb-2">
-                  <i class="fas fa-yen-sign fa-2x"></i>
+              
+              <!-- 売上 -->
+              <div class="col-6">
+                <div class="stats-card bg-success bg-gradient text-white rounded-3 p-3 text-center">
+                  <div class="stats-icon mb-2">
+                    <i class="fas fa-yen-sign fa-2x"></i>
+                  </div>
+                  <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month)) %></div>
+                  <div class="stats-label small"><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>売上</div>
                 </div>
-                <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month)) %></div>
-                <div class="stats-label small">当月売上</div>
               </div>
-            </div>
-            
-            <!-- ボーナス -->
-            <div class="col-6">
-              <div class="stats-card bg-warning bg-gradient text-white rounded-3 p-3 text-center">
-                <div class="stats-icon mb-2">
-                  <i class="fas fa-gift fa-2x"></i>
+              
+              <!-- インセンティブ -->
+              <div class="col-6">
+                <div class="stats-card bg-warning bg-gradient text-white rounded-3 p-3 text-center">
+                  <div class="stats-icon mb-2">
+                    <i class="fas fa-gift fa-2x"></i>
+                  </div>
+                  <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@user.bonus_in_month(@selected_month)) %></div>
+                  <div class="stats-label small"><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>インセンティブ</div>
                 </div>
-                <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@user.bonus_in_month(@selected_month)) %></div>
-                <div class="stats-label small">ボーナス</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    <% end %>
   </div>
+
+
 
   <!-- 統計情報カード用のカスタムスタイル -->
   <style>
@@ -385,75 +398,81 @@
     </div>
   <% end %>
 
-  <!-- 直接紹介した代理店 -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">直接紹介した代理店 (<%= @user.referrals.count %>名)</h5>
-        </div>
-        <div class="card-body">
-          <% if @user.referrals.any? %>
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead class="table-light">
-                  <tr>
-                    <th>ID</th>
-                    <th>代理店名</th>
-                    <th>LステップID</th>
-                    <th>登録日</th>
-                    <th>当月売上</th>
-                    <th>当月ボーナス</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @user.referrals.each do |referral| %>
+  <!-- 直接紹介した代理店（サロン・クリニック・お客様レベルは非表示） -->
+  <% unless @user.level.value.in?([4, 5, 6]) %>
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">直接紹介した代理店 (<%= @user.referrals.count %>名)</h5>
+          </div>
+          <div class="card-body">
+            <% if @user.referrals.any? %>
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead class="table-light">
                     <tr>
-                      <td><%= referral.id %></td>
-                      <td><%= referral.name.present? ? referral.name : referral.email %></td>
-                      <td>
-                        <% if referral.lstep_user_id.present? %>
-                          <span class="badge bg-info"><%= referral.lstep_user_id %></span>
-                        <% else %>
-                          <span class="text-muted">未設定</span>
-                        <% end %>
-                      </td>
-                      <td><%= referral.created_at.strftime("%Y/%m/%d") %></td>
-                      <td>
-                        <span class="text-success">¥<%= number_with_delimiter(referral.total_sales_with_descendants(@selected_month)) %></span>
-                      </td>
-                      <td>
-                        <span class="text-warning">¥<%= number_with_delimiter(referral.bonus_in_month(@selected_month)) %></span>
-                      </td>
-                      <td>
-                        <%= link_to "詳細", user_path(referral, month: @selected_month), class: "btn btn-sm btn-outline-primary" %>
-                      </td>
+                      <th>ID</th>
+                      <th>代理店名</th>
+                      <th>LステップID</th>
+                      <th>登録日</th>
+                      <th><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>売上</th>
+                      <th><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>インセンティブ</th>
+                      <th>操作</th>
                     </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          <% else %>
-            <div class="text-center py-4">
-              <p class="text-muted">まだ誰も紹介していません</p>
-            </div>
-          <% end %>
+                  </thead>
+                  <tbody>
+                    <% @user.referrals.each do |referral| %>
+                      <tr>
+                        <td><%= referral.id %></td>
+                        <td><%= referral.name.present? ? referral.name : referral.email %></td>
+                        <td>
+                          <% if referral.lstep_user_id.present? %>
+                            <span class="badge bg-info"><%= referral.lstep_user_id %></span>
+                          <% else %>
+                            <span class="text-muted">未設定</span>
+                          <% end %>
+                        </td>
+                        <td><%= referral.created_at.strftime("%Y/%m/%d") %></td>
+                        <td>
+                          <span class="text-success">¥<%= number_with_delimiter(referral.total_sales_with_descendants(@selected_month)) %></span>
+                        </td>
+                        <td>
+                          <% if referral.level&.value&.in?([4, 5, 6]) %>
+                            <span class="text-muted">——</span>
+                          <% else %>
+                            <span class="text-warning">¥<%= number_with_delimiter(referral.bonus_in_month(@selected_month)) %></span>
+                          <% end %>
+                        </td>
+                        <td>
+                          <%= link_to "詳細", user_path(referral, month: @selected_month), class: "btn btn-sm btn-outline-primary" %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% else %>
+              <div class="text-center py-4">
+                <p class="text-muted">まだ誰も紹介していません</p>
+              </div>
+            <% end %>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  <% end %>
 
   <!-- 購入履歴 -->
   <div class="row">
     <div class="col-12">
       <div class="card">
         <div class="card-header">
-          <h5 class="card-title mb-0">当月の購入履歴</h5>
+          <h5 class="card-title mb-0"><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>の購入履歴</h5>
         </div>
         <div class="card-body">
           <% 
-            # 当月の購入履歴を取得
+            # 対象月の購入履歴を取得
             current_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
             current_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
             monthly_purchases = @user.purchases.where(purchased_at: current_month_start..current_month_end).includes(purchase_items: :product)
@@ -464,7 +483,7 @@
                 <thead class="table-light">
                   <tr>
                     <th>購入日</th>
-                    <th>購入者</th>
+                    <th>仲介者</th>
                     <th>商品名</th>
                     <th>数量</th>
                     <th>単価</th>
@@ -491,7 +510,7 @@
             </div>
           <% else %>
             <div class="text-center py-4">
-              <p class="text-muted">当月の購入履歴はありません</p>
+              <p class="text-muted"><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>の購入履歴はありません</p>
             </div>
           <% end %>
         </div>

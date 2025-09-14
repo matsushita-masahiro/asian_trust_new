@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  referrer: one
+  referral_token: MyString
+  target_level: one
+  passcode: MyString
+  expires_at: 2025-09-13 02:37:13
+  used_at: 2025-09-13 02:37:13
+
+two:
+  referrer: two
+  referral_token: MyString
+  target_level: two
+  passcode: MyString
+  expires_at: 2025-09-13 02:37:13
+  used_at: 2025-09-13 02:37:13

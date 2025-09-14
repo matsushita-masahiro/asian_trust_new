@@ -17,7 +17,7 @@ class Level < ApplicationRecord
     when 3 then :advisor
     when 4 then :salon
     when 5 then :hospital
-    when 6 then :other
+    when 6 then :customer
     else :unknown
     end
   end

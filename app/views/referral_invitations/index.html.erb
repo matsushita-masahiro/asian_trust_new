@@ -1,0 +1,78 @@
+<% content_for :title, "紹介招待一覧" %>
+
+<div class="container-fluid" style="margin-top: 80px;">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-primary">紹介招待一覧</h1>
+        <%= link_to "新しい招待を作成", new_referral_invitation_path, class: "btn btn-primary" %>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <% if @referral_invitations.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>作成日</th>
+                    <th>対象レベル</th>
+                    <th>暗証番号</th>
+                    <th>ステータス</th>
+                    <th>有効期限</th>
+                    <th>登録者</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @referral_invitations.each do |invitation| %>
+                    <tr>
+                      <td><%= invitation.created_at.strftime("%Y/%m/%d") %></td>
+                      <td>
+                        <span class="badge bg-info"><%= invitation.target_level.name %></span>
+                      </td>
+                      <td>
+                        <code><%= invitation.passcode %></code>
+                      </td>
+                      <td>
+                        <% if invitation.used? %>
+                          <span class="badge bg-success">使用済み</span>
+                        <% elsif invitation.expired? %>
+                          <span class="badge bg-danger">期限切れ</span>
+                        <% else %>
+                          <span class="badge bg-primary">有効</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <%= invitation.expires_at.strftime("%Y/%m/%d") %>
+                      </td>
+                      <td>
+                        <% if invitation.invited_user %>
+                          <%= invitation.invited_user.display_name %>
+                        <% else %>
+                          <span class="text-muted">未使用</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <%= link_to "詳細", referral_invitation_path(invitation), 
+                                    class: "btn btn-sm btn-outline-primary" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">まだ招待を作成していません</h5>
+              <p class="text-muted">新しい招待を作成して、メンバーを紹介しましょう。</p>
+              <%= link_to "最初の招待を作成", new_referral_invitation_path, 
+                          class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,7 +1,8 @@
 class Purchase < ApplicationRecord
   # 🔗 関連
   belongs_to :user      # 購入を仲介した代理店
-  belongs_to :customer
+  belongs_to :buyer, class_name: 'User'  # 購入者
+  belongs_to :customer, optional: true  # 移行期間中は optional
   has_many :purchase_items, dependent: :destroy
   has_many :products, through: :purchase_items
 
@@ -42,6 +43,12 @@ class Purchase < ApplicationRecord
   scope :in_period, ->(start_date, end_date) {
     where(purchased_at: start_date..end_date)
   }
+  
+  # 特定ユーザーの購入履歴
+  scope :bought_by, ->(user) { where(buyer_id: user.id) }
+  
+  # 特定ユーザーが仲介した販売履歴（自分の購入は除外）
+  scope :sold_by, ->(user) { where(user_id: user.id).where.not(buyer_id: user.id) }
 
 
 

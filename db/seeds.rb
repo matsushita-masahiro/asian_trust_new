@@ -89,9 +89,9 @@ agents.each_with_index do |parent, i|
   end
 end
 
-# サロン・病院
+# サロン・クリニック
 advisors.each_with_index do |parent, i|
-  ["サロン", "病院"].each_with_index do |type, _idx|
+  ["サロン", "クリニック"].each_with_index do |type, _idx|
     User.create!(
       id: user_id_seq,
       name: "#{type}#{i + 1}",
@@ -192,6 +192,56 @@ end
   )
   user_id_seq += 1
   lstep_id_seq += 1
+end
+
+# 購入データの作成（新しいデータ構造に対応）
+puts "🛒 Creating purchase data..."
+
+# 商品を取得
+product = Product.first
+if product.nil?
+  puts "⚠️  No products found. Skipping purchase data creation."
+else
+  # 特約代理店1が自分で購入するデータを作成
+  special_agent_1 = User.find_by(name: "特約代理店1")
+  
+  if special_agent_1
+    # 2025年8月の購入データ
+    purchase = Purchase.create!(
+      user_id: special_agent_1.id,        # 仲介者（自分）
+      buyer_id: special_agent_1.id,       # 購入者（自分）
+      purchased_at: "2025-08-08 10:00:00"
+    )
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: product,
+      quantity: 40,
+      unit_price: 50000,
+      seller_price: 45000  # 特約代理店の購入価格
+    )
+    
+    puts "✅ Created purchase data for 特約代理店1"
+    
+    # 他の代理店の購入データも作成
+    agents.first(3).each_with_index do |agent, i|
+      purchase = Purchase.create!(
+        user_id: agent.id,        # 仲介者（自分）
+        buyer_id: agent.id,       # 購入者（自分）
+        purchased_at: "2025-08-#{10 + i} 14:00:00"
+      )
+      
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: product,
+        quantity: 20 + (i * 5),
+        unit_price: 50000,
+        seller_price: 47000  # 代理店の購入価格
+      )
+    end
+    
+    puts "✅ Created purchase data for agents"
+  end
 end
 
 puts "✅ Seeding completed!"

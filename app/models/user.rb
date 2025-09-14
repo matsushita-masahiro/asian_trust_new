@@ -1,15 +1,19 @@
 require 'set'
 
 class User < ApplicationRecord
-  # Devise（認証機能）- registrableは無効化（Lステップからの自動登録のみ）
+  # Devise（認証機能）- registrableは使わずカスタム登録機能を実装
   devise :database_authenticatable,
          :recoverable, :rememberable, :validatable,
-         :trackable, :confirmable, :lockable
+         :trackable, :lockable
 
   # 紹介者との関係
   belongs_to :referrer, class_name: 'User', foreign_key: 'referred_by_id', optional: true
   has_many   :referrals, class_name: 'User', foreign_key: 'referred_by_id'
   has_many   :referred_users, class_name: 'User', foreign_key: 'referred_by_id'
+  
+  # 紹介招待システム
+  has_many :referral_invitations, foreign_key: 'referrer_id', dependent: :destroy
+  has_one :received_invitation, class_name: 'ReferralInvitation', foreign_key: 'invited_user_id'
   # invoice関連
   has_many :invoices
   has_many :invoice_recipients
@@ -17,7 +21,17 @@ class User < ApplicationRecord
 
   # 会員レベル
   belongs_to :level
-  has_many :purchases
+  
+  # 購入関連のリレーション
+  has_many :mediated_purchases, class_name: 'Purchase', foreign_key: 'user_id'  # 仲介した購入
+  has_many :purchases, class_name: 'Purchase', foreign_key: 'buyer_id'  # 自分の購入
+  
+  # カート機能
+  has_one :cart, dependent: :destroy
+  
+  def ensure_cart
+    cart || create_cart
+  end
   
   # レベル履歴
   has_many :user_level_histories, dependent: :destroy
@@ -32,6 +46,9 @@ class User < ApplicationRecord
   }
 
   BONUS_ELIGIBLE_LEVELS = %w[特約代理店 代理店 アドバイザー].freeze
+
+  # コールバック
+  before_create :generate_referral_token
 
   # スコープ
   scope :active_users, -> { where(status: 'active') }
@@ -103,6 +120,28 @@ class User < ApplicationRecord
   
   def total_sales_with_descendants(month_str)
     own_monthly_sales_total(month_str) + all_descendants_monthly_sales_total(month_str)
+  end
+
+  # 自分の購入合計（buyer_idが自分のもの）
+  def own_purchase_total(month_str = nil)
+    scope = purchases.joins(:purchase_items)
+    
+    if month_str
+      scope = scope.in_month_tokyo(month_str)
+    end
+    
+    scope.sum('purchase_items.unit_price * purchase_items.quantity')
+  end
+
+  # 販売合計（user_idが自分で、buyer_idが自分以外のもの）
+  def sales_total(month_str = nil)
+    scope = mediated_purchases.where.not(buyer_id: id).joins(:purchase_items)
+    
+    if month_str
+      scope = scope.in_month_tokyo(month_str)
+    end
+    
+    scope.sum('purchase_items.unit_price * purchase_items.quantity')
   end
 
 
@@ -495,6 +534,45 @@ class User < ApplicationRecord
     return unless referrer&.level&.value && level&.value
     if level.value < referrer.level.value
       errors.add(:level, "紹介者より上のレベルには設定できません")
+    end
+  end
+
+  # 紹介URL生成（ホスト情報が必要な場合はコントローラーで生成）
+  def referral_url(host = nil)
+    if host
+      "#{host}/users/sign_up?ref=#{referral_token}"
+    else
+      "/users/sign_up?ref=#{referral_token}"
+    end
+  end
+
+  # 紹介QRコード生成用のURL
+  def referral_qr_url(host = nil)
+    referral_url(host)
+  end
+
+  # 紹介トークンの再生成
+  def regenerate_referral_token!
+    update!(referral_token: generate_unique_token)
+  end
+
+  # 紹介機能が使用可能かどうか
+  def can_refer?
+    return false unless level&.value
+    # レベル4、5、6（クリニック・サロン）は紹介不可
+    ![4, 5, 6].include?(level.value)
+  end
+
+  private
+
+  def generate_referral_token
+    self.referral_token = generate_unique_token
+  end
+
+  def generate_unique_token
+    loop do
+      token = SecureRandom.urlsafe_base64(12)
+      break token unless User.exists?(referral_token: token)
     end
   end
 end

@@ -1,8 +1,13 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <% if defined?(@user) && @user.present? %>
-      <%= link_to "販売履歴", purchases_user_path(@user, month: @selected_month), 
-          class: "btn btn-outline-info btn-sm" %>
+      <% if @user.level.value == 6 %>
+        <%= link_to "購入履歴", purchases_user_path(@user, month: @selected_month), 
+            class: "btn btn-outline-info btn-sm" %>
+      <% else %>
+        <%= link_to "販売履歴", purchases_user_path(@user, month: @selected_month), 
+            class: "btn btn-outline-info btn-sm" %>
+      <% end %>
     <% end %>
   </div>
   

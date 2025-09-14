@@ -17,7 +17,7 @@ class UsersController < ApplicationController
     end
   end
 
-  # 販売履歴表示
+  # 販売履歴・購入履歴表示
   def purchases
     @user = User.find(params[:id])
 
@@ -28,11 +28,41 @@ class UsersController < ApplicationController
 
     @selected_month = params[:month] || Time.current.strftime('%Y-%m')
     
-    # 指定ユーザーの販売履歴を取得
-    @purchases = Purchase.includes(purchase_items: :product, customer: [])
-                        .where(user_id: @user.id)
-                        .in_month_tokyo(@selected_month)
-                        .order(purchased_at: :desc)
+    begin
+      # URLパラメータで表示モードを判定
+      # ?view=own_purchases が指定された場合は自分の購入履歴を表示
+      if params[:view] == 'own_purchases'
+        # 自分自身の購入履歴を表示（buyer_idが自分のユーザーIDと一致するもの）
+        @purchases = Purchase.includes({ purchase_items: :product }, :buyer)
+                            .where(buyer_id: @user.id)
+                            .in_month_tokyo(@selected_month)
+                            .order(purchased_at: :desc)
+        @is_customer_view = true
+        @is_own_purchases = true
+      elsif @user.level.value == 6
+        # お客様の場合：自分が購入者として記録された購入履歴を表示
+        @purchases = Purchase.includes({ purchase_items: :product }, :buyer)
+                            .where(buyer_id: @user.id)
+                            .in_month_tokyo(@selected_month)
+                            .order(purchased_at: :desc)
+        @is_customer_view = true
+        @is_own_purchases = false
+      else
+        # 指定ユーザーの販売履歴を取得（userとしての仲介）
+        # 自分自身の購入は除外する（buyer_idが自分のユーザーIDと一致するものを除外）
+        @purchases = Purchase.includes({ purchase_items: :product }, :buyer)
+                            .where(user_id: @user.id)
+                            .where.not(buyer_id: @user.id)
+                            .in_month_tokyo(@selected_month)
+                            .order(purchased_at: :desc)
+        @is_customer_view = false
+        @is_own_purchases = false
+      end
+    rescue => e
+      Rails.logger.error "Error loading purchases: #{e.message}"
+      @purchases = Purchase.none
+      flash.now[:alert] = "購入履歴の読み込み中にエラーが発生しました。"
+    end
     
     # 統計情報
     @total_amount = @purchases.sum(&:total_price)

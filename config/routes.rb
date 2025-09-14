@@ -1,11 +1,21 @@
 Rails.application.routes.draw do
+  get "carts/show"
+  get "carts/add_item"
+  get "carts/remove_item"
+  get "carts/update_item"
+  get "orders/index"
+  get "orders/products"
+  get "orders/cart"
+  get "orders/checkout"
+
+  root "home#index"
   # Webhook
   namespace :webhooks do
     post 'lstep', to: 'lstep#create'
     post 'lstep/purchase', to: 'lstep#purchase'
   end
 
-  # Devise（登録機能は無効化 - Lステップからの自動登録のみ）
+  # Devise（registrationは除外してカスタム実装）
   devise_for :users, skip: [:registrations], controllers: {
     sessions:      'users/sessions',
     passwords:     'users/passwords',
@@ -13,8 +23,13 @@ Rails.application.routes.draw do
     unlocks:       'users/unlocks'
   }
 
+  # カスタム新規登録ルート
+  devise_scope :user do
+    get '/users/sign_up', to: 'users/registrations#new', as: :new_user_registration
+    post '/users', to: 'users/registrations#create', as: :user_registration
+  end
+
   # トップページと各種ページ
-  root "home#index"
   get 'terms',   to: 'home#terms',   as: :terms
   get 'privacy', to: 'home#privacy', as: :privacy
   get 'law',     to: 'home#law',     as: :law
@@ -70,6 +85,16 @@ Rails.application.routes.draw do
     end
   end
 
+  # 紹介機能
+  resources :referrals, only: [:index, :show] do
+    member do
+      get :qr_code
+    end
+  end
+  
+  # 紹介招待機能
+  resources :referral_invitations, only: [:index, :new, :create, :show]
+
   # 一般ユーザー用マイページ
   get 'mysales', to: 'users#mysales', as: :mysales
   resources :users, only: [:show] do  # /users/:id → 下位ユーザー詳細
@@ -80,6 +105,24 @@ Rails.application.routes.draw do
   get 'sales/:id' => "sales#show"
   resources :sales, only: [:index]
   resources :customers, only: [:show]
+  
+  # 予約・注文システム
+  resources :orders, only: [:index] do
+    collection do
+      get :products      # 商品一覧
+      get :checkout      # 購入確認
+      post :purchase     # 購入処理
+    end
+  end
+  
+  # カート機能
+  resource :cart, only: [:show] do
+    member do
+      post :add_item
+      patch :update_item
+      delete :remove_item
+    end
+  end
   
   
   

@@ -46,13 +46,13 @@
               </div>
               <div class="col-md-6">
                 <div class="mb-3">
-                  <%= form.label :customer_name, "顧客名", class: "form-label" %>
-                  <%= form.text_field :customer_name, 
-                      class: "form-control", 
-                      required: true,
-                      placeholder: "顧客名を入力してください" %>
+                  <%= form.label :buyer_id, "購入者", class: "form-label" %>
+                  <%= form.select :buyer_id, 
+                      options_from_collection_for_select(@users, :id, :display_name, @purchase.buyer_id),
+                      { prompt: "購入者を選択してください" },
+                      { class: "form-select", required: true } %>
                   <div class="invalid-feedback">
-                    顧客名を入力してください。
+                    購入者を選択してください。
                   </div>
                 </div>
               </div>

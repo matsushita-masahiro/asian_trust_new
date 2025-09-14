@@ -19,12 +19,20 @@
               <p class="mb-0"><strong>🆔 LステップID:</strong> <code class="text-purple"><%= @user.lstep_user_id.presence || "未登録" %></code></p>
             </div>
             <div class="text-end">
-              <p>本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
-              <p>下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
-              <p>合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
-              <div class="mt-2">
-                <%= link_to "売上明細", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
-              </div>
+              <% if @user.level.value == 6 %>
+                <p>本人購入：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
+                <p>合計購入：<strong><%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month).to_i) %></strong> 円</p>
+                <div class="mt-2">
+                  <%= link_to "購入明細", purchases_user_path(@user, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
+                </div>
+              <% else %>
+                <p>本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
+                <p>下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
+                <p>合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
+                <div class="mt-2">
+                  <%= link_to "売上明細", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
+                </div>
+              <% end %>
             </div>
           </div>
 
@@ -39,69 +47,93 @@
             </div>
             
             <div class="text-center">
-              <p class="mb-1">本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
-              <p class="mb-1">下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
-              <p class="mb-2">合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
-              <div>
-                <%= link_to "売上明細", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
-              </div>
+              <% if @user.level.value == 6 %>
+                <p class="mb-1">本人購入：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
+                <p class="mb-2">合計購入：<strong><%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month).to_i) %></strong> 円</p>
+                <div>
+                  <%= link_to "購入明細", purchases_user_path(@user, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
+                </div>
+              <% else %>
+                <p class="mb-1">本人売上：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
+                <p class="mb-1">下位売上：<%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month) - @user.own_monthly_sales_total(@selected_month)) %>円</p>
+                <p class="mb-2">合計売上：<strong><%= number_with_delimiter(@user.total_sales_with_descendants(@selected_month).to_i) %></strong> 円</p>
+                <div>
+                  <%= link_to "売上明細", sales_path(user_id: @user.id, month: @selected_month), class: "btn btn-outline-primary btn-sm" %>
+                </div>
+              <% end %>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 下位紹介者セクション -->
-    <div class="card shadow mt-3">
-      <div class="card-header bg-light">
-        <h5 class="mb-0">👇 下位紹介者</h5>
-      </div>
-      <div class="card-body">
-        <% if @user.referrals.any? %>
-          <% @user.referrals.each_with_index do |ref_user, i| %>
-            <div class="card mb-3 hover-pointer" onclick="window.location.href='<%= user_path(ref_user) %>'">
-              <div class="card-body">
-                <!-- デスクトップ表示 -->
-                <div class="d-none d-md-block">
-                  <div class="row align-items-start">
-                    <div class="col-md-8">
-                      <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
-                      <p class="mb-1 text-break">📧 <%= ref_user.email %></p>
-                      <p class="mb-1">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
-                      <div>売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</div>
-                      <div>インセンティブ（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
-                    </div>
-                    <div class="col-md-4 text-end">
-                      <%= link_to "売上明細", sales_path(user_id: ref_user.id), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+    <!-- 下位紹介者セクション（サロン・クリニック・お客様レベルは非表示） -->
+    <% unless @user.level.value.in?([4, 5, 6]) %>
+      <div class="card shadow mt-3">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">👇 下位紹介者</h5>
+        </div>
+        <div class="card-body">
+          <% if @user.referrals.any? %>
+            <% @user.referrals.each_with_index do |ref_user, i| %>
+              <div class="card mb-3 hover-pointer" onclick="window.location.href='<%= user_path(ref_user) %>'">
+                <div class="card-body">
+                  <!-- デスクトップ表示 -->
+                  <div class="d-none d-md-block">
+                    <div class="row align-items-start">
+                      <div class="col-md-8">
+                        <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
+                        <p class="mb-1 text-break">📧 <%= ref_user.email %></p>
+                        <p class="mb-1">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
+                        <% if ref_user.level.value == 6 %>
+                          <div>購入：<%= number_with_delimiter(ref_user.own_monthly_sales_total(@selected_month).to_i) %>円</div>
+                        <% else %>
+                          <div>売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</div>
+                          <div>インセンティブ（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
+                        <% end %>
+                      </div>
+                      <div class="col-md-4 text-end">
+                        <% if ref_user.level.value == 6 %>
+                          <%= link_to "購入明細", purchases_user_path(ref_user), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+                        <% else %>
+                          <%= link_to "売上明細", sales_path(user_id: ref_user.id), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+                        <% end %>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- モバイル表示 -->
-                <div class="d-md-none">
-                  <div class="text-center mb-2">
-                    <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
-                  </div>
-                  
-                  <div class="mb-2">
-                    <p class="mb-1 small text-break">📧 <%= ref_user.email %></p>
-                    <p class="mb-1 small">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
-                  </div>
-                  
-                  <div class="text-center mb-2">
-                    <div class="small">売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</div>
-                    <div class="small mb-2">インセンティブ（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
-                    <%= link_to "売上明細", sales_path(user_id: ref_user.id), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+                  <!-- モバイル表示 -->
+                  <div class="d-md-none">
+                    <div class="text-center mb-2">
+                      <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
+                    </div>
+                    
+                    <div class="mb-2">
+                      <p class="mb-1 small text-break">📧 <%= ref_user.email %></p>
+                      <p class="mb-1 small">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
+                    </div>
+                    
+                    <div class="text-center mb-2">
+                      <% if ref_user.level.value == 6 %>
+                        <div class="small">購入：<%= number_with_delimiter(ref_user.own_monthly_sales_total(@selected_month).to_i) %>円</div>
+                        <div class="small mb-2"></div>
+                        <%= link_to "購入明細", purchases_user_path(ref_user), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+                      <% else %>
+                        <div class="small">売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</div>
+                        <div class="small mb-2">インセンティブ（<%= @selected_month %>）：<strong class="text-success"><%= number_with_delimiter(ref_user.bonus_in_month(@selected_month).to_i) %></strong> 円</div>
+                        <%= link_to "売上明細", sales_path(user_id: ref_user.id), class: "btn btn-outline-primary btn-sm", onclick: "event.stopPropagation();" %>
+                      <% end %>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            <% end %>
+          <% else %>
+            <p class="text-muted mb-0">下位紹介者なし</p>
           <% end %>
-        <% else %>
-          <p class="text-muted mb-0">下位紹介者なし</p>
-        <% end %>
+        </div>
       </div>
-    </div>
+    <% end %>
 
   </div>
 </div>

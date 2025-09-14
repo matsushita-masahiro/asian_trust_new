@@ -1,0 +1,176 @@
+<% content_for :title, "紹介招待詳細" %>
+
+<div class="container-fluid" style="margin-top: 80px;">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title mb-0">紹介招待詳細</h2>
+        </div>
+        <div class="card-body">
+          <!-- ステータス表示 -->
+          <div class="mb-4">
+            <% if @referral_invitation.used? %>
+              <span class="badge bg-success fs-6">使用済み</span>
+              <small class="text-muted ms-2">
+                <%= @referral_invitation.used_at.strftime("%Y年%m月%d日 %H:%M") %>に使用
+              </small>
+            <% elsif @referral_invitation.expired? %>
+              <span class="badge bg-danger fs-6">期限切れ</span>
+              <small class="text-muted ms-2">
+                <%= @referral_invitation.expires_at.strftime("%Y年%m月%d日 %H:%M") %>に期限切れ
+              </small>
+            <% else %>
+              <span class="badge bg-primary fs-6">有効</span>
+              <small class="text-muted ms-2">
+                <%= @referral_invitation.expires_at.strftime("%Y年%m月%d日 %H:%M") %>まで有効
+              </small>
+            <% end %>
+          </div>
+
+          <!-- 招待情報 -->
+          <div class="row mb-4">
+            <div class="col-sm-4">
+              <strong>対象レベル:</strong>
+            </div>
+            <div class="col-sm-8">
+              <span class="badge bg-info"><%= @referral_invitation.target_level.name %></span>
+            </div>
+          </div>
+
+          <div class="row mb-4">
+            <div class="col-sm-4">
+              <strong>暗証番号:</strong>
+            </div>
+            <div class="col-sm-8">
+              <code class="fs-4 text-primary"><%= @referral_invitation.passcode %></code>
+              <button onclick="copyPasscode()" class="btn btn-sm btn-outline-primary ms-2">
+                <i class="fas fa-copy"></i> コピー
+              </button>
+            </div>
+          </div>
+
+          <!-- 紹介URL -->
+          <div class="mb-4">
+            <label class="form-label"><strong>紹介URL:</strong></label>
+            <div class="input-group">
+              <input type="text" 
+                     value="<%= @referral_invitation.referral_url %>" 
+                     readonly 
+                     class="form-control"
+                     id="referral-url">
+              <button onclick="copyURL()" class="btn btn-outline-primary">
+                <i class="fas fa-copy"></i> コピー
+              </button>
+            </div>
+          </div>
+
+          <!-- QRコード -->
+          <div class="text-center mb-4">
+            <h6>QRコード</h6>
+            <div id="qr-code-container">
+              <!-- QRコードをJavaScriptで生成 -->
+            </div>
+            <small class="text-muted">
+              QRコードをスクリーンショットして送信できます
+            </small>
+          </div>
+
+          <!-- 使用者情報 -->
+          <% if @referral_invitation.invited_user %>
+            <div class="alert alert-success">
+              <h6 class="alert-heading">
+                <i class="fas fa-check-circle me-2"></i>登録完了
+              </h6>
+              <p class="mb-0">
+                <strong><%= @referral_invitation.invited_user.display_name %></strong>さんが
+                <%= @referral_invitation.used_at.strftime("%Y年%m月%d日 %H:%M") %>に登録しました。
+              </p>
+            </div>
+          <% end %>
+
+          <!-- 送信方法の説明 -->
+          <div class="alert alert-info">
+            <h6 class="alert-heading">
+              <i class="fas fa-paper-plane me-2"></i>被紹介者への送信内容
+            </h6>
+            <p>以下の情報を被紹介者にお伝えください：</p>
+            <ol class="mb-0">
+              <li><strong>紹介URL</strong>: <%= @referral_invitation.referral_url %></li>
+              <li><strong>暗証番号</strong>: <code><%= @referral_invitation.passcode %></code></li>
+              <li><strong>設定レベル</strong>: <%= @referral_invitation.target_level.name %></li>
+            </ol>
+          </div>
+
+          <div class="d-grid gap-2">
+            <%= link_to "招待一覧に戻る", referral_invitations_path, class: "btn btn-outline-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QRコード生成ライブラリ -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+<script>
+// QRコード生成
+document.addEventListener('DOMContentLoaded', function() {
+  const url = '<%= @referral_invitation.referral_url %>';
+  const container = document.getElementById('qr-code-container');
+  
+  QRCode.toCanvas(url, { width: 200, margin: 2 }, function (error, canvas) {
+    if (error) {
+      console.error(error);
+      container.innerHTML = '<p class="text-danger">QRコードの生成に失敗しました</p>';
+    } else {
+      canvas.className = 'border rounded';
+      container.appendChild(canvas);
+    }
+  });
+});
+
+// URLコピー機能
+function copyURL() {
+  const urlInput = document.getElementById('referral-url');
+  urlInput.select();
+  urlInput.setSelectionRange(0, 99999);
+  
+  try {
+    document.execCommand('copy');
+    showToast('URLをコピーしました！');
+  } catch (err) {
+    console.error('コピーに失敗しました:', err);
+    alert('コピーに失敗しました。手動でURLを選択してコピーしてください。');
+  }
+}
+
+// 暗証番号コピー機能
+function copyPasscode() {
+  const passcode = '<%= @referral_invitation.passcode %>';
+  navigator.clipboard.writeText(passcode).then(function() {
+    showToast('暗証番号をコピーしました！');
+  }).catch(function(err) {
+    console.error('コピーに失敗しました:', err);
+    alert('コピーに失敗しました。');
+  });
+}
+
+// トースト表示
+function showToast(message) {
+  // 簡単なトースト表示
+  const toast = document.createElement('div');
+  toast.className = 'position-fixed top-0 end-0 m-3 alert alert-success alert-dismissible';
+  toast.style.zIndex = '9999';
+  toast.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+</script>

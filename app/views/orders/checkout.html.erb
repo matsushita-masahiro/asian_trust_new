@@ -1,0 +1,68 @@
+<div class="container mt-4">
+  <h3>購入確認</h3>
+  
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5>注文内容</h5>
+        </div>
+        <div class="card-body">
+          <% if @cart&.cart_items&.any? %>
+            <% @cart.cart_items.each do |item| %>
+              <div class="row mb-3 pb-3 border-bottom">
+                <div class="col-md-6">
+                  <h6><%= item.product.name %></h6>
+                  <p class="text-muted mb-0">単位: <%= item.product.display_unit %></p>
+                </div>
+                <div class="col-md-2 text-center">
+                  <span class="badge bg-secondary">× <%= item.quantity %></span>
+                </div>
+                <div class="col-md-2 text-end">
+                  ¥<%= number_with_delimiter(item.product.price_for(current_user.level_symbol) || 0) %>
+                </div>
+                <div class="col-md-2 text-end">
+                  <strong>¥<%= number_with_delimiter(item.subtotal(current_user.level_symbol)) %></strong>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="text-muted">カートに商品がありません</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5>注文合計</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <span>小計:</span>
+            <span>¥<%= number_with_delimiter(@cart&.total_amount(current_user.level_symbol) || 0) %></span>
+          </div>
+          <div class="d-flex justify-content-between mb-3">
+            <span>送料:</span>
+            <span>無料</span>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between mb-3">
+            <strong>合計:</strong>
+            <strong class="text-success">¥<%= number_with_delimiter(@cart&.total_amount(current_user.level_symbol) || 0) %></strong>
+          </div>
+          
+          <div class="d-grid gap-2">
+            <%= form_with url: purchase_orders_path, method: :post, local: true do |f| %>
+              <%= f.submit "注文を確定する", class: "btn btn-success btn-lg", 
+                  confirm: "この内容で注文を確定しますか？" %>
+            <% end %>
+            <%= link_to "カートに戻る", cart_path, class: "btn btn-outline-secondary" %>
+            <%= link_to "商品一覧に戻る", orders_products_path, class: "btn btn-outline-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

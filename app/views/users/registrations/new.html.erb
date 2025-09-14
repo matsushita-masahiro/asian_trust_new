@@ -1,0 +1,86 @@
+<% content_for :title, "新規登録" %>
+
+<div class="container-fluid" style="margin-top: 80px;">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow">
+        <div class="card-header text-center">
+          <h2 class="card-title mb-0">新規登録</h2>
+        </div>
+        <div class="card-body">
+          <% if @referrer %>
+            <div class="alert alert-info d-flex align-items-center mb-4">
+              <i class="fas fa-user-friends me-2"></i>
+              <div>
+                <strong>紹介者</strong><br>
+                <span class="text-muted"><%= @referrer.display_name %></span>
+              </div>
+            </div>
+          <% end %>
+
+          <%= form_with model: @user, url: user_registration_path, local: true do |f| %>
+            <% if params[:ref].present? %>
+              <%= hidden_field_tag :ref, params[:ref] %>
+            <% end %>
+            <%= render "users/shared/error_messages", resource: @user %>
+
+            <div class="mb-3">
+              <%= f.label :name, "お名前", class: "form-label" %>
+              <%= f.text_field :name, class: "form-control" %>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :email, "メールアドレス", class: "form-label" %>
+              <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
+            </div>
+
+            <div class="mb-3">
+              <label for="passcode" class="form-label">暗証番号</label>
+              <input type="text" 
+                     name="passcode" 
+                     id="passcode" 
+                     class="form-control" 
+                     placeholder="4桁の暗証番号を入力"
+                     maxlength="4"
+                     pattern="[0-9]{4}"
+                     required>
+              <div class="form-text">紹介者から受け取った4桁の暗証番号を入力してください。</div>
+            </div>
+
+            <%# 電話番号フィールドは一時的にコメントアウト %>
+            <%# <div class="mb-3">
+              <%= f.label :phone, "電話番号", class: "form-label" %>
+              <%#= f.telephone_field :phone, class: "form-control" %>
+            <%# </div> %>
+
+            <div class="mb-3">
+              <%= f.label :password, "パスワード", class: "form-label" %>
+              <% if @minimum_password_length %>
+                <small class="form-text text-muted">(<%= @minimum_password_length %>文字以上)</small>
+              <% end %>
+              <%= f.password_field :password, autocomplete: "new-password", class: "form-control" %>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :password_confirmation, "パスワード確認", class: "form-label" %>
+              <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control" %>
+            </div>
+
+            <div class="d-grid">
+              <%= f.submit "登録する", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+
+          <div class="mt-4 text-center">
+            <div class="mb-2">
+              <%= link_to "ログイン", new_user_session_path, class: "text-primary" %>
+            </div>
+            <div>
+              <%= link_to "パスワードを忘れた方", new_user_password_path, class: "text-primary" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

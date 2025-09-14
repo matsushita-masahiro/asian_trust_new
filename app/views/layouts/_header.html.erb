@@ -10,6 +10,9 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         <% if user_signed_in? %>
+          <li class="nav-item">
+            <%= link_to "予約・注文", orders_path, class: "nav-link" %>
+          </li>
           <% if user_signed_in? && !current_user.admin %>
             <li class="nav-item">
               <%= link_to "請求書管理", invoices_path, class: "nav-link" %>
@@ -21,13 +24,22 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-custom" aria-labelledby="mypageDropdown">
               <li><%= link_to "マイアカウント", user_path(current_user), class: "dropdown-item" %></li>
-              <li><%= link_to "売上情報", mysales_path, class: "dropdown-item" %></li>
+              <li>
+                <% if current_user.level.value == 6 %>
+                  <%= link_to "購入情報", mysales_path, class: "dropdown-item" %>
+                <% else %>
+                  <%= link_to "売上情報", mysales_path, class: "dropdown-item" %>
+                <% end %>
+              </li>
+              <% if current_user&.level&.value && ![4, 5, 6].include?(current_user.level.value) %>
+                <li><%= link_to "紹介機能", referrals_path, class: "dropdown-item" %></li>
+              <% end %>
             </ul>
           </li>
           <li class="nav-item">
             <%= link_to "ログアウト", destroy_user_session_path, method: :delete, data: { turbo: false }, class: "nav-link" %>
           </li>
-          <% if current_user.admin? %>
+          <% if current_user.admin? || current_user.level&.value == 0 %>
             <li class="nav-item">
               <%= link_to "ダッシュボード", admin_root_path, class: "nav-link" %>
             </li>

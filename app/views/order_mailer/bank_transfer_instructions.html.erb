@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>銀行振込のご案内</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #007bff;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      border-radius: 8px 8px 0 0;
+    }
+    .content {
+      background-color: #f8f9fa;
+      padding: 30px;
+      border-radius: 0 0 8px 8px;
+    }
+    .order-summary {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border: 1px solid #dee2e6;
+    }
+    .bank-info {
+      background-color: #e7f3ff;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #007bff;
+    }
+    .important {
+      background-color: #fff3cd;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #ffc107;
+      margin: 20px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: bold;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .total-row {
+      background-color: #e7f3ff;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #dee2e6;
+      font-size: 0.9em;
+      color: #6c757d;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ご注文ありがとうございます</h1>
+    <p>銀行振込のご案内</p>
+  </div>
+
+  <div class="content">
+    <p><%= @user.name %>様</p>
+    
+    <p>この度は、Asian Business Trustをご利用いただき、誠にありがとうございます。<br>
+    ご注文の詳細と銀行振込先をご案内いたします。</p>
+
+    <div class="order-summary">
+      <h3>📋 ご注文内容</h3>
+      <p><strong>注文番号:</strong> #<%= @purchase.id %></p>
+      <p><strong>注文日時:</strong> <%= @purchase.purchased_at.strftime("%Y年%m月%d日 %H:%M") %></p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>商品名</th>
+            <th class="text-right">数量</th>
+            <th class="text-right">単価</th>
+            <th class="text-right">小計</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @purchase_items.each do |item| %>
+            <tr>
+              <td>
+                <%= item.product.name %><br>
+                <small style="color: #6c757d;">単位: <%= item.product.unit_label %></small>
+              </td>
+              <td class="text-right"><%= item.quantity %></td>
+              <td class="text-right">¥<%= number_with_delimiter(item.unit_price) %></td>
+              <td class="text-right">¥<%= number_with_delimiter(item.unit_price * item.quantity) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="3">合計金額</td>
+            <td class="text-right">¥<%= number_with_delimiter(@total_amount) %></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="bank-info">
+      <h3>🏦 お振込先</h3>
+      <table style="margin: 0;">
+        <tr>
+          <td style="border: none; padding: 8px 0;"><strong>銀行名:</strong></td>
+          <td style="border: none; padding: 8px 0;">三菱UFJ銀行</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 8px 0;"><strong>支店名:</strong></td>
+          <td style="border: none; padding: 8px 0;">新宿支店</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 8px 0;"><strong>口座種別:</strong></td>
+          <td style="border: none; padding: 8px 0;">普通預金</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 8px 0;"><strong>口座番号:</strong></td>
+          <td style="border: none; padding: 8px 0;">1234567</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 8px 0;"><strong>口座名義:</strong></td>
+          <td style="border: none; padding: 8px 0;">株式会社アジアビジネストラスト</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 8px 0;"><strong>振込金額:</strong></td>
+          <td style="border: none; padding: 8px 0; color: #007bff; font-weight: bold; font-size: 1.2em;">¥<%= number_with_delimiter(@total_amount) %></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="important">
+      <h4>⚠️ 重要なお知らせ</h4>
+      <ul>
+        <li><strong>振込名義人:</strong> ご注文者様のお名前でお振込みください</li>
+        <li><strong>振込手数料:</strong> お客様のご負担となります</li>
+        <li><strong>入金確認:</strong> 1-2営業日で確認いたします</li>
+        <li><strong>商品発送:</strong> 入金確認後、3-5営業日で発送いたします</li>
+        <li><strong>振込期限:</strong> <%= (@purchase.purchased_at + 7.days).strftime("%Y年%m月%d日") %>まで</li>
+      </ul>
+    </div>
+
+    <p>ご入金が確認でき次第、発送準備を開始し、発送完了時に追跡番号をお知らせいたします。</p>
+    
+    <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+
+    <div class="footer">
+      <hr>
+      <p><strong>Asian Business Trust</strong><br>
+      Email: <%= ENV['ADMIN_EMAIL'] || 'support@example.com' %><br>
+      TEL: 03-1234-5678<br>
+      営業時間: 平日 9:00-18:00</p>
+      
+      <p><small>このメールは自動送信されています。返信はできませんので、お問い合わせは上記連絡先までお願いいたします。</small></p>
+    </div>
+  </div>
+</body>
+</html>

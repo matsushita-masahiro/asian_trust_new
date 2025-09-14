@@ -54,10 +54,8 @@
           </div>
           
           <div class="d-grid gap-2">
-            <%= form_with url: purchase_orders_path, method: :post, local: true do |f| %>
-              <%= f.submit "注文を確定する", class: "btn btn-success btn-lg", 
-                  confirm: "この内容で注文を確定しますか？" %>
-            <% end %>
+            <%= link_to "お支払い方法を選択する", select_method_payments_path, 
+                class: "btn btn-success btn-lg" %>
             <%= link_to "カートに戻る", cart_path, class: "btn btn-outline-secondary" %>
             <%= link_to "商品一覧に戻る", orders_products_path, class: "btn btn-outline-primary" %>
           </div>

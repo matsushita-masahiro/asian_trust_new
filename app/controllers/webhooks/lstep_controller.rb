@@ -41,17 +41,19 @@ class Webhooks::LstepController < ApplicationController
     referrer = User.find_by(lstep_user_id: data["referrer_id"])
     product  = Product.find_by(id: data["product_id"])
   
-    customer = Customer.create!(
-      name: data["customer_name"],
-      email: data["customer_email"],
-      phone: data["customer_phone"],
-      address: data["customer_address"]
-    )
+    # Customerモデル削除により、buyerとしてUserを作成または検索
+    buyer = User.find_or_create_by(email: data["customer_email"]) do |u|
+      u.name = data["customer_name"]
+      u.password = SecureRandom.hex(8)
+      u.password_confirmation = u.password
+      u.level_id = Level.find_by(name: 'お客様')&.id || 7
+      u.status = 'active'
+      u.confirmed_at = Time.current
+    end
   
     Purchase.create!(
       user: referrer,
-      product: product,
-      customer: customer,
+      buyer: buyer,
       quantity: data["quantity"],
       unit_price: data["unit_price"],
       price: data["quantity"] * product.base_price,

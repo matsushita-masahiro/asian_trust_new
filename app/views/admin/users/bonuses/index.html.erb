@@ -186,7 +186,7 @@
                         </td>
                         <!-- 購入者名（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
-                          <%= is_first_item ? (purchase.customer&.name || "-") : "" %>
+                          <%= is_first_item ? (purchase.buyer&.name || "-") : "" %>
                         </td>
                         <!-- 商品名（常に表示） -->
                         <td class="text-nowrap">
@@ -214,15 +214,15 @@
                         </td>
                         <!-- メール（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
-                          <%= is_first_item ? (purchase.customer&.email || "-") : "" %>
+                          <%= is_first_item ? (purchase.buyer&.email || "-") : "" %>
                         </td>
                         <!-- 電話番号（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
-                          <%= is_first_item ? (purchase.customer&.phone || "-") : "" %>
+                          <%= is_first_item ? (purchase.buyer&.phone || "-") : "" %>
                         </td>
                         <!-- 住所（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
-                          <%= is_first_item ? (purchase.customer&.address || "-") : "" %>
+                          <%= is_first_item ? "-" : "" %>
                         </td>
                         <!-- 購入日（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">

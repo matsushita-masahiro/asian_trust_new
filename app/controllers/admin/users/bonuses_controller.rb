@@ -5,7 +5,7 @@ class Admin::Users::BonusesController < Admin::BaseController
   def index
     begin
       # 基本的にsales/indexと同じ内容だが、管理者向けの詳細情報を追加
-      @purchases = @user.purchases.includes(purchase_items: :product, customer: [])
+      @purchases = @user.purchases.includes(purchase_items: :product, buyer: [])
       
       # 期間でフィルタリング（in_periodメソッドが存在しない場合の対応）
       if @purchases.respond_to?(:in_period)
@@ -16,7 +16,7 @@ class Admin::Users::BonusesController < Admin::BaseController
       
       # 自身 + 下位の購入履歴（選択月）
       descendant_ids = @user.descendants.pluck(:id)
-      @purchases_with_descendants = Purchase.includes(purchase_items: :product, customer: [], user: [])
+      @purchases_with_descendants = Purchase.includes(purchase_items: :product, buyer: [], user: [])
                                             .where(user_id: [@user.id] + descendant_ids)
                                             .where(purchased_at: @selected_month_start..@selected_month_end)
 

@@ -33,7 +33,7 @@ module BonusTestHelper
           quantity: purchase.quantity,
           amount: purchase.unit_price * purchase.quantity,
           date: purchase.purchased_at,
-          customer: purchase.customer.name
+          customer: purchase.buyer.name
         }
       end
       

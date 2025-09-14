@@ -104,7 +104,7 @@ Rails.application.routes.draw do
   end
   get 'sales/:id' => "sales#show"
   resources :sales, only: [:index]
-  resources :customers, only: [:show]
+  # resources :customers, only: [:show] # Customerモデル削除により無効化
   
   # 予約・注文システム
   resources :orders, only: [:index] do
@@ -112,6 +112,15 @@ Rails.application.routes.draw do
       get :products      # 商品一覧
       get :checkout      # 購入確認
       post :purchase     # 購入処理
+    end
+  end
+  
+  # 支払い処理
+  resources :payments, only: [] do
+    collection do
+      get :select_method    # 支払い方法選択
+      post :bank_transfer   # 銀行振込処理
+      post :credit_card     # クレジットカード処理
     end
   end
   

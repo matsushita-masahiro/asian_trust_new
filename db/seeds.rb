@@ -51,7 +51,8 @@ end
 # Productデータを作成
 product = Product.find_or_create_by(name: "再生医療製品") do |p|
   p.base_price = 50000
-  p.display_unit = "本"
+  p.unit_quantity = 1
+  p.unit_label = "本"
   p.description = "再生医療用製品"
 end
 

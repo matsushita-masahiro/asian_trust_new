@@ -1,4 +1,4 @@
-Level.destroy_all
+# ProductPriceが参照しているため、destroy_allではなくseedのupsert機能を使用
 
 Level.seed(:id,
   { id: 1, name: 'アジアビジネストラスト', value: 0 },

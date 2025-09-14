@@ -1,4 +1,4 @@
-Product.destroy_all
+# ProductPriceが参照しているため、destroy_allではなくseedのupsert機能を使用
 
 Product.seed(:id,
   { id: 1, name: '骨髄幹細胞培培養上清液', base_price: 50000, is_active: true, unit_quantity: 2 , unit_label: "cc" },

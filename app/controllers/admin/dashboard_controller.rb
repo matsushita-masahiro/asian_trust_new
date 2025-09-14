@@ -5,6 +5,9 @@ class Admin::DashboardController < Admin::BaseController
     
     # 今日のアクセス数を取得
     @today_access_count = get_today_access_count
+    
+    # 未入金注文件数を取得
+    @pending_payments_count = Purchase.built.count
   end
 
   private

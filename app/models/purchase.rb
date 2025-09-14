@@ -10,13 +10,13 @@ class Purchase < ApplicationRecord
   accepts_nested_attributes_for :purchase_items, allow_destroy: true
 
   # 💳 支払い方法のenum
-  enum payment_type: {
+  enum :payment_type, {
     cash: 'cash',      # 銀行振込
     credit: 'credit'   # クレジットカード
   }
 
   # 📊 ステータスのenum
-  enum status: {
+  enum :status, {
     built: 'built',       # 注文作成済み（銀行振込の場合の初期状態）
     paid: 'paid',         # 支払い完了（クレジットカードの場合の初期状態、または銀行振込確認後）
     reserved: 'reserved'  # クリニック予約完了

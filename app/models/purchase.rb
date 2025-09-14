@@ -25,16 +25,6 @@ class Purchase < ApplicationRecord
   # コールバック：支払い方法に応じて初期ステータスを設定
   before_validation :set_initial_status, on: :create
 
-  private
-
-  def set_initial_status
-    if credit?
-      self.status = 'paid'
-    else
-      self.status = 'built'
-    end
-  end
-
   # 💰 合計金額（全アイテムの合計）
   def total_price
     purchase_items.sum(Arel.sql('quantity * unit_price'))
@@ -43,6 +33,16 @@ class Purchase < ApplicationRecord
   # 商品数の合計
   def total_quantity
     purchase_items.sum(:quantity)
+  end
+
+  private
+
+  def set_initial_status
+    if credit?
+      self.status = 'paid'
+    else
+      self.status = 'built'
+    end
   end
 
   # 📅 今月の購入（東京時間基準）

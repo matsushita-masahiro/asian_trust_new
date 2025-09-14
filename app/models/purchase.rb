@@ -2,7 +2,7 @@ class Purchase < ApplicationRecord
   # 🔗 関連
   belongs_to :user      # 購入を仲介した代理店
   belongs_to :buyer, class_name: 'User'  # 購入者
-  belongs_to :customer, optional: true  # 移行期間中は optional
+  # belongs_to :customer は削除済み（buyer_idに統合）
   has_many :purchase_items, dependent: :destroy
   has_many :products, through: :purchase_items
 

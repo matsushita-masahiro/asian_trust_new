@@ -30,6 +30,7 @@ class ReferralInvitationsController < ApplicationController
 
   def show
     @referral_invitation = current_user.referral_invitations.find(params[:id])
+    @referral_url = @referral_invitation.referral_url(request)
   end
 
   def index

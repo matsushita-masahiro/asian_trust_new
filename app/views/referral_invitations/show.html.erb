@@ -55,7 +55,7 @@
             <label class="form-label"><strong>紹介URL:</strong></label>
             <div class="input-group">
               <input type="text" 
-                     value="<%= @referral_invitation.referral_url %>" 
+                     value="<%= @referral_url %>" 
                      readonly 
                      class="form-control"
                      id="referral-url">
@@ -96,7 +96,7 @@
             </h6>
             <p>以下の情報を被紹介者にお伝えください：</p>
             <ol class="mb-0">
-              <li><strong>紹介URL</strong>: <%= @referral_invitation.referral_url %></li>
+              <li><strong>紹介URL</strong>: <%= @referral_url %></li>
               <li><strong>暗証番号</strong>: <code><%= @referral_invitation.passcode %></code></li>
               <li><strong>設定レベル</strong>: <%= @referral_invitation.target_level.name %></li>
             </ol>
@@ -117,7 +117,7 @@
 <script>
 // QRコード生成
 document.addEventListener('DOMContentLoaded', function() {
-  const url = '<%= @referral_invitation.referral_url %>';
+  const url = '<%= @referral_url %>';
   const container = document.getElementById('qr-code-container');
   
   QRCode.toCanvas(url, { width: 200, margin: 2 }, function (error, canvas) {

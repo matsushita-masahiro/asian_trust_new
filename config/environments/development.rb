@@ -34,14 +34,8 @@ Rails.application.configure do
   # 複数のActive Storageサービスを有効化
   config.active_storage.variant_processor = :mini_magick
 
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = true
-
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
-
-  # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
@@ -74,11 +68,10 @@ Rails.application.configure do
   # config.generators.apply_rubocop_autocorrect_after_generate!
   
   
-  # config/environments/development.rb
-  # 開発環境では実際にメールを送信せず、ログに出力のみ
+  # 開発環境のメール設定
   config.action_mailer.delivery_method = :test
-  config.action_mailer.perform_deliveries = false
-  config.action_mailer.raise_delivery_errors = false
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.raise_delivery_errors = true
   config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
   
   # 本番環境用のSMTP設定（コメントアウト）

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>入金確認のお知らせ</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: #007bff;
+      margin: 0;
+      font-size: 24px;
+    }
+    .content {
+      margin-bottom: 30px;
+    }
+    .order-details {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+    .order-details h3 {
+      color: #007bff;
+      margin-top: 0;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 10px;
+    }
+    .item-list {
+      margin: 15px 0;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .item:last-child {
+      border-bottom: none;
+      font-weight: bold;
+      background-color: #e9ecef;
+      padding: 15px 10px;
+      margin-top: 10px;
+    }
+    .total-amount {
+      font-size: 18px;
+      color: #28a745;
+      font-weight: bold;
+    }
+    .next-steps {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 5px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .next-steps h3 {
+      color: #155724;
+      margin-top: 0;
+    }
+    .clinic-button {
+      display: inline-block;
+      background-color: #28a745;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #dee2e6;
+      color: #6c757d;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>入金確認のお知らせ</h1>
+      <p>Asian Business Trust</p>
+    </div>
+
+    <div class="content">
+      <p><%= @user.name.present? ? @user.name : @user.email %> 様</p>
+      
+      <p>いつもお世話になっております。<br>
+      この度は、ご注文いただきありがとうございます。</p>
+      
+      <p><strong>ご入金を確認いたしました。</strong></p>
+
+      <div class="order-details">
+        <h3>ご注文詳細</h3>
+        <p><strong>注文番号:</strong> #<%= @purchase.id %></p>
+        <p><strong>注文日時:</strong> <%= @purchase.purchased_at.strftime('%Y年%m月%d日 %H:%M') %></p>
+        
+        <div class="item-list">
+          <% @purchase_items.each do |item| %>
+            <div class="item">
+              <span><%= item.product.name %> × <%= item.quantity %></span>
+              <span>¥<%= number_with_delimiter(item.unit_price * item.quantity) %></span>
+            </div>
+          <% end %>
+          <div class="item">
+            <span>合計金額</span>
+            <span class="total-amount">¥<%= number_with_delimiter(@total_amount) %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="next-steps">
+        <h3>次のステップ</h3>
+        <p>入金確認が完了いたしました。マイページにログインして、クリニック予約を行ってください。</p>
+        <p>
+          <% begin %>
+            <a href="<%= root_url %>" class="clinic-button">
+              マイページでクリニック予約
+            </a>
+          <% rescue => e %>
+            <a href="http://localhost:3000" class="clinic-button">
+              マイページでクリニック予約
+            </a>
+          <% end %>
+        </p>
+      </div>
+
+      <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+    </div>
+
+    <div class="footer">
+      <p>Asian Business Trust<br>
+      Email: <%= ENV['ADMIN_EMAIL'] || 'support@example.com' %></p>
+    </div>
+  </div>
+</body>
+</html>

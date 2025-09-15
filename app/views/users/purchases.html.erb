@@ -59,7 +59,7 @@
                 <th class="text-end">数量</th>
                 <th class="text-end">合計（円）</th>
                 <th>仲介者</th>
-                <th>購入日時</th>
+                <th>購入日時・アクション</th>
               <% else %>
                 <th>購入者名</th>
                 <th>商品名</th>
@@ -107,7 +107,18 @@
                     <td class="text-end text-danger fw-bold"><%= number_with_delimiter(item.total_price) %></td>
                     <% if index == 0 %>
                       <td rowspan="<%= purchase.purchase_items.count %>">-</td>
-                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>
+                      <td rowspan="<%= purchase.purchase_items.count %>">
+                        <%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %>
+                        <% if purchase.paid? %>
+                          <br>
+                          <button class="btn btn-success btn-sm mt-1" onclick="reserveClinic(<%= purchase.id %>)">
+                            <i class="fas fa-calendar-plus"></i> クリニック予約
+                          </button>
+                        <% elsif purchase.built? %>
+                          <br>
+                          <span class="badge bg-warning text-dark mt-1">入金待ち</span>
+                        <% end %>
+                      </td>
                     <% end %>
                   <% else %>
                     <!-- 販売履歴表示 -->
@@ -229,3 +240,31 @@
     }
   }
 </style>
+
+<script>
+function reserveClinic(purchaseId) {
+  if (confirm('クリニック予約を行いますか？\n予約が完了すると、ステータスが「予約完了」に変更されます。')) {
+    // 予約処理のAPIを呼び出す（今後実装予定）
+    fetch(`/purchases/${purchaseId}/reserve_clinic`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('クリニック予約が完了しました！');
+        location.reload();
+      } else {
+        alert('予約に失敗しました: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('予約処理中にエラーが発生しました。');
+    });
+  }
+}
+</script>

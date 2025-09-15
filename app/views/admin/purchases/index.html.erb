@@ -80,6 +80,7 @@
                     <th>数量</th>
                     <th>単価</th>
                     <th>合計金額</th>
+                    <th>ステータス</th>
                     <th>販売店</th>
                     <th>販売店レベル</th>
                   </tr>
@@ -136,6 +137,17 @@
                         <div class="fw-bold text-success">
                           ¥<%= number_with_delimiter(purchase.total_price) %>
                         </div>
+                      </td>
+                      <td class="text-center">
+                        <% if purchase.built? %>
+                          <span class="badge bg-warning text-dark">未入金</span>
+                        <% elsif purchase.paid? %>
+                          <span class="badge bg-success">入金済み</span>
+                        <% elsif purchase.reserved? %>
+                          <span class="badge bg-info">予約完了</span>
+                        <% else %>
+                          <span class="badge bg-secondary"><%= purchase.status %></span>
+                        <% end %>
                       </td>
                       <td>
                         <%= link_to admin_user_path(purchase.user), class: "text-decoration-none" do %>

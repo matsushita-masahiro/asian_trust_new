@@ -33,7 +33,17 @@
                       複数商品 (<%= @purchase.purchase_items.count %>種類)
                     <% end %>
                   </p>
-                  <p class="mb-0"><strong>販売店:</strong> <%= @purchase.user.name.present? ? @purchase.user.name : @purchase.user.email %></p>
+                  <p class="mb-1"><strong>販売店:</strong> <%= @purchase.user.name.present? ? @purchase.user.name : @purchase.user.email %></p>
+                  <p class="mb-0">
+                    <strong>支払いステータス:</strong> 
+                    <% if @purchase.built? %>
+                      <span class="badge bg-warning text-dark">未入金</span>
+                    <% elsif @purchase.paid? %>
+                      <span class="badge bg-success">入金済み</span>
+                    <% else %>
+                      <span class="badge bg-info"><%= @purchase.status %></span>
+                    <% end %>
+                  </p>
                 </div>
               </div>
             </div>
@@ -107,7 +117,7 @@
               <div class="col-12">
                 <div class="card border-primary">
                   <div class="card-body text-center">
-                    <h6 class="card-title text-muted">新しい合計金額</h6>
+                    <h6 class="card-title text-muted">合計金額</h6>
                     <h3 class="text-primary mb-0" id="total_amount">¥<%= number_with_delimiter(@purchase.total_price) %></h3>
                   </div>
                 </div>
@@ -116,6 +126,14 @@
 
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
               <%= link_to "キャンセル", admin_purchases_path, class: "btn btn-secondary me-md-2" %>
+              <% if @purchase.built? %>
+                <%= link_to "入金確認", confirm_payment_admin_purchase_path(@purchase), 
+                    method: :patch, 
+                    class: "btn btn-success me-md-2",
+                    data: { 
+                      confirm: "入金を確認しましたか？この操作により支払いステータスが「入金済み」に変更されます。" 
+                    } %>
+              <% end %>
               <%= form.submit "更新する", class: "btn btn-primary btn-lg" %>
             </div>
           <% end %>

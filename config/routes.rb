@@ -47,7 +47,11 @@ Rails.application.routes.draw do
       end
     end
     resources :bonuses, only: [:index]
-    resources :purchases, only: [:index, :edit, :update, :new, :create]
+    resources :purchases, only: [:index, :edit, :update, :new, :create] do
+      member do
+        patch :confirm_payment
+      end
+    end
 
     resources :users, only: [:index, :show, :edit, :update] do
       resources :bonuses, only: [:index], controller: 'users/bonuses'
@@ -100,6 +104,13 @@ Rails.application.routes.draw do
   resources :users, only: [:show] do  # /users/:id → 下位ユーザー詳細
     member do
       get :purchases  # /users/:id/purchases → 販売履歴
+    end
+  end
+  
+  # 購入関連
+  resources :purchases, only: [] do
+    member do
+      patch :reserve_clinic
     end
   end
   get 'sales/:id' => "sales#show"

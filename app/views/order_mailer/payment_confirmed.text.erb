@@ -1,0 +1,34 @@
+【Asian Business Trust】入金確認のお知らせ
+
+<%= @user.name.present? ? @user.name : @user.email %> 様
+
+いつもお世話になっております。
+この度は、ご注文いただきありがとうございます。
+
+ご入金を確認いたしました。
+
+■ ご注文詳細
+注文番号: #<%= @purchase.id %>
+注文日時: <%= @purchase.purchased_at.strftime('%Y年%m月%d日 %H:%M') %>
+
+<% @purchase_items.each do |item| %>
+・<%= item.product.name %> × <%= item.quantity %> : ¥<%= number_with_delimiter(item.unit_price * item.quantity) %>
+<% end %>
+
+合計金額: ¥<%= number_with_delimiter(@total_amount) %>
+
+■ 次のステップ
+入金確認が完了いたしました。
+マイページにログインして、クリニック予約を行ってください。
+
+<% begin %>
+マイページURL: <%= root_url %>
+<% rescue => e %>
+マイページURL: http://localhost:3000
+<% end %>
+
+ご不明な点がございましたら、お気軽にお問い合わせください。
+
+---
+Asian Business Trust
+Email: <%= ENV['ADMIN_EMAIL'] || 'support@example.com' %>

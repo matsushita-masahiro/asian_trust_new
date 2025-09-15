@@ -22,9 +22,9 @@
 マイページにログインして、クリニック予約を行ってください。
 
 <% begin %>
-マイページURL: <%= root_url %>
+マイページURL: <%= new_user_registration_url %>
 <% rescue => e %>
-マイページURL: http://localhost:3000
+マイページURL: http://localhost:3000/users/sign_up
 <% end %>
 
 ご不明な点がございましたら、お気軽にお問い合わせください。

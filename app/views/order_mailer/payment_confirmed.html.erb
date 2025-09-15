@@ -137,7 +137,7 @@
         <p>入金確認が完了いたしました。マイページにログインして、クリニック予約を行ってください。</p>
         <p>
           <% begin %>
-            <a href="<%= new_user_registration_url %>" class="clinic-button">
+            <a href="<%= "#{request.protocol}#{request.host}/users/sign_in" %>" class="clinic-button">
               マイページでクリニック予約
             </a>
           <% rescue => e %>

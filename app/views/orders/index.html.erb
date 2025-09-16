@@ -1,8 +1,9 @@
 <div class="container mt-4">
   <h3>予約・注文</h3>
   
-  <div class="row mt-4">
-    <div class="col-md-4 mb-3">
+  <% is_customer = current_user.level&.value == 6 %>
+  <div class="row mt-4 <%= 'justify-content-center' if is_customer %>">
+    <div class="<%= is_customer ? 'col-md-6 col-lg-4' : 'col-md-4' %> mb-3">
       <div class="card h-100">
         <div class="card-body text-center">
           <h5 class="card-title">クリニックの予約をする</h5>
@@ -14,7 +15,7 @@
       </div>
     </div>
     
-    <div class="col-md-4 mb-3">
+    <div class="<%= is_customer ? 'col-md-6 col-lg-4' : 'col-md-4' %> mb-3">
       <div class="card h-100">
         <div class="card-body text-center">
           <h5 class="card-title">幹細胞培養上精液を注文する</h5>
@@ -24,7 +25,7 @@
       </div>
     </div>
     
-    <% unless current_user.level&.value == 6 %>
+    <% unless is_customer %>
       <div class="col-md-4 mb-3">
         <div class="card h-100">
           <div class="card-body text-center">

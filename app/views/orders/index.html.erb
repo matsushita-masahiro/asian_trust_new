@@ -24,16 +24,18 @@
       </div>
     </div>
     
-    <div class="col-md-4 mb-3">
-      <div class="card h-100">
-        <div class="card-body text-center">
-          <h5 class="card-title">エアーガンを注文する</h5>
-          <p class="card-text">エアーガンの注文を行います</p>
-          <button class="btn btn-primary" disabled>
-            準備中
-          </button>
+    <% unless current_user.level&.value == 6 %>
+      <div class="col-md-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h5 class="card-title">エアーガンを注文する</h5>
+            <p class="card-text">エアーガンの注文を行います</p>
+            <button class="btn btn-primary" disabled>
+              準備中
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    <% end %>
   </div>
 </div>

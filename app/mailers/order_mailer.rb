@@ -9,7 +9,7 @@ class OrderMailer < ApplicationMailer
     
     mail(
       to: @user.email,
-      subject: "【Asian Business Trust】銀行振込のご案内 - 注文番号: ##{@purchase.id}"
+      subject: "【Asia Business Trust】銀行振込のご案内 - 注文番号: ##{@purchase.id}"
     )
   end
 
@@ -28,7 +28,7 @@ class OrderMailer < ApplicationMailer
     
     mail(
       to: recipient_email,
-      subject: "【Asian Business Trust】入金確認のお知らせ - 注文番号: ##{@purchase.id}"
+      subject: "【Asia Business Trust】入金確認のお知らせ - 注文番号: ##{@purchase.id}"
     )
   end
 end

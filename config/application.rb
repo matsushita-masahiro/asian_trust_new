@@ -7,7 +7,7 @@ require_relative "../lib/middleware/remove_allow_browser_middleware"
 
 Bundler.require(*Rails.groups)
 
-module AsianTrust
+module AsiaTrust
   class Application < Rails::Application
     config.load_defaults 8.0
 

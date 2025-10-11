@@ -166,6 +166,18 @@
       </ul>
     </div>
 
+    <% if @purchase_invoice %>
+      <div class="important">
+        <h4>📄 請求書について</h4>
+        <p>このメールに請求書（PDF）を添付しております。</p>
+        <ul>
+          <li><strong>請求書番号:</strong> <%= @purchase_invoice.invoice_number %></li>
+          <li><strong>支払期限:</strong> <%= @purchase_invoice.due_date.strftime("%Y年%m月%d日") %></li>
+        </ul>
+        <p>請求書は経理処理等にご活用ください。</p>
+      </div>
+    <% end %>
+
     <p>ご入金が確認でき次第、クリニックの予約ボタンをクリックできるように致しますのでクリニックの予約を完了させてください。</p>
     
     <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>

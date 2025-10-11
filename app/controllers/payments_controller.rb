@@ -14,13 +14,13 @@ class PaymentsController < ApplicationController
     result = process_purchase('cash')
     
     if result[:success]
-      # 銀行振込案内メールを送信
+      # 銀行振込案内メールを送信（請求書PDF添付）
       begin
-        OrderMailer.bank_transfer_instructions(result[:purchase]).deliver_now
-        redirect_to orders_path, notice: '注文が完了しました。銀行振込の詳細をメールでお送りしました。'
+        OrderMailer.bank_transfer_instructions(result[:purchase], result[:purchase_invoice]).deliver_now
+        redirect_to purchase_invoices_path, notice: '注文が完了しました。銀行振込の詳細と請求書をメールでお送りしました。'
       rescue => e
         Rails.logger.error "Failed to send bank transfer email: #{e.message}"
-        redirect_to orders_path, notice: '注文が完了しました。銀行振込の詳細は別途ご連絡いたします。'
+        redirect_to purchase_invoices_path, notice: '注文が完了しました。銀行振込の詳細は別途ご連絡いたします。'
       end
     else
       redirect_to select_method_payments_path, alert: result[:error]
@@ -71,10 +71,20 @@ class PaymentsController < ApplicationController
           )
         end
 
+        # 購入請求書を自動生成
+        purchase_invoice = purchase.create_purchase_invoice!(
+          invoice_number: PurchaseInvoice.generate_invoice_number,
+          invoice_date: Date.current,
+          due_date: Date.current + 30.days,
+          total_amount: purchase.total_price,
+          status: PurchaseInvoice::DRAFT,
+          notes: "商品購入に関する請求書"
+        )
+
         # カートをクリア
         @cart.cart_items.destroy_all
 
-        { success: true, purchase: purchase }
+        { success: true, purchase: purchase, purchase_invoice: purchase_invoice }
       end
     rescue => e
       Rails.logger.error "Purchase failed: #{e.message}"

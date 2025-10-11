@@ -15,25 +15,51 @@ class OrderMailer < ApplicationMailer
     # 購入請求書HTMLを添付
     if @purchase_invoice
       begin
-        Rails.logger.info "Starting HTML invoice generation for invoice #{@purchase_invoice.invoice_number}"
+        Rails.logger.info "Starting PDF invoice generation for invoice #{@purchase_invoice.invoice_number}"
         
         # HTMLを直接生成
         html_content = generate_invoice_html(@purchase_invoice)
-        
         Rails.logger.info "HTML content generated, size: #{html_content.bytesize} bytes"
         
-        # HTMLファイルとして添付
-        attachments["請求書_#{@purchase_invoice.invoice_number}.html"] = {
-          mime_type: 'text/html; charset=UTF-8',
-          content: html_content
+        # PDFを生成
+        pdf_content = WickedPdf.new.pdf_from_string(
+          html_content,
+          page_size: 'A4',
+          margin: {
+            top: 20,
+            bottom: 20,
+            left: 20,
+            right: 20
+          },
+          encoding: 'UTF-8',
+          print_media_type: true
+        )
+        
+        Rails.logger.info "PDF content generated, size: #{pdf_content.bytesize} bytes"
+        
+        # PDFファイルとして添付
+        attachments["請求書_#{@purchase_invoice.invoice_number}.pdf"] = {
+          mime_type: 'application/pdf',
+          content: pdf_content
         }
         
-        Rails.logger.info "HTML invoice attachment added successfully"
+        Rails.logger.info "PDF invoice attachment added successfully"
         
       rescue => e
-        Rails.logger.error "Failed to generate HTML invoice: #{e.message}"
+        Rails.logger.error "Failed to generate PDF invoice: #{e.message}"
         Rails.logger.error e.backtrace.join("\n")
-        # HTMLが生成できなくてもメールは送信する
+        
+        # PDFが生成できない場合はHTMLにフォールバック
+        begin
+          html_content = generate_invoice_html(@purchase_invoice)
+          attachments["請求書_#{@purchase_invoice.invoice_number}.html"] = {
+            mime_type: 'text/html; charset=UTF-8',
+            content: html_content
+          }
+          Rails.logger.info "Fallback to HTML attachment successful"
+        rescue => fallback_error
+          Rails.logger.error "Fallback HTML generation also failed: #{fallback_error.message}"
+        end
       end
     else
       Rails.logger.warn "No purchase_invoice provided for email attachment"
@@ -111,10 +137,11 @@ class OrderMailer < ApplicationMailer
         <meta charset="utf-8">
         <style>
           body {
-            font-family: 'MS Gothic', 'Hiragino Sans', sans-serif;
+            font-family: 'Hiragino Sans', 'MS Gothic', sans-serif;
             font-size: 12px;
             line-height: 1.4;
-            margin: 20px;
+            margin: 0;
+            padding: 20px;
             color: #000;
           }
           

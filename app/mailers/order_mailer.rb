@@ -100,6 +100,15 @@ class OrderMailer < ApplicationMailer
       amount.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
     end
     
+    # 会社情報を変数として定義
+    company_name = "株式会社アジアビジネストラスト"
+    company_department = "アジアビジネストラスト事業部"
+    company_address = "〒104-0061 東京都中央区銀座4丁目6-1"
+    company_building = "銀座医科ビル3階"
+    company_tel = "TEL:03-5904-8148"
+    company_email = "Email: abt1@asia-b-t.com"
+    company_footer = "アジアビジネストラスト 事務局"
+    
     # 税計算（内税）- 本物の請求書に合わせて
     total_with_tax = purchase_invoice.total_amount
     subtotal = (total_with_tax / 1.1).to_i
@@ -378,13 +387,13 @@ class OrderMailer < ApplicationMailer
             </div>
             
             <div class="company-info">
-              <div class="company-name">株式会社アジアビジネストラスト</div>
-              アジアビジネストラスト事業部<br>
-              〒104-0061 東京都中央区銀座4丁目6-1<br>
-              銀座医科ビル3階<br>
-              TEL:03-5904-8148<br>
-              Email: abt1@asia-b-t.com<br>
-              アジアビジネストラスト 事務局
+              <div class="company-name">#{company_name}</div>
+              #{company_department}<br>
+              #{company_address}<br>
+              #{company_building}<br>
+              #{company_tel}<br>
+              #{company_email}<br>
+              #{company_footer}
             </div>
           </div>
         </div>
@@ -423,7 +432,7 @@ class OrderMailer < ApplicationMailer
               支店番号：252<br>
               口座種別：普通預金<br>
               口座番号：7747552<br>
-              口座名義：株式会社アジアビジネストラスト
+              口座名義：#{company_name}
             </td>
           </tr>
         </table>
@@ -477,10 +486,19 @@ class OrderMailer < ApplicationMailer
       amount.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
     end
     
-    # 税計算（外税）
-    subtotal = purchase_invoice.total_amount
-    tax = (purchase_invoice.total_amount * 0.1).to_i
-    total_with_tax = subtotal + tax
+    # 会社情報を変数として定義
+    company_name = "株式会社アジアビジネストラスト"
+    company_department = "アジアビジネストラスト事業部"
+    company_address = "〒104-0061 東京都中央区銀座4丁目6-1"
+    company_building = "銀座医科ビル3階"
+    company_tel = "TEL:03-5904-8148"
+    company_email = "Email: abt1@asia-b-t.com"
+    company_footer = "アジアビジネストラスト 事務局"
+    
+    # 税計算（内税）- テキスト版も内税に統一
+    total_with_tax = purchase_invoice.total_amount
+    subtotal = (total_with_tax / 1.1).to_i
+    tax = total_with_tax - subtotal
     
     # 商品明細
     items_text = purchase_invoice.purchase_items.map do |item|
@@ -499,13 +517,13 @@ class OrderMailer < ApplicationMailer
                                                               登録番号       T4210001009156
 
 
-                                                              株式会社アジアビジネストラスト
-                                                              アジアビジネストラスト事業部
-                                                              〒104-0061 東京都中央区銀座4丁目6-1
-                                                              銀座医科ビル3階
-                                                              TEL:03-5904-8148
-                                                              Email: abt1@asia-b-t.com
-                                                              アジアビジネストラスト 事務局
+                                                              #{company_name}
+                                                              #{company_department}
+                                                              #{company_address}
+                                                              #{company_building}
+                                                              #{company_tel}
+                                                              #{company_email}
+                                                              #{company_footer}
 
       件名      幹細胞商品代
 
@@ -523,7 +541,7 @@ class OrderMailer < ApplicationMailer
       │ #{purchase_invoice.due_date.strftime('%Y-%m-%d').ljust(11)} │ 支店番号：252                                        │
       │             │ 口座種別：普通預金                                   │
       │             │ 口座番号：7747552                                    │
-      │             │ 口座名義：株式会社アジアビジネストラスト             │
+      │             │ 口座名義：#{company_name}             │
       └─────────────┴──────────────────────────────────────────────────────┘
 
       ┌──────────────────────────────────┬────────┬──────────┬──────────────┐
@@ -531,7 +549,7 @@ class OrderMailer < ApplicationMailer
       ├──────────────────────────────────┼────────┼──────────┼──────────────┤
       #{items_text}
       ├──────────────────────────────────┴────────┴──────────┼──────────────┤
-      │                          外税  10%対象(税抜)        │ #{format_price(subtotal).rjust(10)}円 │
+      │                          内税  10%対象(税抜)        │ #{format_price(subtotal).rjust(10)}円 │
       │                               10%消費税             │ #{format_price(tax).rjust(10)}円 │
       └─────────────────────────────────────────────────────┴──────────────┘
 

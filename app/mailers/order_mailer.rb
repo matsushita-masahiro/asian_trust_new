@@ -185,6 +185,12 @@ class OrderMailer < ApplicationMailer
           .invoice-details td {
             padding: 3px 10px;
             border: none;
+            font-size: 12px;
+          }
+          
+          .invoice-details td:first-child {
+            text-align: right;
+            padding-right: 15px;
           }
           
           .company-info {
@@ -204,7 +210,14 @@ class OrderMailer < ApplicationMailer
           .company-details {
             margin-right: 90px;
             font-size: 11px;
-            line-height: 1.3;
+            line-height: 1.4;
+            text-align: right;
+          }
+          
+          .company-details strong {
+            font-size: 12px;
+            display: block;
+            margin-bottom: 5px;
           }
           
           .subject {
@@ -337,15 +350,15 @@ class OrderMailer < ApplicationMailer
           <div class="invoice-details">
             <table>
               <tr>
-                <td>請求日</td>
+                <td><strong>請求日</strong></td>
                 <td>#{purchase_invoice.invoice_date.strftime('%Y-%m-%d')}</td>
               </tr>
               <tr>
-                <td>請求書番号</td>
+                <td><strong>請求書番号</strong></td>
                 <td>#{purchase_invoice.invoice_number}</td>
               </tr>
               <tr>
-                <td>登録番号</td>
+                <td><strong>登録番号</strong></td>
                 <td>T4210001009156</td>
               </tr>
             </table>
@@ -355,7 +368,7 @@ class OrderMailer < ApplicationMailer
         <!-- 会社情報とロゴ -->
         <div class="company-info">
           <div class="company-details">
-            株式会社アジアビジネストラスト<br>
+            <strong>株式会社アジアビジネストラスト</strong>
             アジアビジネストラスト事業部<br>
             〒104-0061 東京都中央区銀座4丁目6-1<br>
             銀座医科ビル3階<br>
@@ -394,7 +407,7 @@ class OrderMailer < ApplicationMailer
           <tr>
             <td>#{purchase_invoice.due_date.strftime('%Y-%m-%d')}</td>
             <td>
-              楽天銀行<br>
+              <strong>楽天銀行</strong><br>
               支店名：第二営業支店<br>
               支店番号：252<br>
               口座種別：普通預金<br>
@@ -406,14 +419,18 @@ class OrderMailer < ApplicationMailer
 
         <!-- 商品明細 -->
         <table class="items-table">
-          <tr>
-            <th class="item-name">摘要</th>
-            <th class="quantity">数量</th>
-            <th class="price">単価</th>
-            <th class="price">明細金額</th>
-          </tr>
-          #{items_rows}
-          #{empty_rows}
+          <thead>
+            <tr>
+              <th class="item-name">摘要</th>
+              <th class="quantity">数量</th>
+              <th class="price">単価</th>
+              <th class="price">明細金額</th>
+            </tr>
+          </thead>
+          <tbody>
+            #{items_rows}
+            #{empty_rows}
+          </tbody>
         </table>
 
         <!-- 税計算 -->

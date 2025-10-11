@@ -185,6 +185,9 @@ Rails.application.routes.draw do
 
   # ヘルスチェック
   get "up", to: "rails/health#show", as: :rails_health_check
+  
+  # デバッグ用（一時的）
+  get "debug/mailer", to: "debug#mailer_check" if Rails.env.production?
 
   # HTTPS強制リダイレクト（本番環境のみ）
   # Herokuでは自動的にHTTPS対応されるため、通常は不要

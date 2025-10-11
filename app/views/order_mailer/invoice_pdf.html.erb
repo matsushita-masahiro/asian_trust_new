@@ -7,25 +7,28 @@
       font-family: 'MS Gothic', 'Hiragino Sans', sans-serif;
       font-size: 12px;
       line-height: 1.4;
-      margin: 20px;
+      margin: 0;
+      padding: 40px;
       color: #000;
     }
     
     .header {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 40px;
     }
     
     .header h1 {
       font-size: 24px;
       font-weight: bold;
       margin: 0;
+      letter-spacing: 3px;
     }
     
-    .invoice-info {
+    .top-section {
       display: flex;
       justify-content: space-between;
       margin-bottom: 30px;
+      align-items: flex-start;
     }
     
     .customer-info {
@@ -38,43 +41,47 @@
       margin-bottom: 20px;
     }
     
-    .invoice-details {
+    .right-section {
       text-align: right;
       flex: 1;
+    }
+    
+    .invoice-details {
+      margin-bottom: 20px;
     }
     
     .invoice-details table {
       margin-left: auto;
       border-collapse: collapse;
+      font-size: 12px;
     }
     
     .invoice-details td {
-      padding: 3px 10px;
+      padding: 3px 15px;
       border: none;
+      text-align: left;
+    }
+    
+    .invoice-details td:first-child {
+      font-weight: bold;
+      padding-right: 20px;
     }
     
     .company-info {
-      position: relative;
-      text-align: right;
-      margin-bottom: 20px;
-    }
-    
-    .company-logo {
-      position: absolute;
-      right: 0;
-      top: 0;
-      width: 80px;
-      height: 80px;
-    }
-    
-    .company-details {
-      margin-right: 90px;
       font-size: 11px;
-      line-height: 1.3;
+      line-height: 1.4;
+      margin-top: 20px;
+    }
+    
+    .company-name {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 3px;
     }
     
     .subject {
       margin: 20px 0;
+      font-size: 14px;
     }
     
     .subject-label {
@@ -94,6 +101,12 @@
       border: 1px solid #000;
       padding: 8px;
       text-align: center;
+      font-size: 12px;
+    }
+    
+    .summary-table th {
+      background-color: #f8f8f8;
+      font-weight: bold;
     }
     
     .summary-table .amount {
@@ -112,12 +125,18 @@
       border: 1px solid #000;
       padding: 8px;
       vertical-align: top;
+      font-size: 12px;
     }
     
     .payment-info th {
-      background-color: #f0f0f0;
+      background-color: #f8f8f8;
       text-align: center;
       width: 120px;
+      font-weight: bold;
+    }
+    
+    .payment-info .bank-info {
+      line-height: 1.3;
     }
     
     .items-table {
@@ -131,10 +150,12 @@
       border: 1px solid #000;
       padding: 6px;
       text-align: center;
+      font-size: 12px;
     }
     
     .items-table th {
-      background-color: #f0f0f0;
+      background-color: #f8f8f8;
+      font-weight: bold;
     }
     
     .items-table .item-name {
@@ -155,12 +176,14 @@
       width: 300px;
       margin-left: auto;
       border-collapse: collapse;
+      margin-top: 10px;
     }
     
     .tax-summary td {
       border: 1px solid #000;
       padding: 6px;
       text-align: right;
+      font-size: 12px;
     }
     
     .notes {
@@ -174,15 +197,17 @@
       border: 1px solid #000;
       padding: 8px;
       vertical-align: top;
+      font-size: 12px;
     }
     
     .notes th {
-      background-color: #f0f0f0;
+      background-color: #f8f8f8;
       width: 60px;
+      font-weight: bold;
     }
     
     .page-number {
-      text-align: right;
+      text-align: center;
       margin-top: 30px;
       font-size: 12px;
     }
@@ -194,51 +219,54 @@
     <h1>請求書</h1>
   </div>
 
-  <!-- 請求書情報 -->
-  <div class="invoice-info">
+  <!-- 上部セクション -->
+  <div class="top-section">
     <div class="customer-info">
       <div class="customer-name"><%= @purchase_invoice.buyer.name %> 様</div>
     </div>
     
-    <div class="invoice-details">
-      <table>
-        <tr>
-          <td>請求日</td>
-          <td><%= @purchase_invoice.invoice_date.strftime('%Y-%m-%d') %></td>
-        </tr>
-        <tr>
-          <td>請求書番号</td>
-          <td><%= @purchase_invoice.invoice_number %></td>
-        </tr>
-        <tr>
-          <td>登録番号</td>
-          <td>T4210001009156</td>
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  <!-- 会社情報とロゴ -->
-  <div class="company-info">
-    <img src="<%= asset_url('abt_logo.png') %>" alt="ABT Logo" class="company-logo">
-    <div class="company-details">
-      株式会社アジアビジネストラスト<br>
-      アジアビジネストラスト事業部<br>
-      〒104-0061 東京都中央区銀座4丁目6-1<br>
-      銀座医科ビル3階<br>
-      TEL:03-5904-8148<br>
-      Email: abt1@asia-b-t.com<br>
-      アジアビジネストラスト 事務局
+    <div class="right-section">
+      <div class="invoice-details">
+        <table>
+          <tr>
+            <td>請求日</td>
+            <td><%= @purchase_invoice.invoice_date.strftime('%Y-%m-%d') %></td>
+          </tr>
+          <tr>
+            <td>請求書番号</td>
+            <td><%= @purchase_invoice.invoice_number %></td>
+          </tr>
+          <tr>
+            <td>登録番号</td>
+            <td>T4210001009156</td>
+          </tr>
+        </table>
+      </div>
+      
+      <div class="company-info">
+        <div class="company-name">株式会社アジアビジネストラスト</div>
+        アジアビジネストラスト事業部<br>
+        〒104-0061 東京都中央区銀座4丁目6-1<br>
+        銀座医科ビル3階<br>
+        TEL:03-5904-8148<br>
+        Email: abt1@asia-b-t.com<br>
+        アジアビジネストラスト 事務局
+      </div>
     </div>
   </div>
 
   <!-- 件名 -->
   <div class="subject">
-    <span class="subject-label">件名</span>
+    <span class="subject-label"><strong>件名</strong></span>
     <span>幹細胞商品代</span>
   </div>
 
   <!-- 金額サマリー -->
+  <% 
+    total_with_tax = @purchase_invoice.total_amount
+    subtotal = (total_with_tax / 1.1).to_i
+    tax = total_with_tax - subtotal
+  %>
   <table class="summary-table">
     <tr>
       <th>小計</th>
@@ -246,9 +274,9 @@
       <th>請求金額</th>
     </tr>
     <tr>
-      <td><%= number_with_delimiter((@purchase_invoice.total_amount / 1.1).to_i) %>円</td>
-      <td><%= number_with_delimiter((@purchase_invoice.total_amount * 0.1 / 1.1).to_i) %>円</td>
-      <td class="amount"><%= number_with_delimiter(@purchase_invoice.total_amount) %>円</td>
+      <td><%= number_with_delimiter(subtotal) %>円</td>
+      <td><%= number_with_delimiter(tax) %>円</td>
+      <td class="amount"><%= number_with_delimiter(total_with_tax) %>円</td>
     </tr>
   </table>
 
@@ -259,8 +287,8 @@
       <th>振込先</th>
     </tr>
     <tr>
-      <td><%= @purchase_invoice.due_date.strftime('%Y-%m-%d') %></td>
-      <td>
+      <td><strong><%= @purchase_invoice.due_date.strftime('%Y-%m-%d') %></strong></td>
+      <td class="bank-info">
         楽天銀行<br>
         支店名：第二営業支店<br>
         支店番号：252<br>
@@ -273,41 +301,45 @@
 
   <!-- 商品明細 -->
   <table class="items-table">
-    <tr>
-      <th class="item-name">摘要</th>
-      <th class="quantity">数量</th>
-      <th class="price">単価</th>
-      <th class="price">明細金額</th>
-    </tr>
-    <% @purchase_invoice.purchase_items.each do |item| %>
-    <tr>
-      <td class="item-name"><%= item.product.name %></td>
-      <td class="quantity"><%= item.quantity %></td>
-      <td class="price"><%= number_with_delimiter(item.unit_price) %></td>
-      <td class="price"><%= number_with_delimiter(item.total_price) %></td>
-    </tr>
-    <% end %>
-    
-    <!-- 空行を追加 -->
-    <% (10 - @purchase_invoice.purchase_items.count).times do %>
-    <tr>
-      <td class="item-name">&nbsp;</td>
-      <td class="quantity">&nbsp;</td>
-      <td class="price">&nbsp;</td>
-      <td class="price">&nbsp;</td>
-    </tr>
-    <% end %>
+    <thead>
+      <tr>
+        <th class="item-name">摘要</th>
+        <th class="quantity">数量</th>
+        <th class="price">単価</th>
+        <th class="price">明細金額</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @purchase_invoice.purchase_items.each do |item| %>
+      <tr>
+        <td class="item-name"><%= item.product.name %></td>
+        <td class="quantity"><%= item.quantity %></td>
+        <td class="price"><%= number_with_delimiter(item.unit_price) %></td>
+        <td class="price"><%= number_with_delimiter(item.total_price) %></td>
+      </tr>
+      <% end %>
+      
+      <!-- 空行を追加 -->
+      <% (10 - @purchase_invoice.purchase_items.count).times do %>
+      <tr>
+        <td class="item-name">&nbsp;</td>
+        <td class="quantity">&nbsp;</td>
+        <td class="price">&nbsp;</td>
+        <td class="price">&nbsp;</td>
+      </tr>
+      <% end %>
+    </tbody>
   </table>
 
   <!-- 税計算 -->
   <table class="tax-summary">
     <tr>
-      <td>内税 10%対象(税抜)</td>
-      <td><%= number_with_delimiter((@purchase_invoice.total_amount / 1.1).to_i) %>円</td>
+      <td><strong>内税 10%対象(税抜)</strong></td>
+      <td><strong><%= number_with_delimiter(subtotal) %>円</strong></td>
     </tr>
     <tr>
-      <td>10%消費税</td>
-      <td><%= number_with_delimiter((@purchase_invoice.total_amount * 0.1 / 1.1).to_i) %>円</td>
+      <td><strong>10%消費税</strong></td>
+      <td><strong><%= number_with_delimiter(tax) %>円</strong></td>
     </tr>
   </table>
 

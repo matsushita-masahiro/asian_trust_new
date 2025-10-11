@@ -100,9 +100,10 @@ class OrderMailer < ApplicationMailer
       amount.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
     end
     
-    # 税計算
-    subtotal = (purchase_invoice.total_amount / 1.1).to_i
-    tax = (purchase_invoice.total_amount * 0.1 / 1.1).to_i
+    # 税計算（内税）- 本物の請求書に合わせて
+    total_with_tax = purchase_invoice.total_amount
+    subtotal = (total_with_tax / 1.1).to_i
+    tax = total_with_tax - subtotal
     
     # 商品明細行を生成
     items_rows = purchase_invoice.purchase_items.map do |item|
@@ -129,7 +130,7 @@ class OrderMailer < ApplicationMailer
       EMPTY_ROW
     end.join
     
-    # HTMLを生成
+    # HTMLを生成（本物の請求書レイアウトに合わせて）
     <<~HTML_CONTENT
       <!DOCTYPE html>
       <html>
@@ -137,29 +138,31 @@ class OrderMailer < ApplicationMailer
         <meta charset="utf-8">
         <style>
           body {
-            font-family: 'Hiragino Sans', 'MS Gothic', sans-serif;
+            font-family: 'MS Gothic', 'Hiragino Sans', sans-serif;
             font-size: 12px;
             line-height: 1.4;
             margin: 0;
-            padding: 20px;
+            padding: 40px;
             color: #000;
           }
           
           .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
           }
           
           .header h1 {
             font-size: 24px;
             font-weight: bold;
             margin: 0;
+            letter-spacing: 3px;
           }
           
-          .invoice-info {
+          .top-section {
             display: flex;
             justify-content: space-between;
             margin-bottom: 30px;
+            align-items: flex-start;
           }
           
           .customer-info {
@@ -172,56 +175,47 @@ class OrderMailer < ApplicationMailer
             margin-bottom: 20px;
           }
           
-          .invoice-details {
+          .right-section {
             text-align: right;
             flex: 1;
+          }
+          
+          .invoice-details {
+            margin-bottom: 20px;
           }
           
           .invoice-details table {
             margin-left: auto;
             border-collapse: collapse;
+            font-size: 12px;
           }
           
           .invoice-details td {
-            padding: 3px 10px;
+            padding: 3px 15px;
             border: none;
-            font-size: 12px;
+            text-align: left;
           }
           
           .invoice-details td:first-child {
-            text-align: right;
-            padding-right: 15px;
+            font-weight: bold;
+            padding-right: 20px;
           }
           
           .company-info {
-            position: relative;
-            text-align: right;
-            margin-bottom: 20px;
-          }
-          
-          .company-logo {
-            position: absolute;
-            right: 0;
-            top: 0;
-            width: 80px;
-            height: 80px;
-          }
-          
-          .company-details {
-            margin-right: 90px;
             font-size: 11px;
             line-height: 1.4;
-            text-align: right;
+            margin-top: 20px;
           }
           
-          .company-details strong {
+          .company-name {
             font-size: 12px;
-            display: block;
-            margin-bottom: 5px;
+            font-weight: bold;
+            margin-bottom: 3px;
           }
           
           .subject {
             margin: 20px 0;
+            font-size: 14px;
           }
           
           .subject-label {
@@ -241,6 +235,12 @@ class OrderMailer < ApplicationMailer
             border: 1px solid #000;
             padding: 8px;
             text-align: center;
+            font-size: 12px;
+          }
+          
+          .summary-table th {
+            background-color: #f8f8f8;
+            font-weight: bold;
           }
           
           .summary-table .amount {
@@ -259,12 +259,18 @@ class OrderMailer < ApplicationMailer
             border: 1px solid #000;
             padding: 8px;
             vertical-align: top;
+            font-size: 12px;
           }
           
           .payment-info th {
-            background-color: #f0f0f0;
+            background-color: #f8f8f8;
             text-align: center;
             width: 120px;
+            font-weight: bold;
+          }
+          
+          .payment-info .bank-info {
+            line-height: 1.3;
           }
           
           .items-table {
@@ -278,10 +284,12 @@ class OrderMailer < ApplicationMailer
             border: 1px solid #000;
             padding: 6px;
             text-align: center;
+            font-size: 12px;
           }
           
           .items-table th {
-            background-color: #f0f0f0;
+            background-color: #f8f8f8;
+            font-weight: bold;
           }
           
           .items-table .item-name {
@@ -302,12 +310,14 @@ class OrderMailer < ApplicationMailer
             width: 300px;
             margin-left: auto;
             border-collapse: collapse;
+            margin-top: 10px;
           }
           
           .tax-summary td {
             border: 1px solid #000;
             padding: 6px;
             text-align: right;
+            font-size: 12px;
           }
           
           .notes {
@@ -321,15 +331,17 @@ class OrderMailer < ApplicationMailer
             border: 1px solid #000;
             padding: 8px;
             vertical-align: top;
+            font-size: 12px;
           }
           
           .notes th {
-            background-color: #f0f0f0;
+            background-color: #f8f8f8;
             width: 60px;
+            font-weight: bold;
           }
           
           .page-number {
-            text-align: right;
+            text-align: center;
             margin-top: 30px;
             font-size: 12px;
           }
@@ -341,46 +353,45 @@ class OrderMailer < ApplicationMailer
           <h1>請求書</h1>
         </div>
 
-        <!-- 請求書情報 -->
-        <div class="invoice-info">
+        <!-- 上部セクション -->
+        <div class="top-section">
           <div class="customer-info">
             <div class="customer-name">#{purchase_invoice.buyer.name} 様</div>
           </div>
           
-          <div class="invoice-details">
-            <table>
-              <tr>
-                <td><strong>請求日</strong></td>
-                <td>#{purchase_invoice.invoice_date.strftime('%Y-%m-%d')}</td>
-              </tr>
-              <tr>
-                <td><strong>請求書番号</strong></td>
-                <td>#{purchase_invoice.invoice_number}</td>
-              </tr>
-              <tr>
-                <td><strong>登録番号</strong></td>
-                <td>T4210001009156</td>
-              </tr>
-            </table>
-          </div>
-        </div>
-
-        <!-- 会社情報とロゴ -->
-        <div class="company-info">
-          <div class="company-details">
-            <strong>株式会社アジアビジネストラスト</strong>
-            アジアビジネストラスト事業部<br>
-            〒104-0061 東京都中央区銀座4丁目6-1<br>
-            銀座医科ビル3階<br>
-            TEL:03-5904-8148<br>
-            Email: abt1@asia-b-t.com<br>
-            アジアビジネストラスト 事務局
+          <div class="right-section">
+            <div class="invoice-details">
+              <table>
+                <tr>
+                  <td>請求日</td>
+                  <td>#{purchase_invoice.invoice_date.strftime('%Y-%m-%d')}</td>
+                </tr>
+                <tr>
+                  <td>請求書番号</td>
+                  <td>#{purchase_invoice.invoice_number}</td>
+                </tr>
+                <tr>
+                  <td>登録番号</td>
+                  <td>T4210001009156</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div class="company-info">
+              <div class="company-name">株式会社アジアビジネストラスト</div>
+              アジアビジネストラスト事業部<br>
+              〒104-0061 東京都中央区銀座4丁目6-1<br>
+              銀座医科ビル3階<br>
+              TEL:03-5904-8148<br>
+              Email: abt1@asia-b-t.com<br>
+              アジアビジネストラスト 事務局
+            </div>
           </div>
         </div>
 
         <!-- 件名 -->
         <div class="subject">
-          <span class="subject-label">件名</span>
+          <span class="subject-label"><strong>件名</strong></span>
           <span>幹細胞商品代</span>
         </div>
 
@@ -394,7 +405,7 @@ class OrderMailer < ApplicationMailer
           <tr>
             <td>#{format_price(subtotal)}円</td>
             <td>#{format_price(tax)}円</td>
-            <td class="amount">#{format_price(purchase_invoice.total_amount)}円</td>
+            <td class="amount">#{format_price(total_with_tax)}円</td>
           </tr>
         </table>
 
@@ -405,9 +416,9 @@ class OrderMailer < ApplicationMailer
             <th>振込先</th>
           </tr>
           <tr>
-            <td>#{purchase_invoice.due_date.strftime('%Y-%m-%d')}</td>
-            <td>
-              <strong>楽天銀行</strong><br>
+            <td><strong>#{purchase_invoice.due_date.strftime('%Y-%m-%d')}</strong></td>
+            <td class="bank-info">
+              楽天銀行<br>
               支店名：第二営業支店<br>
               支店番号：252<br>
               口座種別：普通預金<br>
@@ -436,12 +447,12 @@ class OrderMailer < ApplicationMailer
         <!-- 税計算 -->
         <table class="tax-summary">
           <tr>
-            <td>内税 10%対象(税抜)</td>
-            <td>#{format_price(subtotal)}円</td>
+            <td><strong>内税 10%対象(税抜)</strong></td>
+            <td><strong>#{format_price(subtotal)}円</strong></td>
           </tr>
           <tr>
-            <td>10%消費税</td>
-            <td>#{format_price(tax)}円</td>
+            <td><strong>10%消費税</strong></td>
+            <td><strong>#{format_price(tax)}円</strong></td>
           </tr>
         </table>
 
@@ -466,9 +477,10 @@ class OrderMailer < ApplicationMailer
       amount.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
     end
     
-    # 税計算
-    subtotal = (purchase_invoice.total_amount / 1.1).to_i
-    tax = (purchase_invoice.total_amount * 0.1 / 1.1).to_i
+    # 税計算（外税）
+    subtotal = purchase_invoice.total_amount
+    tax = (purchase_invoice.total_amount * 0.1).to_i
+    total_with_tax = subtotal + tax
     
     # 商品明細
     items_text = purchase_invoice.purchase_items.map do |item|
@@ -500,7 +512,7 @@ class OrderMailer < ApplicationMailer
       ┌─────────────┬────────────┬──────────────┐
       │     小計     │   消費税   │   請求金額   │
       ├─────────────┼────────────┼──────────────┤
-      │ #{format_price(subtotal).rjust(11)}円 │ #{format_price(tax).rjust(8)}円 │ #{format_price(purchase_invoice.total_amount).rjust(10)}円 │
+      │ #{format_price(subtotal).rjust(11)}円 │ #{format_price(tax).rjust(8)}円 │ #{format_price(total_with_tax).rjust(10)}円 │
       └─────────────┴────────────┴──────────────┘
 
       ┌─────────────┬──────────────────────────────────────────────────────┐
@@ -519,7 +531,7 @@ class OrderMailer < ApplicationMailer
       ├──────────────────────────────────┼────────┼──────────┼──────────────┤
       #{items_text}
       ├──────────────────────────────────┴────────┴──────────┼──────────────┤
-      │                          内税  10%対象(税抜)        │ #{format_price(subtotal).rjust(10)}円 │
+      │                          外税  10%対象(税抜)        │ #{format_price(subtotal).rjust(10)}円 │
       │                               10%消費税             │ #{format_price(tax).rjust(10)}円 │
       └─────────────────────────────────────────────────────┴──────────────┘
 

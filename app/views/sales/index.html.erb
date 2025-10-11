@@ -42,17 +42,14 @@
               <% purchase.purchase_items.each_with_index do |item, index| %>
                 <% 
                   # 各アイテムに対するボーナスを個別計算
-                  temp_purchase = Purchase.new(user: purchase.user, customer: purchase.customer, purchased_at: purchase.purchased_at)
-                  temp_item = PurchaseItem.new(purchase: temp_purchase, product: item.product, quantity: item.quantity, unit_price: item.unit_price, seller_price: item.seller_price)
-                  temp_purchase.purchase_items = [temp_item]
-                  item_bonus = @user.bonus_for_purchase(temp_purchase)
+                  item_bonus = @user.bonus_for_purchase_item(item)
                 %>
                 <tr>
                   <% if index == 0 %>
                     <td rowspan="<%= purchase.purchase_items.count %>" class="fw-bold"><%= purchase.user.name %></td>
                     <td rowspan="<%= purchase.purchase_items.count %>">
-                      <% if purchase.customer %>
-                        <%= link_to purchase.customer.name, customer_path(purchase.customer), class: "text-decoration-none text-primary" %>
+                      <% if purchase.buyer %>
+                        <%= purchase.buyer.name %>
                       <% else %>
                         -
                       <% end %>

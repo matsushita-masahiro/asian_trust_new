@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_14_194605) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_09_050651) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -169,6 +169,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_14_194605) do
     t.text "description"
   end
 
+  create_table "purchase_invoices", force: :cascade do |t|
+    t.integer "purchase_id", null: false
+    t.string "invoice_number"
+    t.date "invoice_date"
+    t.date "due_date"
+    t.decimal "total_amount"
+    t.integer "status"
+    t.datetime "sent_at"
+    t.datetime "confirmed_at"
+    t.datetime "receipt_requested_at"
+    t.datetime "receipt_sent_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["purchase_id"], name: "index_purchase_invoices_on_purchase_id"
+  end
+
   create_table "purchase_items", force: :cascade do |t|
     t.integer "purchase_id", null: false
     t.integer "product_id", null: false
@@ -286,6 +303,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_14_194605) do
   add_foreign_key "invoices", "users"
   add_foreign_key "product_prices", "levels"
   add_foreign_key "product_prices", "products"
+  add_foreign_key "purchase_invoices", "purchases"
   add_foreign_key "purchase_items", "products"
   add_foreign_key "purchase_items", "purchases"
   add_foreign_key "purchases", "users"

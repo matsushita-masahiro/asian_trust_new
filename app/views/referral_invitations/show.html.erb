@@ -68,8 +68,16 @@
           <!-- QRコード -->
           <div class="text-center mb-4">
             <h6>QRコード</h6>
-            <div id="qr-code-container">
-              <!-- QRコードをJavaScriptで生成 -->
+            <div id="qr-code-container" class="d-flex justify-content-center">
+              <% if @qr_code_svg %>
+                <!-- サーバーサイドで生成されたQRコード -->
+                <%= @qr_code_svg.html_safe %>
+              <% else %>
+                <!-- JavaScriptで生成するQRコード -->
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">QRコード生成中...</span>
+                </div>
+              <% end %>
             </div>
             <small class="text-muted">
               QRコードをスクリーンショットして送信できます
@@ -115,20 +123,44 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
 <script>
-// QRコード生成
+// QRコード生成（サーバーサイドで生成されていない場合のみ）
 document.addEventListener('DOMContentLoaded', function() {
-  const url = '<%= @referral_url %>';
-  const container = document.getElementById('qr-code-container');
-  
-  QRCode.toCanvas(url, { width: 200, margin: 2 }, function (error, canvas) {
-    if (error) {
-      console.error(error);
-      container.innerHTML = '<p class="text-danger">QRコードの生成に失敗しました</p>';
-    } else {
-      canvas.className = 'border rounded';
-      container.appendChild(canvas);
+  <% unless @qr_code_svg %>
+    const url = '<%= @referral_url %>';
+    const container = document.getElementById('qr-code-container');
+    
+    // ライブラリが読み込まれているかチェック
+    if (typeof QRCode === 'undefined') {
+      console.error('QRCode library not loaded');
+      container.innerHTML = '<div class="alert alert-warning">QRコードライブラリの読み込みに失敗しました。<br><a href="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '" target="_blank" class="btn btn-primary btn-sm mt-2">QRコードを別ウィンドウで表示</a></div>';
+      return;
     }
-  });
+    
+    try {
+      QRCode.toCanvas(url, { 
+        width: 200, 
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      }, function (error, canvas) {
+        if (error) {
+          console.error('QRCode generation error:', error);
+          // フォールバック: 外部APIを使用
+          container.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '" alt="QRコード" class="border rounded" style="max-width: 200px;">';
+        } else {
+          container.innerHTML = '';
+          canvas.className = 'border rounded';
+          container.appendChild(canvas);
+        }
+      });
+    } catch (e) {
+      console.error('QRCode generation exception:', e);
+      // フォールバック: 外部APIを使用
+      container.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '" alt="QRコード" class="border rounded" style="max-width: 200px;">';
+    }
+  <% end %>
 });
 
 // URLコピー機能

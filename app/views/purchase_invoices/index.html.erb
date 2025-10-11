@@ -1,0 +1,54 @@
+<div class="container mt-4">
+  <h4>購入請求書一覧</h4>
+  
+  <% if @purchase_invoices.any? %>
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>請求書番号</th>
+            <th>請求日</th>
+            <th>支払期限</th>
+            <th>金額</th>
+            <th>ステータス</th>
+            <th>販売者</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @purchase_invoices.each do |invoice| %>
+            <tr>
+              <td><%= link_to invoice.invoice_number, purchase_invoice_path(invoice), class: "text-decoration-none" %></td>
+              <td><%= invoice.invoice_date.strftime("%Y/%m/%d") %></td>
+              <td><%= invoice.due_date.strftime("%Y/%m/%d") %></td>
+              <td class="text-end"><%= number_with_delimiter(invoice.total_amount) %>円</td>
+              <td>
+                <span class="badge bg-<%= invoice.status == 0 ? 'secondary' : invoice.status == 1 ? 'warning' : invoice.status == 2 ? 'success' : 'info' %>">
+                  <%= invoice.status_display_name %>
+                </span>
+              </td>
+              <td><%= invoice.user.name %></td>
+              <td>
+                <%= link_to "詳細", purchase_invoice_path(invoice), class: "btn btn-sm btn-outline-primary" %>
+                <% if invoice.paid? && !invoice.receipt_requested? %>
+                  <%= link_to "領収書依頼", request_receipt_purchase_invoice_path(invoice), 
+                      method: :patch, class: "btn btn-sm btn-outline-success",
+                      confirm: "領収書発行を依頼しますか？" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle"></i>
+      購入請求書はありません。
+    </div>
+  <% end %>
+  
+  <div class="mt-3">
+    <%= link_to "商品一覧に戻る", orders_products_path, class: "btn btn-secondary" %>
+  </div>
+</div>

@@ -5,6 +5,7 @@ class Purchase < ApplicationRecord
   # belongs_to :customer は削除済み（buyer_idに統合）
   has_many :purchase_items, dependent: :destroy
   has_many :products, through: :purchase_items
+  has_one :purchase_invoice, dependent: :destroy
 
   # ネストした属性を受け入れる
   accepts_nested_attributes_for :purchase_items, allow_destroy: true

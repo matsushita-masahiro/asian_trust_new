@@ -31,6 +31,22 @@ class ReferralInvitationsController < ApplicationController
   def show
     @referral_invitation = current_user.referral_invitations.find(params[:id])
     @referral_url = "#{request.protocol}#{request.host_with_port}/users/sign_up?ref=#{@referral_invitation.referral_token}"
+    
+    # QRコード生成
+    require 'rqrcode'
+    begin
+      qr = RQRCode::QRCode.new(@referral_url)
+      @qr_code_svg = qr.as_svg(
+        offset: 0,
+        color: '000',
+        shape_rendering: 'crispEdges',
+        module_size: 6,
+        standalone: true
+      )
+    rescue => e
+      Rails.logger.error "QR Code generation failed: #{e.message}"
+      @qr_code_svg = nil
+    end
   end
 
   def index

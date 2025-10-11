@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  purchase: one
+  invoice_number: MyString
+  invoice_date: 2025-10-09
+  due_date: 2025-10-09
+  total_amount: 9.99
+  status: 1
+  sent_at: 2025-10-09 14:06:51
+  confirmed_at: 2025-10-09 14:06:51
+  receipt_requested_at: 2025-10-09 14:06:51
+  receipt_sent_at: 2025-10-09 14:06:51
+  notes: MyText
+
+two:
+  purchase: two
+  invoice_number: MyString
+  invoice_date: 2025-10-09
+  due_date: 2025-10-09
+  total_amount: 9.99
+  status: 1
+  sent_at: 2025-10-09 14:06:51
+  confirmed_at: 2025-10-09 14:06:51
+  receipt_requested_at: 2025-10-09 14:06:51
+  receipt_sent_at: 2025-10-09 14:06:51
+  notes: MyText

@@ -29,5 +29,5 @@ class PurchaseItem < ApplicationRecord
   end
 
   # 委譲メソッド
-  delegate :user, :customer, :purchased_at, to: :purchase
+  delegate :user, :buyer, :purchased_at, to: :purchase
 end

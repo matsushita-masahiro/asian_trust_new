@@ -51,6 +51,7 @@ Rails.application.routes.draw do
       member do
         patch :confirm_payment
       end
+      resources :purchase_invoices, only: [:new, :create]
     end
 
     resources :users, only: [:index, :show, :edit, :update] do
@@ -75,16 +76,25 @@ Rails.application.routes.draw do
       get :api_status
     end
     
-    # 請求書管理
+    # 請求書管理（インセンティブ用）
     resource :invoice_recipient, only: [:show, :new, :create, :edit, :update, :destroy]
     get 'invoice_recipients', to: 'invoice_recipients#index'
     
-    # 請求書状況管理
+    # 請求書状況管理（インセンティブ用）
     resources :invoice_status, only: [:index] do
       member do
         patch :update_status
         get :show_receipt    # 領収書表示
         post :send_receipt   # 領収書送信
+      end
+    end
+    
+    # 購入請求書管理
+    resources :purchase_invoices, only: [:index, :show, :edit, :update] do
+      member do
+        patch :send_invoice      # 請求書送付
+        patch :confirm_payment   # 支払い確認
+        patch :send_receipt      # 領収書発行
       end
     end
   end
@@ -112,10 +122,21 @@ Rails.application.routes.draw do
     member do
       patch :reserve_clinic
     end
+    resources :purchase_invoices, only: [:new, :create]
   end
   get 'sales/:id' => "sales#show"
   resources :sales, only: [:index]
   # resources :customers, only: [:show] # Customerモデル削除により無効化
+  
+  # 購入請求書
+  resources :purchase_invoices, only: [:index, :show, :edit, :update] do
+    member do
+      patch :send_invoice      # 請求書送付（管理者のみ）
+      patch :confirm_payment   # 支払い確認（管理者のみ）
+      patch :request_receipt   # 領収書発行依頼
+      patch :send_receipt      # 領収書発行（管理者のみ）
+    end
+  end
   
   # 予約・注文システム
   resources :orders, only: [:index] do

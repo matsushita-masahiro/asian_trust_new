@@ -6,8 +6,10 @@ class OrdersController < ApplicationController
   end
 
   def products
-    # 幹細胞培養上精液の商品一覧
-    @products = Product.all
+    # 幹細胞培養上精液の商品一覧（価格情報があるもののみ）
+    @products = Product.joins(:product_prices)
+                      .where(product_prices: { level_id: current_user.level_id })
+                      .distinct
     @cart = current_user.ensure_cart
   end
 
@@ -42,27 +44,48 @@ class OrdersController < ApplicationController
     
     # 購入処理を実行
     ActiveRecord::Base.transaction do
+      # 購入レコードを作成
       purchase = Purchase.create!(
-        user: current_user,
+        user: current_user,        # 販売者（自分）
+        buyer: current_user,       # 購入者（自分）
         purchased_at: Time.current,
-        total_amount: @cart.total_amount(current_user.level_symbol)
+        payment_type: params[:payment_type] || 'cash',  # デフォルトは銀行振込
+        status: 'built'  # 初期ステータス
       )
       
+      # 購入アイテムを作成
       @cart.cart_items.each do |cart_item|
+        user_price = cart_item.product.price_for(current_user.level_symbol) || 0
+        
         PurchaseItem.create!(
           purchase: purchase,
           product: cart_item.product,
           quantity: cart_item.quantity,
-          unit_price: cart_item.product.price_for(current_user.level_symbol) || 0
+          unit_price: cart_item.product.base_price,  # 基本価格
+          seller_price: user_price  # ユーザーの購入価格
         )
       end
       
+      # 購入請求書を自動生成
+      purchase_invoice = purchase.create_purchase_invoice!(
+        invoice_number: PurchaseInvoice.generate_invoice_number,
+        invoice_date: Date.current,
+        due_date: Date.current + 30.days,
+        total_amount: purchase.total_price,
+        status: PurchaseInvoice::DRAFT,
+        notes: "商品購入に関する請求書"
+      )
+      
       # カートをクリア
       @cart.cart_items.destroy_all
+      
+      Rails.logger.info "Purchase #{purchase.id} and PurchaseInvoice #{purchase_invoice.id} created successfully"
     end
     
-    redirect_to orders_path, notice: '購入が完了しました'
+    redirect_to purchase_invoices_path, notice: '注文が完了しました。請求書を確認してください。'
   rescue => e
+    Rails.logger.error "Purchase process error: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
     redirect_to orders_checkout_path, alert: '購入処理中にエラーが発生しました'
   end
 end

@@ -81,7 +81,7 @@ company = User.create!(
   id: user_id_seq,
   name: "アジアビジネストラスト",
   email: "info@abt-saisei.com",
-  password: "password",
+  password: "111111",
   level_id: levels["アジアビジネストラスト"].id,
   lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
   confirmed_at: Time.current
@@ -95,7 +95,7 @@ special_agents = 3.times.map do |i|
     id: user_id_seq,
     name: "特約代理店#{i + 1}",
     email: "special_agent#{i + 1}@example.com",
-    password: "password",
+    password: "111111",
     level_id: levels["特約代理店"].id,
     referred_by_id: company.id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -114,7 +114,7 @@ special_agents.each_with_index do |parent, i|
       id: user_id_seq,
       name: "代理店#{i + 1}-#{j + 1}",
       email: "agent#{i + 1}-#{j + 1}@example.com",
-      password: "password",
+      password: "111111",
       level_id: levels["代理店"].id,
       referred_by_id: parent.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -134,7 +134,7 @@ agents.each_with_index do |parent, i|
       id: user_id_seq,
       name: "アドバイザー#{i + 1}-#{j + 1}",
       email: "advisor#{i + 1}-#{j + 1}@example.com",
-      password: "password",
+      password: "111111",
       level_id: levels["アドバイザー"].id,
       referred_by_id: parent.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -148,13 +148,16 @@ end
 
 # サロン・クリニック
 advisors.each_with_index do |parent, i|
-  ["サロン", "クリニック"].each_with_index do |type, _idx|
+  [
+    { type: "サロン", email_prefix: "salon" },
+    { type: "クリニック", email_prefix: "clinic" }
+  ].each do |type_data|
     User.create!(
       id: user_id_seq,
-      name: "#{type}#{i + 1}",
-      email: "#{type.downcase}#{i + 1}@example.com",
-      password: "password",
-      level_id: levels[type].id,
+      name: "#{type_data[:type]}#{i + 1}",
+      email: "#{type_data[:email_prefix]}#{i + 1}@example.com",
+      password: "111111",
+      level_id: levels[type_data[:type]].id,
       referred_by_id: parent.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
@@ -170,7 +173,7 @@ end
     id: user_id_seq,
     name: "特約1-アドバイザー#{i + 1}",
     email: "tokuyaku1_advisor#{i + 1}@example.com",
-    password: "password",
+    password: "111111",
     level_id: levels["アドバイザー"].id,
     referred_by_id: special_agents[0].id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -182,8 +185,8 @@ end
   User.create!(
     id: user_id_seq,
     name: "特約1-サロン#{i + 1}",
-    email: "tokuyaku1_salon#{i + 1}@example.com",
-    password: "password",
+    email: "special1_salon#{i + 1}@example.com",
+    password: "111111",
     level_id: levels["サロン"].id,
     referred_by_id: advisor.id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -198,8 +201,8 @@ end
   User.create!(
     id: user_id_seq,
     name: "特約2-サロン#{i + 1}",
-    email: "tokuyaku2_salon#{i + 1}@example.com",
-    password: "password",
+    email: "special2_salon#{i + 1}@example.com",
+    password: "111111",
     level_id: levels["サロン"].id,
     referred_by_id: special_agents[1].id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -214,8 +217,8 @@ end
   advisor1 = User.create!(
     id: user_id_seq,
     name: "特約3-アドバイザー#{i + 1}-1",
-    email: "tokuyaku3_advisor#{i + 1}_1@example.com",
-    password: "password",
+    email: "special3_advisor#{i + 1}_1@example.com",
+    password: "111111",
     level_id: levels["アドバイザー"].id,
     referred_by_id: special_agents[2].id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -227,8 +230,8 @@ end
   advisor2 = User.create!(
     id: user_id_seq,
     name: "特約3-アドバイザー#{i + 1}-2",
-    email: "tokuyaku3_advisor#{i + 1}_2@example.com",
-    password: "password",
+    email: "special3_advisor#{i + 1}_2@example.com",
+    password: "111111",
     level_id: levels["アドバイザー"].id,
     referred_by_id: advisor1.id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -240,8 +243,8 @@ end
   User.create!(
     id: user_id_seq,
     name: "特約3-サロン#{i + 1}",
-    email: "tokuyaku3_salon#{i + 1}@example.com",
-    password: "password",
+    email: "special3_salon#{i + 1}@example.com",
+    password: "111111",
     level_id: levels["サロン"].id,
     referred_by_id: advisor2.id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -263,41 +266,72 @@ else
   special_agent_1 = User.find_by(name: "特約代理店1")
   
   if special_agent_1
-    # 2025年8月の購入データ
-    purchase = Purchase.create!(
-      user_id: special_agent_1.id,        # 仲介者（自分）
-      buyer_id: special_agent_1.id,       # 購入者（自分）
-      purchased_at: "2025-08-08 10:00:00"
-    )
+    # 複数月の購入データを作成
+    months = [
+      { month: "2025-08", day: 8, quantity: 40 },
+      { month: "2025-09", day: 15, quantity: 35 },
+      { month: "2025-10", day: 12, quantity: 50 }
+    ]
     
-    PurchaseItem.create!(
-      purchase: purchase,
-      product: product,
-      quantity: 40,
-      unit_price: 50000,
-      seller_price: 45000  # 特約代理店の購入価格
-    )
-    
-    puts "✅ Created purchase data for 特約代理店1"
-    
-    # 他の代理店の購入データも作成
-    agents.first(3).each_with_index do |agent, i|
+    months.each do |month_data|
       purchase = Purchase.create!(
-        user_id: agent.id,        # 仲介者（自分）
-        buyer_id: agent.id,       # 購入者（自分）
-        purchased_at: "2025-08-#{10 + i} 14:00:00"
+        user_id: special_agent_1.id,        # 仲介者（自分）
+        buyer_id: special_agent_1.id,       # 購入者（自分）
+        purchased_at: "#{month_data[:month]}-#{format('%02d', month_data[:day])} 10:00:00"
       )
       
       PurchaseItem.create!(
         purchase: purchase,
         product: product,
-        quantity: 20 + (i * 5),
+        quantity: month_data[:quantity],
         unit_price: 50000,
-        seller_price: 47000  # 代理店の購入価格
+        seller_price: 45000  # 特約代理店の購入価格
       )
     end
     
-    puts "✅ Created purchase data for agents"
+    puts "✅ Created purchase data for 特約代理店1 (8月, 9月, 10月)"
+    
+    # 他の代理店の購入データも複数月で作成
+    agents.first(3).each_with_index do |agent, i|
+      months.each_with_index do |month_data, month_idx|
+        purchase = Purchase.create!(
+          user_id: agent.id,        # 仲介者（自分）
+          buyer_id: agent.id,       # 購入者（自分）
+          purchased_at: "#{month_data[:month]}-#{format('%02d', 10 + i + month_idx)} 14:00:00"
+        )
+        
+        PurchaseItem.create!(
+          purchase: purchase,
+          product: product,
+          quantity: 20 + (i * 5) + (month_idx * 3),  # 月ごとに少し数量を変える
+          unit_price: 50000,
+          seller_price: 47000  # 代理店の購入価格
+        )
+      end
+    end
+    
+    puts "✅ Created purchase data for agents (8月, 9月, 10月)"
+    
+    # アドバイザーの購入データも追加
+    advisors.first(2).each_with_index do |advisor, i|
+      months.each_with_index do |month_data, month_idx|
+        purchase = Purchase.create!(
+          user_id: advisor.id,        # 仲介者（自分）
+          buyer_id: advisor.id,       # 購入者（自分）
+          purchased_at: "#{month_data[:month]}-#{format('%02d', 20 + i + month_idx)} 16:00:00"
+        )
+        
+        PurchaseItem.create!(
+          purchase: purchase,
+          product: product,
+          quantity: 10 + (i * 2) + (month_idx * 2),  # 月ごとに少し数量を変える
+          unit_price: 50000,
+          seller_price: 49000  # アドバイザーの購入価格
+        )
+      end
+    end
+    
+    puts "✅ Created purchase data for advisors (8月, 9月, 10月)"
   end
 end
 

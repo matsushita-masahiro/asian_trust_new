@@ -33,14 +33,23 @@ class PurchaseInvoicePdfService
     admin_user = User.find_by(admin: true)
     invoice_base = admin_user&.invoice_base
     
-    # 購入商品情報を取得（関連データを含む）
+    # 関連データを明示的に読み込み
+    @purchase.reload
     purchase_items = @purchase.purchase_items.includes(:product)
+    buyer = User.find(@purchase.buyer_id) if @purchase.buyer_id
     
-    # Buyerを明示的に読み込み
-    buyer = @purchase.buyer
-    
-    Rails.logger.info "Buyer loaded: #{buyer&.name || 'No name'}"
-    Rails.logger.info "First item product name: #{purchase_items.first&.product&.name || 'No product name'}"
+    Rails.logger.info "=== Detailed Debug Info ==="
+    Rails.logger.info "Purchase buyer_id: #{@purchase.buyer_id}"
+    Rails.logger.info "Buyer found: #{buyer.present?}"
+    Rails.logger.info "Buyer name: #{buyer&.name}"
+    Rails.logger.info "Purchase items count: #{purchase_items.count}"
+    if purchase_items.any?
+      first_item = purchase_items.first
+      Rails.logger.info "First item product_id: #{first_item.product_id}"
+      Rails.logger.info "First item product present: #{first_item.product.present?}"
+      Rails.logger.info "First item product name: #{first_item.product&.name}"
+    end
+    Rails.logger.info "Invoice base present: #{invoice_base.present?}"
     
     # 税計算（外税）
     total_with_tax = @purchase_invoice.total_amount

@@ -52,8 +52,7 @@ class Webhooks::LstepController < ApplicationController
     end
   
     Purchase.create!(
-      user: referrer,
-      buyer: buyer,
+      user: buyer,  # 購入者
       quantity: data["quantity"],
       unit_price: data["unit_price"],
       price: data["quantity"] * product.base_price,

@@ -98,8 +98,7 @@ class PurchaseInvoice < ApplicationRecord
   end
   
   # 購入者情報の委譲
-  delegate :buyer, to: :purchase
-  delegate :user, to: :purchase  # 販売者
+  delegate :user, to: :purchase  # 購入者
   delegate :purchased_at, to: :purchase
   
   # 購入明細の委譲

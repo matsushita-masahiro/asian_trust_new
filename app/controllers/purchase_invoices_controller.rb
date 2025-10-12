@@ -5,7 +5,7 @@ class PurchaseInvoicesController < ApplicationController
   def index
     # 購入者として受け取った請求書一覧
     @purchase_invoices = PurchaseInvoice.joins(:purchase)
-                                       .where(purchases: { buyer_id: current_user.id })
+                                       .where(purchases: { user_id: current_user.id })
                                        .includes(:purchase => [:user, :purchase_items => :product])
                                        .order(created_at: :desc)
   end
@@ -176,9 +176,8 @@ class PurchaseInvoicesController < ApplicationController
   end
 
   def can_access_purchase_invoice?
-    # 購入者、販売者、または管理者のみアクセス可能
-    @purchase_invoice.buyer == current_user || 
-    @purchase_invoice.user == current_user || 
+    # 購入者または管理者のみアクセス可能
+    @purchase_invoice.purchase.user == current_user || 
     current_user.level&.value == 0  # アジアビジネストラスト
   end
 end

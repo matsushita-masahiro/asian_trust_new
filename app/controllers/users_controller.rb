@@ -32,27 +32,25 @@ class UsersController < ApplicationController
       # URLパラメータで表示モードを判定
       # ?view=own_purchases が指定された場合は自分の購入履歴を表示
       if params[:view] == 'own_purchases'
-        # 自分自身の購入履歴を表示（buyer_idが自分のユーザーIDと一致するもの）
-        @purchases = Purchase.includes({ purchase_items: :product }, :buyer)
-                            .where(buyer_id: @user.id)
+        # 自分自身の購入履歴を表示（user_idが自分のユーザーIDと一致するもの）
+        @purchases = Purchase.includes({ purchase_items: :product }, :user)
+                            .where(user_id: @user.id)
                             .in_month_tokyo(@selected_month)
                             .order(purchased_at: :desc)
         @is_customer_view = true
         @is_own_purchases = true
       elsif @user.level.value == 6
         # お客様の場合：自分が購入者として記録された購入履歴を表示
-        @purchases = Purchase.includes({ purchase_items: :product }, :buyer)
-                            .where(buyer_id: @user.id)
+        @purchases = Purchase.includes({ purchase_items: :product }, :user)
+                            .where(user_id: @user.id)
                             .in_month_tokyo(@selected_month)
                             .order(purchased_at: :desc)
         @is_customer_view = true
         @is_own_purchases = false
       else
-        # 指定ユーザーの販売履歴を取得（userとしての仲介）
-        # 自分自身の購入は除外する（buyer_idが自分のユーザーIDと一致するものを除外）
-        @purchases = Purchase.includes({ purchase_items: :product }, :buyer)
+        # 指定ユーザーの購入履歴を取得
+        @purchases = Purchase.includes({ purchase_items: :product }, :user)
                             .where(user_id: @user.id)
-                            .where.not(buyer_id: @user.id)
                             .in_month_tokyo(@selected_month)
                             .order(purchased_at: :desc)
         @is_customer_view = false

@@ -74,6 +74,45 @@ class PurchaseInvoicePdfService
     Rails.logger.info "Subtotal: #{subtotal}"
     Rails.logger.info "Tax: #{tax}"
     
+    # デバッグ用：変数の値を確認
+    Rails.logger.info "=== Template Variables Debug ==="
+    Rails.logger.info "invoice_base present: #{invoice_base.present?}"
+    Rails.logger.info "company_name: #{invoice_base&.company_name}"
+    Rails.logger.info "bank_name: #{invoice_base&.bank_name}"
+    Rails.logger.info "purchase_items count: #{purchase_items.count}"
+    Rails.logger.info "first product name: #{purchase_items.first&.product&.name}"
+    
+    # 会社情報を直接設定
+    if invoice_base
+      company_name = invoice_base.company_name.presence || "株式会社アジアビジネストラスト"
+      company_address = "#{invoice_base.postal_code.presence || '〒104-0061'} #{invoice_base.address.presence || '東京都中央区銀座4丁目6-1'} 銀座医科ビル3階"
+      company_tel = "TEL:03-5904-8148"
+      company_email = "Email: #{invoice_base.email.presence || 'abt1@asia-b-t.com'}"
+      company_footer = "アジアビジネストラスト 事務局"
+      registration_number = "T4210001009156"
+      
+      bank_name = invoice_base.bank_name.presence || "楽天銀行"
+      bank_branch = invoice_base.bank_branch_name.presence || "第二営業支店"
+      bank_branch_code = "252"
+      bank_account_type = invoice_base.bank_account_type.presence || "普通預金"
+      bank_account_number = invoice_base.bank_account_number.presence || "7747552"
+      bank_account_name = invoice_base.bank_account_name.presence || company_name
+    else
+      company_name = "株式会社アジアビジネストラスト"
+      company_address = "〒104-0061 東京都中央区銀座4丁目6-1 銀座医科ビル3階"
+      company_tel = "TEL:03-5904-8148"
+      company_email = "Email: abt1@asia-b-t.com"
+      company_footer = "アジアビジネストラスト 事務局"
+      registration_number = "T4210001009156"
+      
+      bank_name = "楽天銀行"
+      bank_branch = "第二営業支店"
+      bank_branch_code = "252"
+      bank_account_type = "普通預金"
+      bank_account_number = "7747552"
+      bank_account_name = company_name
+    end
+    
     # 実際のテンプレートを使用してPDFを生成
     html_content = controller.render_to_string(
       template: 'order_mailer/invoice_pdf',
@@ -88,7 +127,19 @@ class PurchaseInvoicePdfService
         purchase_items: purchase_items,
         total_with_tax: total_with_tax,
         subtotal: subtotal,
-        tax: tax
+        tax: tax,
+        company_name: company_name,
+        company_address: company_address,
+        company_tel: company_tel,
+        company_email: company_email,
+        company_footer: company_footer,
+        registration_number: registration_number,
+        bank_name: bank_name,
+        bank_branch: bank_branch,
+        bank_branch_code: bank_branch_code,
+        bank_account_type: bank_account_type,
+        bank_account_number: bank_account_number,
+        bank_account_name: bank_account_name
       },
       formats: [:html]
     )

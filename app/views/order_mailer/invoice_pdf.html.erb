@@ -3,51 +3,25 @@
   purchase_invoice = local_assigns[:purchase_invoice] if local_assigns.key?(:purchase_invoice)
   purchase = local_assigns[:purchase] if local_assigns.key?(:purchase)
   buyer = local_assigns[:buyer] if local_assigns.key?(:buyer)
-  invoice_base = local_assigns[:invoice_base] if local_assigns.key?(:invoice_base)
-  company_info = local_assigns[:company_info] if local_assigns.key?(:company_info)
   purchase_items = local_assigns[:purchase_items] || []
   total_with_tax = local_assigns[:total_with_tax] || 0
   subtotal = local_assigns[:subtotal] || 0
   tax = local_assigns[:tax] || 0
   
-  # 会社情報をinvoice_basesテーブルから取得（フォールバック値付き）
-  if invoice_base
-    # 基本会社情報
-    company_name = invoice_base.company_name.presence || "株式会社アジアビジネストラスト"
-    company_department = invoice_base.department.presence || "アジアビジネストラスト事業部"
-    # 住所にビル名も含める
-    base_address = invoice_base.address.presence || "東京都中央区銀座4丁目6-1"
-    building_name = "銀座医科ビル3階"  # 固定値（DBにカラムがない）
-    company_address = "#{invoice_base.postal_code.presence || '〒104-0061'} #{base_address} #{building_name}"
-    company_tel = "TEL:03-5904-8148"  # 固定値（DBにカラムがない）
-    company_email = "Email: #{invoice_base.email.presence || 'abt1@asia-b-t.com'}"
-    company_footer = "アジアビジネストラスト 事務局"  # 固定値
-    registration_number = "T4210001009156"  # 固定値（法人番号）
-    
-    # 銀行情報をinvoice_basesテーブルから取得
-    bank_name = invoice_base.bank_name.presence || "楽天銀行"
-    bank_branch = invoice_base.bank_branch_name.presence || "第二営業支店"
-    bank_branch_code = "252"  # 固定値（DBにカラムがない）
-    bank_account_type = invoice_base.bank_account_type.presence || "普通預金"
-    bank_account_number = invoice_base.bank_account_number.presence || "7747552"
-    bank_account_name = invoice_base.bank_account_name.presence || company_name
-  else
-    # DBに情報がない場合のデフォルト値
-    company_name = "株式会社アジアビジネストラスト"
-    company_department = "アジアビジネストラスト事業部"
-    company_address = "〒104-0061 東京都中央区銀座4丁目6-1 銀座医科ビル3階"
-    company_tel = "TEL:03-5904-8148"
-    company_email = "Email: abt1@asia-b-t.com"
-    company_footer = "アジアビジネストラスト 事務局"
-    registration_number = "T4210001009156"
-    
-    bank_name = "楽天銀行"
-    bank_branch = "第二営業支店"
-    bank_branch_code = "252"
-    bank_account_type = "普通預金"
-    bank_account_number = "7747552"
-    bank_account_name = company_name
-  end
+  # 会社情報と銀行情報を直接ローカル変数から取得
+  company_name = local_assigns[:company_name] || "株式会社アジアビジネストラスト"
+  company_address = local_assigns[:company_address] || "〒104-0061 東京都中央区銀座4丁目6-1 銀座医科ビル3階"
+  company_tel = local_assigns[:company_tel] || "TEL:03-5904-8148"
+  company_email = local_assigns[:company_email] || "Email: abt1@asia-b-t.com"
+  company_footer = local_assigns[:company_footer] || "アジアビジネストラスト 事務局"
+  registration_number = local_assigns[:registration_number] || "T4210001009156"
+  
+  bank_name = local_assigns[:bank_name] || "楽天銀行"
+  bank_branch = local_assigns[:bank_branch] || "第二営業支店"
+  bank_branch_code = local_assigns[:bank_branch_code] || "252"
+  bank_account_type = local_assigns[:bank_account_type] || "普通預金"
+  bank_account_number = local_assigns[:bank_account_number] || "7747552"
+  bank_account_name = local_assigns[:bank_account_name] || company_name
   
   # 税計算は既にローカル変数として設定済み
 %>

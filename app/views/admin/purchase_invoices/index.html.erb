@@ -46,11 +46,11 @@
                 <%= link_to invoice.invoice_number, admin_purchase_invoice_path(invoice), 
                     class: "text-decoration-none fw-bold" %>
               </td>
-              <td><%= invoice.buyer.name %></td>
+              <td><%= invoice.purchase.user.name %></td>
               <td><%= invoice.user.name %></td>
               <td><%= invoice.invoice_date.strftime("%Y/%m/%d") %></td>
               <td><%= invoice.due_date.strftime("%Y/%m/%d") %></td>
-              <td class="text-end"><%= number_with_delimiter(invoice.total_amount) %>円</td>
+              <td class="text-end"><%= number_with_delimiter(invoice.total_amount.to_i) %>円</td>
               <td>
                 <span class="badge bg-<%= invoice.status == 0 ? 'secondary' : invoice.status == 1 ? 'warning' : invoice.status == 2 ? 'success' : invoice.status == 3 ? 'info' : 'primary' %>">
                   <%= invoice.status_display_name %>

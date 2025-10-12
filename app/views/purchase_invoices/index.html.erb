@@ -21,7 +21,7 @@
               <td><%= link_to invoice.invoice_number, purchase_invoice_path(invoice), class: "text-decoration-none" %></td>
               <td><%= invoice.invoice_date.strftime("%Y/%m/%d") %></td>
               <td><%= invoice.due_date.strftime("%Y/%m/%d") %></td>
-              <td class="text-end"><%= number_with_delimiter(invoice.total_amount) %>円</td>
+              <td class="text-end"><%= number_with_delimiter(invoice.total_amount.to_i) %>円</td>
               <td>
                 <span class="badge bg-<%= invoice.status == 0 ? 'secondary' : invoice.status == 1 ? 'warning' : invoice.status == 2 ? 'success' : 'info' %>">
                   <%= invoice.status_display_name %>

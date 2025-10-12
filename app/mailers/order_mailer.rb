@@ -15,6 +15,9 @@ class OrderMailer < ApplicationMailer
     @subtotal = pdf_info[:subtotal] || ((@total_with_tax / 1.1).to_i)
     @tax = pdf_info[:tax] || (@total_with_tax - @subtotal)
     
+    # 送付先メールアドレスを設定
+    @recipient_email = pdf_info[:recipient_email] || @user.email
+    
     Rails.logger.info "Preparing bank transfer email for purchase #{@purchase.id}"
     Rails.logger.info "User email: #{@user.email}"
     Rails.logger.info "Purchase invoice present: #{@purchase_invoice.present?}"
@@ -75,7 +78,7 @@ class OrderMailer < ApplicationMailer
     Rails.logger.info "Sending bank transfer email..."
     
     mail(
-      to: @user.email,
+      to: @recipient_email,
       subject: "【Asia Business Trust】銀行振込のご案内・請求書 - 注文番号: ##{@purchase.id}"
     )
   end

@@ -24,27 +24,62 @@ class PaymentsController < ApplicationController
         @purchase_invoice = result[:purchase_invoice]
         @user = current_user
         
-        # 会社情報を変数として定義（invoices_controllerと同様）
-        @company_info = {
-          name: "株式会社アジアビジネストラスト",
-          department: "アジアビジネストラスト事業部",
-          address: "〒104-0061 東京都中央区銀座4丁目6-1",
-          building: "銀座医科ビル3階",
-          tel: "TEL:03-5904-8148",
-          email: "Email: abt1@asia-b-t.com",
-          footer: "アジアビジネストラスト 事務局",
-          registration_number: "T4210001009156"
-        }
+        # DBから会社情報を取得（invoice_basesテーブルから）
+        # 管理者ユーザーのinvoice_baseを取得（admin=trueのユーザー）
+        admin_user = User.find_by(admin: true)
+        invoice_base = admin_user&.invoice_base
         
-        # 銀行情報を変数として定義
-        @bank_info = {
-          name: "楽天銀行",
-          branch: "第二営業支店",
-          branch_code: "252",
-          account_type: "普通預金",
-          account_number: "7747552",
-          account_name: @company_info[:name]
-        }
+        if invoice_base
+          @company_info = {
+            name: invoice_base.company_name || "株式会社アジアビジネストラスト",
+            department: invoice_base.department || "アジアビジネストラスト事業部",
+            address: invoice_base.address || "〒104-0061 東京都中央区銀座4丁目6-1",
+            building: "", # invoice_baseにはbuilding項目がないため空文字
+            tel: "TEL:03-5904-8148", # 固定値（DBに項目がない）
+            email: invoice_base.email || "abt1@asia-b-t.com",
+            footer: "アジアビジネストラスト 事務局", # 固定値
+            registration_number: "T4210001009156" # 固定値
+          }
+          
+          @bank_info = {
+            name: invoice_base.bank_name || "楽天銀行",
+            branch: invoice_base.bank_branch_name || "第二営業支店",
+            branch_code: "252", # 固定値（DBに項目がない）
+            account_type: invoice_base.bank_account_type || "普通預金",
+            account_number: invoice_base.bank_account_number || "7747552",
+            account_name: invoice_base.bank_account_name || @company_info[:name]
+          }
+        else
+          # DBに情報がない場合はデフォルト値を使用
+          Rails.logger.warn "No invoice_base found for admin user, using default values"
+          @company_info = {
+            name: "株式会社アジアビジネストラスト",
+            department: "アジアビジネストラスト事業部",
+            address: "〒104-0061 東京都中央区銀座4丁目6-1",
+            building: "銀座医科ビル3階",
+            tel: "TEL:03-5904-8148",
+            email: "abt1@asia-b-t.com",
+            footer: "アジアビジネストラスト 事務局",
+            registration_number: "T4210001009156"
+          }
+          
+          @bank_info = {
+            name: "楽天銀行",
+            branch: "第二営業支店",
+            branch_code: "252",
+            account_type: "普通預金",
+            account_number: "7747552",
+            account_name: @company_info[:name]
+          }
+        end
+        
+        # 送付先メールアドレスを取得（invoice_recipientsテーブルから）
+        # ユーザーの最初のinvoice_recipientのemailを使用
+        invoice_recipient = current_user.invoice_recipients.first
+        @recipient_email = invoice_recipient&.email || current_user.email
+        
+        Rails.logger.info "Recipient email: #{@recipient_email}"
+        Rails.logger.info "Using invoice_recipient: #{invoice_recipient.present?}"
         
         # 商品明細情報を取得
         @purchase_items = @purchase.purchase_items.includes(:product)
@@ -68,7 +103,8 @@ class PaymentsController < ApplicationController
             purchase_items: @purchase_items,
             total_with_tax: @total_with_tax,
             subtotal: @subtotal,
-            tax: @tax
+            tax: @tax,
+            recipient_email: @recipient_email
           }
         ).deliver_now
         

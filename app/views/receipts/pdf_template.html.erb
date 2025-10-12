@@ -179,7 +179,7 @@
 
   <div class="receipt-info">
     <div class="recipient">
-      <%= invoice.invoice_recipient.name %> 様
+      <%= invoice.invoice_recipient&.name || invoice.user&.name || "お客様" %> 様
     </div>
     <% if invoice.invoice_recipient.department.present? %>
       <p><%= invoice.invoice_recipient.department %></p>

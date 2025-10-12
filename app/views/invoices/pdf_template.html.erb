@@ -186,7 +186,7 @@
       <table>
         <tr>
           <th>宛先</th>
-          <td><%= invoice.invoice_recipient.name %> 様</td>
+          <td><%= invoice.invoice_recipient&.name || invoice.user&.name || "お客様" %> 様</td>
         </tr>
         <% if invoice.invoice_recipient.department.present? %>
         <tr>

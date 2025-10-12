@@ -11,10 +11,11 @@
     
     body {
       font-family: 'Times New Roman', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho Pro', 'MS PMincho', serif;
-      font-size: 12px;
+      font-size: 10px;
       line-height: 1.4;
       margin: 0;
-      padding: 40px;
+      padding: 0;
+      page-break-inside: avoid;
       color: #000;
     }
     
@@ -406,7 +407,7 @@
 </head>
 <body>
   <!-- 請求書タイトル -->
-  <h1 class="invoice-title" style="font-family: 'DejaVu Sans', 'Noto Sans CJK JP', 'Hiragino Sans', 'MS Gothic', sans-serif;">請求書</h1>
+  <h1 class="invoice-title">請求書</h1>
 
   <!-- ヘッダー情報 -->
   <div class="header">
@@ -429,25 +430,25 @@
 
   <!-- 件名 -->
   <div class="subject">
-    <span class="subject-label" style="font-family: 'DejaVu Sans', sans-serif;"><strong>件名</strong></span>
-    <span style="font-family: 'DejaVu Sans', sans-serif;">幹細胞商品代</span>
+    <span class="subject-label"><strong>件名</strong></span>
+    <span>幹細胞商品代</span>
   </div>
 
   <!-- 請求金額 -->
   <div class="amount-section">
-    <div class="amount-label" style="font-family: 'DejaVu Sans', sans-serif;">請求金額</div>
+    <div class="amount-label">請求金額</div>
     <div class="amount-value">¥<%= number_with_delimiter(total_with_tax) %></div>
   </div>
 
   <!-- 商品明細 -->
-  <div class="section-title" style="font-family: 'DejaVu Sans', sans-serif;">商品明細</div>
+  <div class="section-title">商品明細</div>
   <table class="details-table">
     <thead>
       <tr>
-        <th class="item-name" style="font-family: 'DejaVu Sans', sans-serif;">摘要</th>
-        <th class="quantity" style="font-family: 'DejaVu Sans', sans-serif;">数量</th>
-        <th class="price" style="font-family: 'DejaVu Sans', sans-serif;">単価</th>
-        <th class="price" style="font-family: 'DejaVu Sans', sans-serif;">明細金額</th>
+        <th class="item-name">摘要</th>
+        <th class="quantity">数量</th>
+        <th class="price">単価</th>
+        <th class="price">明細金額</th>
       </tr>
     </thead>
     <tbody>
@@ -472,15 +473,15 @@
       <% end %>
       
       <tr class="total-row">
-        <td colspan="3" style="font-family: 'DejaVu Sans', sans-serif;"><strong>小計（税抜）</strong></td>
+        <td colspan="3"><strong>小計（税抜）</strong></td>
         <td class="price"><strong>¥<%= number_with_delimiter(subtotal) %></strong></td>
       </tr>
       <tr class="total-row">
-        <td colspan="3" style="font-family: 'DejaVu Sans', sans-serif;"><strong>消費税（10%）</strong></td>
+        <td colspan="3"><strong>消費税（10%）</strong></td>
         <td class="price"><strong>¥<%= number_with_delimiter(tax) %></strong></td>
       </tr>
       <tr class="total-row">
-        <td colspan="3" style="font-family: 'DejaVu Sans', sans-serif;"><strong>合計</strong></td>
+        <td colspan="3"><strong>合計</strong></td>
         <td class="price"><strong>¥<%= number_with_delimiter(total_with_tax) %></strong></td>
       </tr>
     </tbody>
@@ -488,30 +489,30 @@
 
   <!-- 振込先情報 -->
   <div class="bank-info">
-    <div class="section-title" style="font-family: 'DejaVu Sans', sans-serif;">お振込先</div>
+    <div class="section-title">お振込先</div>
     <table>
       <tr>
-        <td style="font-family: 'DejaVu Sans', sans-serif;">銀行名</td>
+        <td>銀行名</td>
         <td><%= bank_name %></td>
       </tr>
       <tr>
-        <td style="font-family: 'DejaVu Sans', sans-serif;">支店名</td>
+        <td>支店名</td>
         <td><%= bank_branch %></td>
       </tr>
       <tr>
-        <td style="font-family: 'DejaVu Sans', sans-serif;">支店番号</td>
+        <td>支店番号</td>
         <td><%= bank_branch_code %></td>
       </tr>
       <tr>
-        <td style="font-family: 'DejaVu Sans', sans-serif;">口座種別</td>
+        <td>口座種別</td>
         <td><%= bank_account_type %></td>
       </tr>
       <tr>
-        <td style="font-family: 'DejaVu Sans', sans-serif;">口座番号</td>
+        <td>口座番号</td>
         <td><%= bank_account_number %></td>
       </tr>
       <tr>
-        <td style="font-family: 'DejaVu Sans', sans-serif;">口座名義</td>
+        <td>口座名義</td>
         <td><%= bank_account_name %></td>
       </tr>
     </table>

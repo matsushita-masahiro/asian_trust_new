@@ -158,9 +158,7 @@ class PurchaseInvoicePdfService
       print_media_type: true,
       no_background: false,
       page_height: '297mm',
-      page_width: '210mm',
-      enable_local_file_access: true,
-      javascript_delay: 1000
+      page_width: '210mm'
     )
   end
 

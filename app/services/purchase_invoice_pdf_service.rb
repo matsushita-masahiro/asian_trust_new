@@ -52,23 +52,33 @@ class PurchaseInvoicePdfService
     Rails.logger.info "Subtotal: #{subtotal}"
     Rails.logger.info "Tax: #{tax}"
     
-    # localsを使用してテンプレートに変数を渡す
-    html_content = controller.render_to_string(
-      template: 'order_mailer/invoice_pdf',
-      layout: 'pdf',
-      locals: {
-        purchase_invoice: @purchase_invoice,
-        purchase: @purchase,
-        user: @purchase.user,
-        buyer: @purchase.buyer,
-        invoice_base: invoice_base,
-        purchase_items: purchase_items,
-        total_with_tax: total_with_tax,
-        subtotal: subtotal,
-        tax: tax
-      },
-      formats: [:html]
-    )
+    # デバッグ用の簡単なHTMLを生成してテスト
+    html_content = <<~HTML
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Test Invoice</title>
+      </head>
+      <body>
+        <h1>請求書テスト</h1>
+        <p>Purchase Invoice ID: #{@purchase_invoice.id}</p>
+        <p>Purchase ID: #{@purchase.id}</p>
+        <p>Buyer: #{@purchase.buyer&.name || 'No buyer'}</p>
+        <p>Invoice Number: #{@purchase_invoice.invoice_number}</p>
+        <p>Total Amount: #{@purchase_invoice.total_amount}</p>
+        <p>Purchase Items Count: #{purchase_items.count}</p>
+        <h2>商品明細</h2>
+        <ul>
+          #{purchase_items.map { |item| "<li>#{item.product.name} - 数量: #{item.quantity} - 単価: #{item.unit_price}</li>" }.join}
+        </ul>
+        <p>会社情報: #{invoice_base ? 'あり' : 'なし'}</p>
+        <p>Total with tax: #{total_with_tax}</p>
+        <p>Subtotal: #{subtotal}</p>
+        <p>Tax: #{tax}</p>
+      </body>
+      </html>
+    HTML
     
     WickedPdf.new.pdf_from_string(
       html_content,

@@ -335,17 +335,17 @@
         </tr>
         <% end %>
         <!-- 合計行を tbody 内の最後の行として配置 -->
-        <tr style="background-color: #333; color: white; font-weight: bold; page-break-inside: avoid;">
-          <td colspan="3" style="text-align: center; background-color: #333; color: white;">小計（税抜）</td>
-          <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(subtotal) %></td>
+        <tr style="font-weight: bold; page-break-inside: avoid;">
+          <td colspan="3" style="text-align: center;">小計（税抜）</td>
+          <td class="number">¥<%= number_with_delimiter(subtotal) %></td>
         </tr>
-        <tr style="background-color: #333; color: white; font-weight: bold; page-break-inside: avoid;">
-          <td colspan="3" style="text-align: center; background-color: #333; color: white;">消費税（10%）</td>
-          <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(tax) %></td>
+        <tr style="font-weight: bold; page-break-inside: avoid;">
+          <td colspan="3" style="text-align: center;">消費税（10%）</td>
+          <td class="number">¥<%= number_with_delimiter(tax) %></td>
         </tr>
-        <tr style="background-color: #333; color: white; font-weight: bold; page-break-inside: avoid;">
-          <td colspan="3" style="text-align: center; background-color: #333; color: white;">合計</td>
-          <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(total_with_tax) %></td>
+        <tr style="background-color: #a9a9a9; color: white; font-weight: bold; page-break-inside: avoid;">
+          <td colspan="3" style="text-align: center; background-color: #a9a9a9; color: white;">合計</td>
+          <td class="number" style="background-color: #a9a9a9; color: white;">¥<%= number_with_delimiter(total_with_tax) %></td>
         </tr>
       </tbody>
     </table>

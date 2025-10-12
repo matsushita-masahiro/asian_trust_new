@@ -29,9 +29,13 @@ class PurchaseInvoicePdfService
     controller.request = ActionDispatch::Request.new({})
     controller.response = ActionDispatch::Response.new
     
-    # 会社情報をDBから取得
+    # 会社情報をinvoice_basesテーブルから取得（アジアビジネストラスト）
+    # 管理者ユーザーのinvoice_baseを取得
     admin_user = User.find_by(admin: true)
     invoice_base = admin_user&.invoice_base
+    
+    # 請求先情報をinvoice_recipientsテーブルから取得
+    company_info = admin_user&.invoice_recipients&.first
     
     # 関連データを明示的に読み込み
     @purchase.reload
@@ -50,6 +54,9 @@ class PurchaseInvoicePdfService
       Rails.logger.info "First item product name: #{first_item.product&.name}"
     end
     Rails.logger.info "Invoice base present: #{invoice_base.present?}"
+    Rails.logger.info "Company info present: #{company_info.present?}"
+    Rails.logger.info "Company name from invoice_base: #{invoice_base&.company_name}"
+    Rails.logger.info "Company name from invoice_recipients: #{company_info&.name}"
     
     # 税計算（外税）
     total_with_tax = @purchase_invoice.total_amount
@@ -67,33 +74,24 @@ class PurchaseInvoicePdfService
     Rails.logger.info "Subtotal: #{subtotal}"
     Rails.logger.info "Tax: #{tax}"
     
-    # デバッグ用の簡単なHTMLを生成してテスト
-    html_content = <<~HTML
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Test Invoice</title>
-      </head>
-      <body>
-        <h1>請求書テスト</h1>
-        <p>Purchase Invoice ID: #{@purchase_invoice.id}</p>
-        <p>Purchase ID: #{@purchase.id}</p>
-        <p>Buyer: #{buyer&.name || 'No buyer name'}</p>
-        <p>Invoice Number: #{@purchase_invoice.invoice_number}</p>
-        <p>Total Amount: #{@purchase_invoice.total_amount}</p>
-        <p>Purchase Items Count: #{purchase_items.count}</p>
-        <h2>商品明細</h2>
-        <ul>
-          #{purchase_items.map { |item| "<li>#{item.product&.name || 'No product name'} - 数量: #{item.quantity} - 単価: #{item.unit_price}</li>" }.join}
-        </ul>
-        <p>会社情報: #{invoice_base ? 'あり' : 'なし'}</p>
-        <p>Total with tax: #{total_with_tax}</p>
-        <p>Subtotal: #{subtotal}</p>
-        <p>Tax: #{tax}</p>
-      </body>
-      </html>
-    HTML
+    # 実際のテンプレートを使用してPDFを生成
+    html_content = controller.render_to_string(
+      template: 'order_mailer/invoice_pdf',
+      layout: 'pdf',
+      locals: {
+        purchase_invoice: @purchase_invoice,
+        purchase: @purchase,
+        user: @purchase.user,
+        buyer: buyer,
+        invoice_base: invoice_base,
+        company_info: company_info,
+        purchase_items: purchase_items,
+        total_with_tax: total_with_tax,
+        subtotal: subtotal,
+        tax: tax
+      },
+      formats: [:html]
+    )
     
     WickedPdf.new.pdf_from_string(
       html_content,

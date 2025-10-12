@@ -11,168 +11,165 @@
     
     body {
       font-family: 'Times New Roman', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho Pro', 'MS PMincho', serif;
-      font-size: 12px;
-      line-height: 1.5;
+      font-size: 10px;
+      line-height: 1.4;
       margin: 0;
       padding: 0;
+      page-break-inside: avoid;
       color: #000;
     }
     
     .header {
       text-align: center;
-      margin-bottom: 30px;
-      page-break-after: avoid;
+      margin-bottom: 15px;
     }
     
     .header h1 {
-      font-size: 28px;
+      font-size: 20px;
       font-weight: bold;
       margin: 0;
-      padding: 15px 0;
-      border-bottom: 3px solid #333;
-      letter-spacing: 2px;
+      padding: 8px 0;
+      border-bottom: 2px solid #333;
+      letter-spacing: 1px;
     }
     
     .invoice-info {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 30px;
-    }
-    
-    .invoice-info .left {
-      width: 48%;
-    }
-    
-    .invoice-info .right {
-      width: 48%;
-      text-align: right;
-    }
-    
-    .customer-name {
-      font-size: 18px;
-      font-weight: bold;
       margin-bottom: 15px;
     }
     
-    .invoice-details p {
-      margin-bottom: 8px;
-      font-size: 14px;
+    .invoice-info .left,
+    .invoice-info .right {
+      width: 48%;
     }
     
-    .company-info {
-      font-size: 12px;
-      line-height: 1.4;
+    .invoice-info table {
+      width: 100%;
+      border-collapse: collapse;
     }
     
-    .company-info h3 {
-      font-size: 14px;
+    .invoice-info th,
+    .invoice-info td {
+      padding: 3px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      font-size: 10px;
+    }
+    
+    .invoice-info th {
+      background-color: #f5f5f5;
       font-weight: bold;
-      margin: 0 0 10px 0;
-    }
-    
-    .subject {
-      margin: 20px 0;
-      font-size: 14px;
-    }
-    
-    .subject-label {
-      font-weight: bold;
-      display: inline-block;
-      width: 60px;
+      width: 30%;
     }
     
     .amount-section {
       text-align: center;
-      margin: 30px 0;
-      padding: 20px;
+      margin: 15px 0;
+      padding: 15px;
       border: 2px solid #333;
       background-color: #f9f9f9;
     }
     
-    .amount-label {
+    .amount-section h2 {
+      margin: 0 0 8px 0;
       font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 10px;
     }
     
-    .amount-value {
-      font-size: 32px;
+    .amount {
+      font-size: 24px;
       font-weight: bold;
       color: #2e7d32;
-      margin: 10px 0;
     }
     
-    .section-title {
-      font-size: 16px;
-      font-weight: bold;
-      margin: 30px 0 15px 0;
-      padding-bottom: 5px;
-      border-bottom: 2px solid #333;
+    .details-section {
+      margin: 15px 0;
+    }
+    
+    .details-section h3 {
+      font-size: 14px;
+      margin-bottom: 10px;
+      padding-bottom: 3px;
+      border-bottom: 1px solid #333;
     }
     
     .details-table {
       width: 100%;
       border-collapse: collapse;
-      margin: 20px 0;
+      margin-bottom: 10px;
+      font-family: 'Times New Roman', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho Pro', 'MS PMincho', serif;
+      page-break-inside: auto;
     }
+    
+    .details-table thead {
+      /* ヘッダーの繰り返し表示を無効化 */
+    }
+    
+    @media print {
+      .details-table thead {
+        display: none !important;
+      }
+      .details-table thead:first-child {
+        display: table-header-group !important;
+      }
+    }
+    
+    .details-table tr {
+      page-break-inside: avoid;
+    }
+    
+    .details-table tbody {
+      page-break-inside: auto;
+    }
+    
+
     
     .details-table th,
     .details-table td {
+      padding: 6px;
+      text-align: left;
       border: 1px solid #333;
-      padding: 10px;
-      text-align: center;
-      font-size: 12px;
+      font-size: 9px;
+      vertical-align: middle;
     }
     
     .details-table th {
-      background-color: #f0f0f0;
+      background-color: #f5f5f5;
       font-weight: bold;
     }
     
-    .details-table .item-name {
-      text-align: left;
-      width: 300px;
-    }
-    
-    .details-table .quantity {
-      width: 80px;
-    }
-    
-    .details-table .price {
-      width: 100px;
+    .details-table .number {
       text-align: right;
     }
     
-    .total-row {
-      background-color: #f9f9f9;
-      font-weight: bold;
+    .footer {
+      margin-top: 15px;
+      font-size: 9px;
+      color: #666;
+      page-break-inside: avoid;
     }
     
-    .bank-info {
-      margin: 30px 0;
+    .no-break {
+      page-break-inside: avoid;
     }
     
-    .bank-info table {
-      width: 100%;
-      border-collapse: collapse;
+    .page-break-before {
+      page-break-before: always;
     }
     
-    .bank-info td {
+    .page-break-after {
+      page-break-after: always;
+    }
+    
+    .company-info {
+      margin-top: 15px;
       padding: 10px;
-      border: 1px solid #333;
-      font-size: 12px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
     }
     
-    .bank-info td:first-child {
-      background-color: #f0f0f0;
-      font-weight: bold;
-      width: 120px;
-      text-align: center;
-    }
-    
-    .page-number {
-      text-align: center;
-      margin-top: 30px;
+    .company-info h4 {
+      margin: 0 0 8px 0;
       font-size: 12px;
     }
   </style>
@@ -204,136 +201,127 @@
     bank_account_name = local_assigns[:bank_account_name] || company_name
   %>
 
-  <!-- 請求書タイトル -->
   <div class="header">
     <h1>請求書</h1>
+    <p>Invoice</p>
   </div>
 
-  <!-- ヘッダー情報 -->
   <div class="invoice-info">
     <div class="left">
-      <div class="customer-name"><%= buyer&.name || buyer&.email || purchase_invoice&.buyer&.name || purchase_invoice&.buyer&.email || "お客様" %> 様</div>
-      <div class="invoice-details">
-        <p><strong>請求書番号:</strong> <%= purchase_invoice&.invoice_number %></p>
-        <p><strong>発行日:</strong> <%= purchase_invoice&.invoice_date&.strftime('%Y年%m月%d日') %></p>
-        <p><strong>支払期限:</strong> <%= purchase_invoice&.due_date&.strftime('%Y年%m月%d日') %></p>
-        <p><strong>登録番号:</strong> <%= registration_number %></p>
-      </div>
+      <h3>請求先</h3>
+      <table>
+        <tr>
+          <th>宛先</th>
+          <td><%= buyer&.name || buyer&.email || "お客様" %> 様</td>
+        </tr>
+        <% if buyer&.address.present? %>
+        <tr>
+          <th>住所</th>
+          <td><%= buyer.address %></td>
+        </tr>
+        <% end %>
+        <% if buyer&.tel.present? %>
+        <tr>
+          <th>電話</th>
+          <td><%= buyer.tel %></td>
+        </tr>
+        <% end %>
+      </table>
     </div>
     
     <div class="right">
-      <div class="company-info">
-        <h3><%= company_name %></h3>
-        <p><%= company_address %></p>
-        <p><%= company_tel %></p>
-        <p><%= company_email %></p>
-        <p><%= company_footer %></p>
-      </div>
+      <h3>請求書情報</h3>
+      <table>
+        <tr>
+          <th>請求書番号</th>
+          <td><%= purchase_invoice&.invoice_number || "PUR-#{purchase&.id&.to_s&.rjust(6, '0')}" %></td>
+        </tr>
+        <tr>
+          <th>発行日</th>
+          <td><%= purchase_invoice&.invoice_date&.strftime("%Y年%m月%d日") || Date.current.strftime("%Y年%m月%d日") %></td>
+        </tr>
+        <tr>
+          <th>支払期限</th>
+          <td><%= purchase_invoice&.due_date&.strftime("%Y年%m月%d日") || (Date.current + 30.days).strftime("%Y年%m月%d日") %></td>
+        </tr>
+        <tr>
+          <th>登録番号</th>
+          <td><%= registration_number %></td>
+        </tr>
+      </table>
     </div>
   </div>
 
-  <!-- 件名 -->
-  <div class="subject">
-    <span class="subject-label"><strong>件名</strong></span>
-    <span>幹細胞商品代</span>
-  </div>
-
-  <!-- 請求金額 -->
   <div class="amount-section">
-    <div class="amount-label">請求金額</div>
-    <div class="amount-value">¥<%= number_with_delimiter(total_with_tax) %></div>
+    <h2>ご請求金額</h2>
+    <div class="amount">¥<%= number_with_delimiter(total_with_tax) %>-</div>
+    <p>（商品代金）</p>
   </div>
 
-  <!-- 商品明細 -->
-  <div class="section-title">商品明細</div>
-  <table class="details-table">
-    <thead>
-      <tr>
-        <th class="item-name">摘要</th>
-        <th class="quantity">数量</th>
-        <th class="price">単価</th>
-        <th class="price">明細金額</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% purchase_items.each do |item| %>
-      <tr>
-        <td class="item-name"><%= item.product&.name || item.product&.title || "商品名不明" %></td>
-        <td class="quantity"><%= item.quantity %></td>
-        <td class="price">¥<%= number_with_delimiter(item.unit_price) %></td>
-        <td class="price">¥<%= number_with_delimiter(item.unit_price * item.quantity) %></td>
-      </tr>
-      <% end %>
-      
-      <!-- 空行を追加（最大10行まで） -->
-      <% empty_rows = [10 - purchase_items.count, 0].max %>
-      <% empty_rows.times do %>
-      <tr>
-        <td class="item-name">&nbsp;</td>
-        <td class="quantity">&nbsp;</td>
-        <td class="price">&nbsp;</td>
-        <td class="price">&nbsp;</td>
-      </tr>
-      <% end %>
-      
-      <tr class="total-row">
-        <td colspan="3"><strong>小計（税抜）</strong></td>
-        <td class="price"><strong>¥<%= number_with_delimiter(subtotal) %></strong></td>
-      </tr>
-      <tr class="total-row">
-        <td colspan="3"><strong>消費税（10%）</strong></td>
-        <td class="price"><strong>¥<%= number_with_delimiter(tax) %></strong></td>
-      </tr>
-      <tr class="total-row">
-        <td colspan="3"><strong>合計</strong></td>
-        <td class="price"><strong>¥<%= number_with_delimiter(total_with_tax) %></strong></td>
-      </tr>
-    </tbody>
-  </table>
-
-  <!-- 振込先情報 -->
-  <div class="bank-info">
-    <div class="section-title">お振込先</div>
-    <table>
-      <tr>
-        <td>銀行名</td>
-        <td><%= bank_name %></td>
-      </tr>
-      <tr>
-        <td>支店名</td>
-        <td><%= bank_branch %></td>
-      </tr>
-      <tr>
-        <td>支店番号</td>
-        <td><%= bank_branch_code %></td>
-      </tr>
-      <tr>
-        <td>口座種別</td>
-        <td><%= bank_account_type %></td>
-      </tr>
-      <tr>
-        <td>口座番号</td>
-        <td><%= bank_account_number %></td>
-      </tr>
-      <tr>
-        <td>口座名義</td>
-        <td><%= bank_account_name %></td>
-      </tr>
+  <% if purchase_items.any? %>
+  <div class="details-section">
+    <h3>商品明細</h3>
+    <table class="details-table">
+      <thead>
+        <tr>
+          <th>商品名</th>
+          <th class="number">数量</th>
+          <th class="number">単価</th>
+          <th class="number">金額</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% purchase_items.each do |item| %>
+        <tr>
+          <td><%= item.product&.name || item.product&.title || "商品名不明" %></td>
+          <td class="number"><%= item.quantity %></td>
+          <td class="number">¥<%= number_with_delimiter(item.unit_price) %></td>
+          <td class="number">¥<%= number_with_delimiter(item.unit_price * item.quantity) %></td>
+        </tr>
+        <% end %>
+        <!-- 合計行を tbody 内の最後の行として配置 -->
+        <tr style="background-color: #333; color: white; font-weight: bold; page-break-inside: avoid;">
+          <td colspan="3" style="text-align: center; background-color: #333; color: white;">小計（税抜）</td>
+          <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(subtotal) %></td>
+        </tr>
+        <tr style="background-color: #333; color: white; font-weight: bold; page-break-inside: avoid;">
+          <td colspan="3" style="text-align: center; background-color: #333; color: white;">消費税（10%）</td>
+          <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(tax) %></td>
+        </tr>
+        <tr style="background-color: #333; color: white; font-weight: bold; page-break-inside: avoid;">
+          <td colspan="3" style="text-align: center; background-color: #333; color: white;">合計</td>
+          <td class="number" style="background-color: #333; color: white;">¥<%= number_with_delimiter(total_with_tax) %></td>
+        </tr>
+      </tbody>
     </table>
   </div>
+  <% end %>
 
-  <!-- 備考 -->
-  <div class="bank-info">
-    <table>
-      <tr>
-        <td>備考</td>
-        <td>振込手数料はお客様負担にて、期日までのお振込をお願いいたします。</td>
-      </tr>
-    </table>
+  <div class="company-info no-break">
+    <h4>振込先情報</h4>
+    <p>
+      <strong>銀行名：</strong><%= bank_name %><br>
+      <strong>支店名：</strong><%= bank_branch %><br>
+      <% if bank_branch_code.present? %>
+      <strong>支店番号：</strong><%= bank_branch_code %><br>
+      <% end %>
+      <strong>口座種別：</strong><%= bank_account_type %><br>
+      <strong>口座番号：</strong><%= bank_account_number %><br>
+      <strong>口座名義：</strong><%= bank_account_name %>
+    </p>
   </div>
 
-  <!-- ページ番号 -->
-  <div class="page-number">1 / 1</div>
+  <div class="company-info no-break">
+    <h4>発行者情報</h4>
+    <p><strong><%= company_name %></strong></p>
+    <p><%= company_address %></p>
+    <p>TEL: <%= company_tel %></p>
+    <p><%= company_email %></p>
+  </div>
 
+  <div class="footer no-break">
+    <p>※ お振込手数料はお客様のご負担でお願いいたします。</p>
+    <p>※ ご不明な点がございましたら、上記連絡先までお問い合わせください。</p>
+  </div>
 </body>
 </html>

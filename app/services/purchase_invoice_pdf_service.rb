@@ -62,6 +62,7 @@ class PurchaseInvoicePdfService
       
       bank_name = invoice_base.bank_name.presence || "楽天銀行"
       bank_branch = invoice_base.bank_branch_name.presence || "第二営業支店"
+      bank_branch_code = invoice_base.bank_branch_code.presence || "252"
       bank_account_type = invoice_base.bank_account_type.presence || "普通預金"
       bank_account_number = invoice_base.bank_account_number.presence || "7747552"
       bank_account_name = invoice_base.bank_account_name.presence || company_name

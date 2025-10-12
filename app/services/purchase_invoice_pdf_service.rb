@@ -53,7 +53,8 @@ class PurchaseInvoicePdfService
     # 会社情報を直接設定
     if invoice_base
       company_name = invoice_base.company_name.presence || "株式会社アジアビジネストラスト"
-      company_address = "#{invoice_base.postal_code.presence || '〒104-0061'} #{invoice_base.address.presence || '東京都中央区銀座4丁目6-1 銀座医科ビル3階'} "
+      company_postal_code = invoice_base.postal_code.presence || "〒104-0061"
+      company_address = invoice_base.address.presence || "東京都中央区銀座4丁目6-1 銀座医科ビル3階"
       company_tel = invoice_base.tel.presence || "03-5904-8148"
       company_email = "Email: #{invoice_base.email.presence || 'abt1@asia-b-t.com'}"
       company_footer = "アジアビジネストラスト 事務局"
@@ -67,7 +68,8 @@ class PurchaseInvoicePdfService
       bank_account_name = invoice_base.bank_account_name.presence || company_name
     else
       company_name = "株式会社アジアビジネストラスト"
-      company_address = "〒104-0061 東京都中央区銀座4丁目6-1 銀座医科ビル3階"
+      company_postal_code = "〒104-0061"
+      company_address = "東京都中央区銀座4丁目6-1 銀座医科ビル3階"
       company_tel = "03-5904-8148"
       company_email = "abt1@asia-b-t.com"
       company_footer = "アジアビジネストラスト 事務局"
@@ -96,6 +98,7 @@ class PurchaseInvoicePdfService
         subtotal: subtotal,
         tax: tax,
         company_name: company_name,
+        company_postal_code: company_postal_code,
         company_address: company_address,
         company_tel: company_tel,
         company_email: company_email,

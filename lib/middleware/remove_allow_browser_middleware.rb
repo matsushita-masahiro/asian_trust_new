@@ -29,7 +29,7 @@ module Middleware
               )
               Rails.logger.debug("✅ Removed AllowBrowser filter from #{controller.name}")
             rescue => e
-              Rails.logger.warn("⚠️ Failed to remove AllowBrowser from #{controller.name}: #{e.class} #{e.message}")
+              # Rails.logger.warn("⚠️ Failed to remove AllowBrowser from #{controller.name}: #{e.class} #{e.message}")
             end
           end
         end

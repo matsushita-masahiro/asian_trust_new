@@ -52,22 +52,21 @@ class PurchaseInvoicePdfService
     Rails.logger.info "Subtotal: #{subtotal}"
     Rails.logger.info "Tax: #{tax}"
     
-    # インスタンス変数を設定してテンプレートで使用できるようにする
-    controller.instance_variable_set(:@purchase_invoice, @purchase_invoice)
-    controller.instance_variable_set(:@purchase, @purchase)
-    controller.instance_variable_set(:@user, @purchase.user)
-    controller.instance_variable_set(:@buyer, @purchase.buyer)
-    controller.instance_variable_set(:@invoice_base, invoice_base)
-    controller.instance_variable_set(:@purchase_items, purchase_items)
-    controller.instance_variable_set(:@total_with_tax, total_with_tax)
-    controller.instance_variable_set(:@subtotal, subtotal)
-    controller.instance_variable_set(:@tax, tax)
-    
-    Rails.logger.info "Instance variables set successfully"
-    
+    # localsを使用してテンプレートに変数を渡す
     html_content = controller.render_to_string(
       template: 'order_mailer/invoice_pdf',
       layout: 'pdf',
+      locals: {
+        purchase_invoice: @purchase_invoice,
+        purchase: @purchase,
+        user: @purchase.user,
+        buyer: @purchase.buyer,
+        invoice_base: invoice_base,
+        purchase_items: purchase_items,
+        total_with_tax: total_with_tax,
+        subtotal: subtotal,
+        tax: tax
+      },
       formats: [:html]
     )
     

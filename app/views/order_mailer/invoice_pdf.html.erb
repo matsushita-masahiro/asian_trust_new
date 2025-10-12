@@ -1,30 +1,32 @@
 <%
-  # デバッグ情報をログ出力
-  Rails.logger.info "=== Invoice PDF Template Debug ==="
-  Rails.logger.info "@purchase_invoice present: #{@purchase_invoice.present?}"
-  Rails.logger.info "@buyer present: #{@buyer.present?}"
-  Rails.logger.info "@invoice_base present: #{@invoice_base.present?}"
-  Rails.logger.info "@purchase_items count: #{@purchase_items&.count || 0}"
-  Rails.logger.info "@total_with_tax: #{@total_with_tax}"
+  # ローカル変数が渡されているかチェック
+  purchase_invoice = local_assigns[:purchase_invoice] if local_assigns.key?(:purchase_invoice)
+  purchase = local_assigns[:purchase] if local_assigns.key?(:purchase)
+  buyer = local_assigns[:buyer] if local_assigns.key?(:buyer)
+  invoice_base = local_assigns[:invoice_base] if local_assigns.key?(:invoice_base)
+  purchase_items = local_assigns[:purchase_items] || []
+  total_with_tax = local_assigns[:total_with_tax] || 0
+  subtotal = local_assigns[:subtotal] || 0
+  tax = local_assigns[:tax] || 0
   
   # 会社情報をDBから取得（フォールバック値付き）
-  if @invoice_base
-    company_name = @invoice_base.company_name.presence || "株式会社アジアビジネストラスト"
-    company_department = @invoice_base.department.presence || "アジアビジネストラスト事業部"
-    company_address = @invoice_base.address.presence || "〒104-0061 東京都中央区銀座4丁目6-1"
-    company_building = @invoice_base.building.presence || "銀座医科ビル3階"
+  if invoice_base
+    company_name = invoice_base.company_name.presence || "株式会社アジアビジネストラスト"
+    company_department = invoice_base.department.presence || "アジアビジネストラスト事業部"
+    company_address = invoice_base.address.presence || "〒104-0061 東京都中央区銀座4丁目6-1"
+    company_building = invoice_base.building.presence || "銀座医科ビル3階"
     company_tel = "TEL:03-5904-8148"  # DBに項目がないため固定値
-    company_email = "Email: #{@invoice_base.email.presence || 'abt1@asia-b-t.com'}"
+    company_email = "Email: #{invoice_base.email.presence || 'abt1@asia-b-t.com'}"
     company_footer = "アジアビジネストラスト 事務局"  # 固定値
     registration_number = "T4210001009156"  # 固定値
     
     # 銀行情報をDBから取得
-    bank_name = @invoice_base.bank_name.presence || "楽天銀行"
-    bank_branch = @invoice_base.bank_branch_name.presence || "第二営業支店"
+    bank_name = invoice_base.bank_name.presence || "楽天銀行"
+    bank_branch = invoice_base.bank_branch_name.presence || "第二営業支店"
     bank_branch_code = "252"  # DBに項目がないため固定値
-    bank_account_type = @invoice_base.bank_account_type.presence || "普通預金"
-    bank_account_number = @invoice_base.bank_account_number.presence || "7747552"
-    bank_account_name = @invoice_base.bank_account_name.presence || company_name
+    bank_account_type = invoice_base.bank_account_type.presence || "普通預金"
+    bank_account_number = invoice_base.bank_account_number.presence || "7747552"
+    bank_account_name = invoice_base.bank_account_name.presence || company_name
   else
     # DBに情報がない場合のデフォルト値
     company_name = "株式会社アジアビジネストラスト"
@@ -44,10 +46,7 @@
     bank_account_name = company_name
   end
   
-  # 税計算（外税）
-  total_with_tax = @total_with_tax
-  subtotal = @subtotal
-  tax = @tax
+  # 税計算は既にローカル変数として設定済み
 %>
 
 <!DOCTYPE html>
@@ -260,10 +259,10 @@
   <!-- ヘッダー情報 -->
   <div class="header">
     <div class="invoice-info">
-      <div class="customer-name"><%= @buyer&.name || @purchase_invoice.buyer&.name || "お客様" %> 様</div>
-      <p><strong>請求書番号:</strong> <%= @purchase_invoice.invoice_number %></p>
-      <p><strong>発行日:</strong> <%= @purchase_invoice.invoice_date.strftime('%Y年%m月%d日') %></p>
-      <p><strong>支払期限:</strong> <%= @purchase_invoice.due_date.strftime('%Y年%m月%d日') %></p>
+      <div class="customer-name"><%= buyer&.name || purchase_invoice&.buyer&.name || "お客様" %> 様</div>
+      <p><strong>請求書番号:</strong> <%= purchase_invoice&.invoice_number %></p>
+      <p><strong>発行日:</strong> <%= purchase_invoice&.invoice_date&.strftime('%Y年%m月%d日') %></p>
+      <p><strong>支払期限:</strong> <%= purchase_invoice&.due_date&.strftime('%Y年%m月%d日') %></p>
       <p><strong>登録番号:</strong> <%= registration_number %></p>
     </div>
     
@@ -302,7 +301,7 @@
       </tr>
     </thead>
     <tbody>
-      <% @purchase_items.each do |item| %>
+      <% purchase_items.each do |item| %>
       <tr>
         <td class="item-name"><%= item.product.name %></td>
         <td class="quantity"><%= item.quantity %></td>
@@ -312,7 +311,7 @@
       <% end %>
       
       <!-- 空行を追加（最大10行まで） -->
-      <% empty_rows = [10 - @purchase_items.count, 0].max %>
+      <% empty_rows = [10 - purchase_items.count, 0].max %>
       <% empty_rows.times do %>
       <tr>
         <td class="item-name">&nbsp;</td>

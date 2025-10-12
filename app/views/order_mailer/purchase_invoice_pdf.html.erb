@@ -29,7 +29,7 @@
     
     .title {
       text-align: center;
-      font-size: 25px;
+      font-size: 20px;
       font-weight: 600;
     }
     
@@ -343,9 +343,9 @@
           <td colspan="3" style="text-align: center;">消費税（10%）</td>
           <td class="number">¥<%= number_with_delimiter(tax) %></td>
         </tr>
-        <tr style="background-color: #a9a9a9; color: white; font-weight: bold; page-break-inside: avoid;">
-          <td colspan="3" style="text-align: center; background-color: #a9a9a9; color: white;">合計</td>
-          <td class="number" style="background-color: #a9a9a9; color: white;">¥<%= number_with_delimiter(total_with_tax) %></td>
+        <tr style="background-color: #d3d3d3; color: white; font-weight: bold; page-break-inside: avoid;">
+          <td colspan="3" style="text-align: center; background-color: #d3d3d3; color: white;">合計</td>
+          <td class="number" style="background-color: #d3d3d3; color: white;">¥<%= number_with_delimiter(total_with_tax) %></td>
         </tr>
       </tbody>
     </table>
@@ -366,11 +366,8 @@
     </p>
   </div>
 
-
-
   <div class="footer no-break">
     <p>※ お振込手数料はお客様のご負担でお願いいたします。</p>
-    <p>※ ご不明な点がございましたら、上記連絡先までお問い合わせください。</p>
   </div>
 </body>
 </html>

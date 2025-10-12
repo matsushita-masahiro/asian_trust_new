@@ -46,9 +46,9 @@ class PurchaseInvoicePdfService
     end
     
     # 税計算（外税）
-    subtotal = @purchase_invoice.total_amount  # 税抜き価格
-    tax = (subtotal * 0.1).to_i  # 消費税10%
-    total_with_tax = subtotal + tax  # 税込み合計
+    subtotal = @purchase_invoice.total_amount.to_i  # 税抜き価格（整数）
+    tax = (subtotal * 0.1).to_i  # 消費税10%（整数）
+    total_with_tax = (subtotal + tax).to_i  # 税込み合計（整数）
     
     # 会社情報を直接設定
     if invoice_base

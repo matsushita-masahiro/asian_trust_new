@@ -27,19 +27,8 @@
       clear: both;
     }
     
-    .header h1 {
-      font-size: 28px;
-      font-weight: bold;
-      margin: 0 auto !important;
-      padding: 15px 0;
-      border-bottom: 3px solid #333;
-      letter-spacing: 2px;
-      text-align: center !important;
-      width: 100% !important;
-      display: block;
-      position: relative;
-      left: 0 !important;
-      right: 0 !important;
+    .title {
+      text-align: center;
     }
     
     .header p {
@@ -249,10 +238,8 @@
     bank_account_name = local_assigns[:bank_account_name] || company_name
   %>
 
-  <div class="header" style="text-align: center !important; width: 100%; margin: 0 auto;">
-    <h1 style="text-align: center !important; margin: 0 auto !important; display: block;">請求書</h1>
-    <p style="text-align: center !important; margin: 5px auto 0 auto;">Invoice</p>
-  </div>
+  <div class="title">請求書</div>
+  <p>Invoice</p>
 
   <div class="invoice-info">
     <div class="left">

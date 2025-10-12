@@ -1,8 +1,7 @@
 class Purchase < ApplicationRecord
   # 🔗 関連
-  belongs_to :user      # 購入を仲介した代理店
-  belongs_to :buyer, class_name: 'User'  # 購入者
-  # belongs_to :customer は削除済み（buyer_idに統合）
+  belongs_to :user      # 購入者
+  # belongs_to :customer は削除済み
   has_many :purchase_items, dependent: :destroy
   has_many :products, through: :purchase_items
   has_one :purchase_invoice, dependent: :destroy
@@ -72,10 +71,7 @@ class Purchase < ApplicationRecord
   }
   
   # 特定ユーザーの購入履歴
-  scope :bought_by, ->(user) { where(buyer_id: user.id) }
-  
-  # 特定ユーザーが仲介した販売履歴（自分の購入は除外）
-  scope :sold_by, ->(user) { where(user_id: user.id).where.not(buyer_id: user.id) }
+  scope :bought_by, ->(user) { where(user_id: user.id) }
 
 
 

@@ -55,7 +55,6 @@ class Admin::PurchasesController < Admin::BaseController
     # 購入情報を作成
     @purchase = Purchase.new(
       user_id: params[:purchase][:user_id],
-      buyer_id: params[:purchase][:buyer_id],
       purchased_at: params[:purchase][:purchased_at]
     )
     
@@ -109,7 +108,7 @@ class Admin::PurchasesController < Admin::BaseController
   end
 
   def create_purchase_params
-    params.require(:purchase).permit(:user_id, :buyer_id, :purchased_at, :product_id, :quantity, :unit_price)
+    params.require(:purchase).permit(:user_id, :purchased_at, :product_id, :quantity, :unit_price)
   end
 
   def generate_month_options

@@ -46,8 +46,7 @@ class OrdersController < ApplicationController
     ActiveRecord::Base.transaction do
       # 購入レコードを作成
       purchase = Purchase.create!(
-        user: current_user,        # 販売者（自分）
-        buyer: current_user,       # 購入者（自分）
+        user: current_user,        # 購入者
         purchased_at: Time.current,
         payment_type: params[:payment_type] || 'cash',  # デフォルトは銀行振込
         status: 'built'  # 初期ステータス

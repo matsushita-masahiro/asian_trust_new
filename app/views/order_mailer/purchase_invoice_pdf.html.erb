@@ -214,16 +214,10 @@
           <th>宛先</th>
           <td><%= buyer&.name || buyer&.email || "お客様" %> 様</td>
         </tr>
-        <% if buyer&.address.present? %>
-        <tr>
-          <th>住所</th>
-          <td><%= buyer.address %></td>
-        </tr>
-        <% end %>
-        <% if buyer&.tel.present? %>
+        <% if buyer&.phone.present? %>
         <tr>
           <th>電話</th>
-          <td><%= buyer.tel %></td>
+          <td><%= buyer.phone %></td>
         </tr>
         <% end %>
       </table>

@@ -40,7 +40,7 @@ class PurchaseInvoicePdfService
     # 関連データを明示的に読み込み
     @purchase.reload
     purchase_items = @purchase.purchase_items.includes(:product)
-    buyer = User.find(@purchase.buyer_id) if @purchase.buyer_id
+    buyer = @purchase.user  # 購入者
 
     if purchase_items.any?
       first_item = purchase_items.first

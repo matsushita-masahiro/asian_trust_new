@@ -141,7 +141,6 @@ class PaymentsController < ApplicationController
         # Purchaseレコードを作成
         purchase = Purchase.create!(
           user: current_user,
-          buyer: current_user,
           purchased_at: Time.current,
           payment_type: payment_type
         )

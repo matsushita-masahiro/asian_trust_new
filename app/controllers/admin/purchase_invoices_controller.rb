@@ -4,7 +4,7 @@ class Admin::PurchaseInvoicesController < ApplicationController
   before_action :set_purchase_invoice, only: [:show, :edit, :update, :send_invoice, :confirm_payment, :send_receipt]
 
   def index
-    @purchase_invoices = PurchaseInvoice.includes(:purchase => [:buyer, :user, :purchase_items => :product])
+    @purchase_invoices = PurchaseInvoice.includes(:purchase => [:user, :purchase_items => :product])
                                        .order(created_at: :desc)
     
     # ステータスフィルター

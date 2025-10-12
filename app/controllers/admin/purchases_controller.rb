@@ -6,7 +6,7 @@ class Admin::PurchasesController < Admin::BaseController
     @selected_month = params[:month] || Time.current.strftime('%Y-%m')
     
     # 月別の購入履歴を取得
-    @purchases = Purchase.includes(:user, :buyer, purchase_items: :product)
+    @purchases = Purchase.includes(:user, purchase_items: :product)
                         .in_month_tokyo(@selected_month)
                         .order(purchased_at: :desc)
     

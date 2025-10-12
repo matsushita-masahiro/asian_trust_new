@@ -19,41 +19,65 @@
     }
     
     .header {
-      text-align: center;
+      text-align: center !important;
       margin-bottom: 30px;
       page-break-after: avoid;
+      width: 100%;
     }
     
     .header h1 {
       font-size: 28px;
       font-weight: bold;
-      margin: 0;
+      margin: 0 auto;
       padding: 15px 0;
       border-bottom: 3px solid #333;
       letter-spacing: 2px;
+      text-align: center !important;
+      width: 100%;
     }
     
     .invoice-info {
       display: flex;
       justify-content: space-between;
       margin-bottom: 15px;
+      width: 100%;
+      clear: both;
     }
     
-    .invoice-info .left,
+    .invoice-info:after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+    
+    .invoice-info .left {
+      width: 48%;
+      float: left;
+    }
+    
     .invoice-info .right {
       width: 48%;
+      float: right;
+      text-align: right;
     }
     
     .company-header {
-      text-align: right;
+      text-align: right !important;
       margin-bottom: 20px;
       padding-bottom: 15px;
       border-bottom: 1px solid #ddd;
+      width: 100%;
     }
     
     .company-header h3 {
       font-weight: bold;
       color: #333;
+      text-align: right !important;
+      margin: 5px 0;
+    }
+    
+    .company-header div {
+      text-align: right !important;
     }
     
     .invoice-info table {

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>請求書</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+    
+    body {
+      font-family: 'Times New Roman', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho Pro', 'MS PMincho', serif;
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+      color: #000;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      page-break-after: avoid;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      font-weight: bold;
+      margin: 0;
+      padding: 15px 0;
+      border-bottom: 3px solid #333;
+      letter-spacing: 2px;
+    }
+    
+    .invoice-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    
+    .invoice-info .left {
+      width: 48%;
+    }
+    
+    .invoice-info .right {
+      width: 48%;
+      text-align: right;
+    }
+    
+    .customer-name {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    
+    .invoice-details p {
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .company-info {
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    
+    .company-info h3 {
+      font-size: 14px;
+      font-weight: bold;
+      margin: 0 0 10px 0;
+    }
+    
+    .subject {
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    
+    .subject-label {
+      font-weight: bold;
+      display: inline-block;
+      width: 60px;
+    }
+    
+    .amount-section {
+      text-align: center;
+      margin: 30px 0;
+      padding: 20px;
+      border: 2px solid #333;
+      background-color: #f9f9f9;
+    }
+    
+    .amount-label {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .amount-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #2e7d32;
+      margin: 10px 0;
+    }
+    
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 30px 0 15px 0;
+      padding-bottom: 5px;
+      border-bottom: 2px solid #333;
+    }
+    
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    
+    .details-table th,
+    .details-table td {
+      border: 1px solid #333;
+      padding: 10px;
+      text-align: center;
+      font-size: 12px;
+    }
+    
+    .details-table th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+    
+    .details-table .item-name {
+      text-align: left;
+      width: 300px;
+    }
+    
+    .details-table .quantity {
+      width: 80px;
+    }
+    
+    .details-table .price {
+      width: 100px;
+      text-align: right;
+    }
+    
+    .total-row {
+      background-color: #f9f9f9;
+      font-weight: bold;
+    }
+    
+    .bank-info {
+      margin: 30px 0;
+    }
+    
+    .bank-info table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .bank-info td {
+      padding: 10px;
+      border: 1px solid #333;
+      font-size: 12px;
+    }
+    
+    .bank-info td:first-child {
+      background-color: #f0f0f0;
+      font-weight: bold;
+      width: 120px;
+      text-align: center;
+    }
+    
+    .page-number {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <%
+    # ローカル変数が渡されているかチェック
+    purchase_invoice = local_assigns[:purchase_invoice] if local_assigns.key?(:purchase_invoice)
+    purchase = local_assigns[:purchase] if local_assigns.key?(:purchase)
+    buyer = local_assigns[:buyer] if local_assigns.key?(:buyer)
+    purchase_items = local_assigns[:purchase_items] || []
+    total_with_tax = local_assigns[:total_with_tax] || 0
+    subtotal = local_assigns[:subtotal] || 0
+    tax = local_assigns[:tax] || 0
+    
+    # 会社情報と銀行情報を直接ローカル変数から取得
+    company_name = local_assigns[:company_name] || "株式会社アジアビジネストラスト"
+    company_address = local_assigns[:company_address] || "〒104-0061 東京都中央区銀座4丁目6-1 銀座医科ビル3階"
+    company_tel = local_assigns[:company_tel] || "TEL:03-5904-8148"
+    company_email = local_assigns[:company_email] || "Email: abt1@asia-b-t.com"
+    company_footer = local_assigns[:company_footer] || "アジアビジネストラスト 事務局"
+    registration_number = local_assigns[:registration_number] || "T4210001009156"
+    
+    bank_name = local_assigns[:bank_name] || "楽天銀行"
+    bank_branch = local_assigns[:bank_branch] || "第二営業支店"
+    bank_branch_code = local_assigns[:bank_branch_code] || "252"
+    bank_account_type = local_assigns[:bank_account_type] || "普通預金"
+    bank_account_number = local_assigns[:bank_account_number] || "7747552"
+    bank_account_name = local_assigns[:bank_account_name] || company_name
+  %>
+
+  <!-- 請求書タイトル -->
+  <div class="header">
+    <h1>請求書</h1>
+  </div>
+
+  <!-- ヘッダー情報 -->
+  <div class="invoice-info">
+    <div class="left">
+      <div class="customer-name"><%= buyer&.name || buyer&.email || purchase_invoice&.buyer&.name || purchase_invoice&.buyer&.email || "お客様" %> 様</div>
+      <div class="invoice-details">
+        <p><strong>請求書番号:</strong> <%= purchase_invoice&.invoice_number %></p>
+        <p><strong>発行日:</strong> <%= purchase_invoice&.invoice_date&.strftime('%Y年%m月%d日') %></p>
+        <p><strong>支払期限:</strong> <%= purchase_invoice&.due_date&.strftime('%Y年%m月%d日') %></p>
+        <p><strong>登録番号:</strong> <%= registration_number %></p>
+      </div>
+    </div>
+    
+    <div class="right">
+      <div class="company-info">
+        <h3><%= company_name %></h3>
+        <p><%= company_address %></p>
+        <p><%= company_tel %></p>
+        <p><%= company_email %></p>
+        <p><%= company_footer %></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 件名 -->
+  <div class="subject">
+    <span class="subject-label"><strong>件名</strong></span>
+    <span>幹細胞商品代</span>
+  </div>
+
+  <!-- 請求金額 -->
+  <div class="amount-section">
+    <div class="amount-label">請求金額</div>
+    <div class="amount-value">¥<%= number_with_delimiter(total_with_tax) %></div>
+  </div>
+
+  <!-- 商品明細 -->
+  <div class="section-title">商品明細</div>
+  <table class="details-table">
+    <thead>
+      <tr>
+        <th class="item-name">摘要</th>
+        <th class="quantity">数量</th>
+        <th class="price">単価</th>
+        <th class="price">明細金額</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% purchase_items.each do |item| %>
+      <tr>
+        <td class="item-name"><%= item.product&.name || item.product&.title || "商品名不明" %></td>
+        <td class="quantity"><%= item.quantity %></td>
+        <td class="price">¥<%= number_with_delimiter(item.unit_price) %></td>
+        <td class="price">¥<%= number_with_delimiter(item.unit_price * item.quantity) %></td>
+      </tr>
+      <% end %>
+      
+      <!-- 空行を追加（最大10行まで） -->
+      <% empty_rows = [10 - purchase_items.count, 0].max %>
+      <% empty_rows.times do %>
+      <tr>
+        <td class="item-name">&nbsp;</td>
+        <td class="quantity">&nbsp;</td>
+        <td class="price">&nbsp;</td>
+        <td class="price">&nbsp;</td>
+      </tr>
+      <% end %>
+      
+      <tr class="total-row">
+        <td colspan="3"><strong>小計（税抜）</strong></td>
+        <td class="price"><strong>¥<%= number_with_delimiter(subtotal) %></strong></td>
+      </tr>
+      <tr class="total-row">
+        <td colspan="3"><strong>消費税（10%）</strong></td>
+        <td class="price"><strong>¥<%= number_with_delimiter(tax) %></strong></td>
+      </tr>
+      <tr class="total-row">
+        <td colspan="3"><strong>合計</strong></td>
+        <td class="price"><strong>¥<%= number_with_delimiter(total_with_tax) %></strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 振込先情報 -->
+  <div class="bank-info">
+    <div class="section-title">お振込先</div>
+    <table>
+      <tr>
+        <td>銀行名</td>
+        <td><%= bank_name %></td>
+      </tr>
+      <tr>
+        <td>支店名</td>
+        <td><%= bank_branch %></td>
+      </tr>
+      <tr>
+        <td>支店番号</td>
+        <td><%= bank_branch_code %></td>
+      </tr>
+      <tr>
+        <td>口座種別</td>
+        <td><%= bank_account_type %></td>
+      </tr>
+      <tr>
+        <td>口座番号</td>
+        <td><%= bank_account_number %></td>
+      </tr>
+      <tr>
+        <td>口座名義</td>
+        <td><%= bank_account_name %></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 備考 -->
+  <div class="bank-info">
+    <table>
+      <tr>
+        <td>備考</td>
+        <td>振込手数料はお客様負担にて、期日までのお振込をお願いいたします。</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ページ番号 -->
+  <div class="page-number">1 / 1</div>
+
+</body>
+</html>

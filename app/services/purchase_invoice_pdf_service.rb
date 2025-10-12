@@ -115,7 +115,7 @@ class PurchaseInvoicePdfService
     
     # 実際のテンプレートを使用してPDFを生成
     html_content = controller.render_to_string(
-      template: 'order_mailer/invoice_pdf',
+      template: 'order_mailer/purchase_invoice_pdf',
       layout: false,
       locals: {
         purchase_invoice: @purchase_invoice,

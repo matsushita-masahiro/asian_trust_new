@@ -16,7 +16,7 @@ class User < ApplicationRecord
   has_one :received_invitation, class_name: 'ReferralInvitation', foreign_key: 'invited_user_id'
   # invoice関連
   has_many :invoices
-  has_one :invoice_recipient
+  has_one  :invoice_recipient
   has_one  :invoice_base
 
   # 会員レベル

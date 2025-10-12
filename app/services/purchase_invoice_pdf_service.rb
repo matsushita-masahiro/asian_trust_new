@@ -40,7 +40,6 @@ class PurchaseInvoicePdfService
     # 関連データを明示的に読み込み
     @purchase.reload
     purchase_items = @purchase.purchase_items.includes(:product)
-    buyer = @purchase.user  # 購入者
 
     if purchase_items.any?
       first_item = purchase_items.first
@@ -90,7 +89,6 @@ class PurchaseInvoicePdfService
         purchase_invoice: @purchase_invoice,
         purchase: @purchase,
         user: @purchase.user,
-        buyer: buyer,
         invoice_base: invoice_base,
         company_info: company_info,
         purchase_items: purchase_items,

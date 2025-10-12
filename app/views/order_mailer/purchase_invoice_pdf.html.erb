@@ -179,7 +179,7 @@
     # ローカル変数が渡されているかチェック
     purchase_invoice = local_assigns[:purchase_invoice] if local_assigns.key?(:purchase_invoice)
     purchase = local_assigns[:purchase] if local_assigns.key?(:purchase)
-    buyer = local_assigns[:buyer] if local_assigns.key?(:buyer)
+    user = local_assigns[:user] if local_assigns.key?(:user)
     purchase_items = local_assigns[:purchase_items] || []
     total_with_tax = local_assigns[:total_with_tax] || 0
     subtotal = local_assigns[:subtotal] || 0
@@ -212,12 +212,12 @@
       <table>
         <tr>
           <th>宛先</th>
-          <td><%= buyer&.name || buyer&.email || "お客様" %> 様</td>
+          <td><%= user&.invoice_recipient&.name || user&.invoice_recipient&.email || "お客様" %> 様</td>
         </tr>
-        <% if buyer&.phone.present? %>
+        <% if user&.invoice_recipient&.phone.present? %>
         <tr>
           <th>電話</th>
-          <td><%= buyer.phone %></td>
+          <td><%= user&.invoice_recipient&.phone %></td>
         </tr>
         <% end %>
       </table>

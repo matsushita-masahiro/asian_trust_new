@@ -275,8 +275,7 @@ else
     
     months.each do |month_data|
       purchase = Purchase.create!(
-        user_id: special_agent_1.id,        # 仲介者（自分）
-        buyer_id: special_agent_1.id,       # 購入者（自分）
+        user_id: special_agent_1.id,        # 購入者
         purchased_at: "#{month_data[:month]}-#{format('%02d', month_data[:day])} 10:00:00"
       )
       
@@ -295,8 +294,7 @@ else
     agents.first(3).each_with_index do |agent, i|
       months.each_with_index do |month_data, month_idx|
         purchase = Purchase.create!(
-          user_id: agent.id,        # 仲介者（自分）
-          buyer_id: agent.id,       # 購入者（自分）
+          user_id: agent.id,        # 購入者
           purchased_at: "#{month_data[:month]}-#{format('%02d', 10 + i + month_idx)} 14:00:00"
         )
         
@@ -316,8 +314,7 @@ else
     advisors.first(2).each_with_index do |advisor, i|
       months.each_with_index do |month_data, month_idx|
         purchase = Purchase.create!(
-          user_id: advisor.id,        # 仲介者（自分）
-          buyer_id: advisor.id,       # 購入者（自分）
+          user_id: advisor.id,        # 購入者
           purchased_at: "#{month_data[:month]}-#{format('%02d', 20 + i + month_idx)} 16:00:00"
         )
         

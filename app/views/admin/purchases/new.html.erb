@@ -46,9 +46,9 @@
               </div>
               <div class="col-md-6">
                 <div class="mb-3">
-                  <%= form.label :buyer_id, "購入者", class: "form-label" %>
-                  <%= form.select :buyer_id, 
-                      options_from_collection_for_select(@users, :id, :display_name, @purchase.buyer_id),
+                  <%= form.label :user_id, "購入者", class: "form-label" %>
+                  <%= form.select :user_id, 
+                      options_from_collection_for_select(@users, :id, :display_name, @purchase.user_id),
                       { prompt: "購入者を選択してください" },
                       { class: "form-select", required: true } %>
                   <div class="invalid-feedback">

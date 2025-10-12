@@ -23,8 +23,7 @@ class User < ApplicationRecord
   belongs_to :level
   
   # 購入関連のリレーション
-  has_many :mediated_purchases, class_name: 'Purchase', foreign_key: 'user_id'  # 仲介した購入
-  has_many :purchases, class_name: 'Purchase', foreign_key: 'buyer_id'  # 自分の購入
+  has_many :purchases, class_name: 'Purchase', foreign_key: 'user_id'  # 自分の購入
   
   # カート機能
   has_one :cart, dependent: :destroy
@@ -122,7 +121,7 @@ class User < ApplicationRecord
     own_monthly_sales_total(month_str) + all_descendants_monthly_sales_total(month_str)
   end
 
-  # 自分の購入合計（buyer_idが自分のもの）
+  # 自分の購入合計
   def own_purchase_total(month_str = nil)
     scope = purchases.joins(:purchase_items)
     
@@ -133,9 +132,10 @@ class User < ApplicationRecord
     scope.sum('purchase_items.unit_price * purchase_items.quantity')
   end
 
-  # 販売合計（user_idが自分で、buyer_idが自分以外のもの）
+  # 販売合計（現在のシステムでは使用しない - 自己購入のみ）
   def sales_total(month_str = nil)
-    scope = mediated_purchases.where.not(buyer_id: id).joins(:purchase_items)
+    # 現在のシステムでは販売者と購入者が同じなので、常に0を返す
+    return 0
     
     if month_str
       scope = scope.in_month_tokyo(month_str)

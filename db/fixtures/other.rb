@@ -56,7 +56,6 @@ class OtherFixture
       # 2025年8月の購入データ
       purchase = Purchase.create!(
         user_id: user.id,
-        buyer_id: user.id,
         purchased_at: "2025-08-#{8 + i} 10:#{30 + (i * 15)}:00"
       )
       
@@ -73,7 +72,6 @@ class OtherFixture
       # 2025年9月の購入データも追加
       purchase_sep = Purchase.create!(
         user_id: user.id,
-        buyer_id: user.id,
         purchased_at: "2025-09-#{10 + i} 14:#{20 + (i * 10)}:00"
       )
       
@@ -95,7 +93,6 @@ class OtherFixture
       # 2025年9月の購入データ
       purchase = Purchase.create!(
         user_id: user.id,
-        buyer_id: user.id,
         purchased_at: "2025-09-#{15 + i} 11:#{30 + (i * 5)}:00"
       )
       
@@ -117,7 +114,6 @@ class OtherFixture
       # 2025年9月の購入データ
       purchase = Purchase.create!(
         user_id: user.id,
-        buyer_id: user.id,
         purchased_at: "2025-09-#{20 + i} 13:#{45 + (i * 8)}:00"
       )
       
@@ -141,7 +137,6 @@ class OtherFixture
       
       purchase = Purchase.create!(
         user_id: user.id,
-        buyer_id: user.id,
         purchased_at: "2025-10-#{5 + (i / 3)} 16:#{10 + (i * 7)}:00"
       )
       

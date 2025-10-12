@@ -60,9 +60,9 @@ class Admin::PurchaseInvoicesController < ApplicationController
     begin
       Rails.logger.info "Starting purchase invoice send process for PurchaseInvoice #{@purchase_invoice.id}"
       
-      # TODO: PDF生成とS3アップロード（後で実装）
-      # pdf_service = PurchaseInvoicePdfService.new(@purchase_invoice)
-      # pdf_content = pdf_service.generate_and_upload_pdf
+      # PDF生成とS3アップロード
+      pdf_service = PurchaseInvoicePdfService.new(@purchase_invoice)
+      pdf_content = pdf_service.generate_and_upload_pdf
       
       # TODO: メール送信（PDFを添付）（後で実装）
       # PurchaseInvoiceMailer.send_invoice(@purchase_invoice, pdf_content).deliver_now

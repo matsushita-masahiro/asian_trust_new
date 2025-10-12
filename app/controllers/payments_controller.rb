@@ -24,6 +24,12 @@ class PaymentsController < ApplicationController
         @purchase_invoice = result[:purchase_invoice]
         @user = current_user
         
+        # PDF生成とS3アップロード
+        pdf_service = PurchaseInvoicePdfService.new(@purchase_invoice)
+        Rails.logger.info "Generating PDF for PurchaseInvoice #{@purchase_invoice.id}"
+        pdf_content = pdf_service.generate_and_upload_pdf
+        Rails.logger.info "PDF generated and uploaded successfully for PurchaseInvoice #{@purchase_invoice.id}"
+        
         # DBから会社情報を取得（invoice_basesテーブルから）
         # 管理者ユーザーのinvoice_baseを取得（admin=trueのユーザー）
         admin_user = User.find_by(admin: true)
@@ -81,31 +87,17 @@ class PaymentsController < ApplicationController
         Rails.logger.info "Recipient email: #{@recipient_email}"
         Rails.logger.info "Using invoice_recipient: #{invoice_recipient.present?}"
         
-        # 商品明細情報を取得
-        @purchase_items = @purchase.purchase_items.includes(:product)
-        
-        # 税計算（内税）
-        @total_with_tax = @purchase_invoice.total_amount
-        @subtotal = (@total_with_tax / 1.1).to_i
-        @tax = @total_with_tax - @subtotal
-        
-        Rails.logger.info "PDF info prepared for Purchase #{@purchase.id}"
-        Rails.logger.info "Total amount: #{@total_with_tax}, Subtotal: #{@subtotal}, Tax: #{@tax}"
-        Rails.logger.info "Items count: #{@purchase_items.count}"
-        
-        # メール送信（PDF情報を含む）
+        # メール送信（PDFを添付）
+        Rails.logger.info "Sending bank transfer email for Purchase #{@purchase.id}"
         OrderMailer.bank_transfer_instructions(
           @purchase, 
           @purchase_invoice,
           {
             company_info: @company_info,
             bank_info: @bank_info,
-            purchase_items: @purchase_items,
-            total_with_tax: @total_with_tax,
-            subtotal: @subtotal,
-            tax: @tax,
             recipient_email: @recipient_email
-          }
+          },
+          pdf_content
         ).deliver_now
         
         Rails.logger.info "Bank transfer email sent successfully for Purchase #{@purchase.id}"

@@ -1,7 +1,7 @@
 class OrderMailer < ApplicationMailer
   default from: ENV['ADMIN_EMAIL'] || 'noreply@example.com'
 
-  def bank_transfer_instructions(purchase, purchase_invoice = nil, pdf_info = {})
+  def bank_transfer_instructions(purchase, purchase_invoice = nil, pdf_info = {}, pdf_content = nil)
     @purchase = purchase
     @user = purchase.buyer
     @total_amount = purchase.total_price
@@ -11,9 +11,6 @@ class OrderMailer < ApplicationMailer
     # PDF表示用の追加情報を設定
     @company_info = pdf_info[:company_info] || {}
     @bank_info = pdf_info[:bank_info] || {}
-    @total_with_tax = pdf_info[:total_with_tax] || purchase.total_price
-    @subtotal = pdf_info[:subtotal] || ((@total_with_tax / 1.1).to_i)
-    @tax = pdf_info[:tax] || (@total_with_tax - @subtotal)
     
     # 送付先メールアドレスを設定
     @recipient_email = pdf_info[:recipient_email] || @user.email
@@ -21,31 +18,12 @@ class OrderMailer < ApplicationMailer
     Rails.logger.info "Preparing bank transfer email for purchase #{@purchase.id}"
     Rails.logger.info "User email: #{@user.email}"
     Rails.logger.info "Purchase invoice present: #{@purchase_invoice.present?}"
+    Rails.logger.info "PDF content provided: #{pdf_content.present?}"
     
-    # 購入請求書HTMLを添付
-    if @purchase_invoice
+    # 購入請求書PDFを添付
+    if @purchase_invoice && pdf_content
       begin
-        Rails.logger.info "Starting PDF invoice generation for invoice #{@purchase_invoice.invoice_number}"
-        
-        # HTMLを直接生成
-        html_content = generate_invoice_html(@purchase_invoice)
-        Rails.logger.info "HTML content generated, size: #{html_content.bytesize} bytes"
-        
-        # PDFを生成
-        pdf_content = WickedPdf.new.pdf_from_string(
-          html_content,
-          page_size: 'A4',
-          margin: {
-            top: 20,
-            bottom: 20,
-            left: 20,
-            right: 20
-          },
-          encoding: 'UTF-8',
-          print_media_type: true
-        )
-        
-        Rails.logger.info "PDF content generated, size: #{pdf_content.bytesize} bytes"
+        Rails.logger.info "Attaching PDF invoice for invoice #{@purchase_invoice.invoice_number}"
         
         # PDFファイルとして添付
         attachments["請求書_#{@purchase_invoice.invoice_number}.pdf"] = {
@@ -56,23 +34,11 @@ class OrderMailer < ApplicationMailer
         Rails.logger.info "PDF invoice attachment added successfully"
         
       rescue => e
-        Rails.logger.error "Failed to generate PDF invoice: #{e.message}"
+        Rails.logger.error "Failed to attach PDF invoice: #{e.message}"
         Rails.logger.error e.backtrace.join("\n")
-        
-        # PDFが生成できない場合はHTMLにフォールバック
-        begin
-          html_content = generate_invoice_html(@purchase_invoice)
-          attachments["請求書_#{@purchase_invoice.invoice_number}.html"] = {
-            mime_type: 'text/html; charset=UTF-8',
-            content: html_content
-          }
-          Rails.logger.info "Fallback to HTML attachment successful"
-        rescue => fallback_error
-          Rails.logger.error "Fallback HTML generation also failed: #{fallback_error.message}"
-        end
       end
     else
-      Rails.logger.warn "No purchase_invoice provided for email attachment"
+      Rails.logger.warn "No purchase_invoice or pdf_content provided for email attachment"
     end
     
     Rails.logger.info "Sending bank transfer email..."

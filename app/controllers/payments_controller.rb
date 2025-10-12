@@ -157,7 +157,8 @@ class PaymentsController < ApplicationController
         end
 
         # 購入請求書を自動生成
-        purchase_invoice = purchase.create_purchase_invoice!(
+        purchase_invoice = PurchaseInvoice.create!(
+          purchase: purchase,
           invoice_number: PurchaseInvoice.generate_invoice_number,
           invoice_date: Date.current,
           due_date: Date.current + 30.days,

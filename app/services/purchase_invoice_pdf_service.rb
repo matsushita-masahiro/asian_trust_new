@@ -65,19 +65,19 @@ class PurchaseInvoicePdfService
     subtotal = (total_with_tax / 1.1).to_i
     tax = total_with_tax - subtotal
     
+    # インスタンス変数を設定してテンプレートで使用できるようにする
+    controller.instance_variable_set(:@purchase_invoice, @purchase_invoice)
+    controller.instance_variable_set(:@purchase, @purchase)
+    controller.instance_variable_set(:@user, @purchase.user)
+    controller.instance_variable_set(:@company_info, company_info)
+    controller.instance_variable_set(:@purchase_items, purchase_items)
+    controller.instance_variable_set(:@total_with_tax, total_with_tax)
+    controller.instance_variable_set(:@subtotal, subtotal)
+    controller.instance_variable_set(:@tax, tax)
+    
     html_content = controller.render_to_string(
       template: 'order_mailer/invoice_pdf',
       layout: 'pdf',
-      locals: { 
-        purchase_invoice: @purchase_invoice,
-        purchase: @purchase,
-        user: @purchase.user,
-        company_info: company_info,
-        purchase_items: purchase_items,
-        total_with_tax: total_with_tax,
-        subtotal: subtotal,
-        tax: tax
-      },
       formats: [:html]
     )
     

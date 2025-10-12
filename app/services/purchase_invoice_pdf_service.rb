@@ -36,6 +36,12 @@ class PurchaseInvoicePdfService
     # 購入商品情報を取得（関連データを含む）
     purchase_items = @purchase.purchase_items.includes(:product)
     
+    # Buyerを明示的に読み込み
+    buyer = @purchase.buyer
+    
+    Rails.logger.info "Buyer loaded: #{buyer&.name || 'No name'}"
+    Rails.logger.info "First item product name: #{purchase_items.first&.product&.name || 'No product name'}"
+    
     # 税計算（外税）
     total_with_tax = @purchase_invoice.total_amount
     subtotal = (total_with_tax / 1.1).to_i
@@ -64,13 +70,13 @@ class PurchaseInvoicePdfService
         <h1>請求書テスト</h1>
         <p>Purchase Invoice ID: #{@purchase_invoice.id}</p>
         <p>Purchase ID: #{@purchase.id}</p>
-        <p>Buyer: #{@purchase.buyer&.name || 'No buyer'}</p>
+        <p>Buyer: #{buyer&.name || 'No buyer name'}</p>
         <p>Invoice Number: #{@purchase_invoice.invoice_number}</p>
         <p>Total Amount: #{@purchase_invoice.total_amount}</p>
         <p>Purchase Items Count: #{purchase_items.count}</p>
         <h2>商品明細</h2>
         <ul>
-          #{purchase_items.map { |item| "<li>#{item.product.name} - 数量: #{item.quantity} - 単価: #{item.unit_price}</li>" }.join}
+          #{purchase_items.map { |item| "<li>#{item.product&.name || 'No product name'} - 数量: #{item.quantity} - 単価: #{item.unit_price}</li>" }.join}
         </ul>
         <p>会社情報: #{invoice_base ? 'あり' : 'なし'}</p>
         <p>Total with tax: #{total_with_tax}</p>

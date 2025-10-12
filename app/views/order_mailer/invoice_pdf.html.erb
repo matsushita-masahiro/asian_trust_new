@@ -1,4 +1,12 @@
 <%
+  # デバッグ情報をログ出力
+  Rails.logger.info "=== Invoice PDF Template Debug ==="
+  Rails.logger.info "@purchase_invoice present: #{@purchase_invoice.present?}"
+  Rails.logger.info "@buyer present: #{@buyer.present?}"
+  Rails.logger.info "@invoice_base present: #{@invoice_base.present?}"
+  Rails.logger.info "@purchase_items count: #{@purchase_items&.count || 0}"
+  Rails.logger.info "@total_with_tax: #{@total_with_tax}"
+  
   # 会社情報をDBから取得（フォールバック値付き）
   if @invoice_base
     company_name = @invoice_base.company_name.presence || "株式会社アジアビジネストラスト"

@@ -41,6 +41,17 @@ class PurchaseInvoicePdfService
     subtotal = (total_with_tax / 1.1).to_i
     tax = total_with_tax - subtotal
     
+    # デバッグ情報をログ出力
+    Rails.logger.info "=== PurchaseInvoicePdfService Debug ==="
+    Rails.logger.info "Purchase Invoice ID: #{@purchase_invoice.id}"
+    Rails.logger.info "Purchase ID: #{@purchase.id}"
+    Rails.logger.info "Buyer: #{@purchase.buyer&.name || 'nil'}"
+    Rails.logger.info "Invoice Base present: #{invoice_base.present?}"
+    Rails.logger.info "Purchase Items count: #{purchase_items.count}"
+    Rails.logger.info "Total with tax: #{total_with_tax}"
+    Rails.logger.info "Subtotal: #{subtotal}"
+    Rails.logger.info "Tax: #{tax}"
+    
     # インスタンス変数を設定してテンプレートで使用できるようにする
     controller.instance_variable_set(:@purchase_invoice, @purchase_invoice)
     controller.instance_variable_set(:@purchase, @purchase)
@@ -51,6 +62,8 @@ class PurchaseInvoicePdfService
     controller.instance_variable_set(:@total_with_tax, total_with_tax)
     controller.instance_variable_set(:@subtotal, subtotal)
     controller.instance_variable_set(:@tax, tax)
+    
+    Rails.logger.info "Instance variables set successfully"
     
     html_content = controller.render_to_string(
       template: 'order_mailer/invoice_pdf',

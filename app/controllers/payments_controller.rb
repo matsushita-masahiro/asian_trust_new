@@ -17,10 +17,66 @@ class PaymentsController < ApplicationController
     if result[:success]
       # 銀行振込案内メールを送信（請求書PDF添付）
       begin
-        OrderMailer.bank_transfer_instructions(result[:purchase], result[:purchase_invoice]).deliver_now
+        Rails.logger.info "Starting bank transfer email process for Purchase #{result[:purchase].id}"
+        
+        # PDF表示用の情報を取得
+        @purchase = result[:purchase]
+        @purchase_invoice = result[:purchase_invoice]
+        @user = current_user
+        
+        # 会社情報を変数として定義（invoices_controllerと同様）
+        @company_info = {
+          name: "株式会社アジアビジネストラスト",
+          department: "アジアビジネストラスト事業部",
+          address: "〒104-0061 東京都中央区銀座4丁目6-1",
+          building: "銀座医科ビル3階",
+          tel: "TEL:03-5904-8148",
+          email: "Email: abt1@asia-b-t.com",
+          footer: "アジアビジネストラスト 事務局",
+          registration_number: "T4210001009156"
+        }
+        
+        # 銀行情報を変数として定義
+        @bank_info = {
+          name: "楽天銀行",
+          branch: "第二営業支店",
+          branch_code: "252",
+          account_type: "普通預金",
+          account_number: "7747552",
+          account_name: @company_info[:name]
+        }
+        
+        # 商品明細情報を取得
+        @purchase_items = @purchase.purchase_items.includes(:product)
+        
+        # 税計算（内税）
+        @total_with_tax = @purchase_invoice.total_amount
+        @subtotal = (@total_with_tax / 1.1).to_i
+        @tax = @total_with_tax - @subtotal
+        
+        Rails.logger.info "PDF info prepared for Purchase #{@purchase.id}"
+        Rails.logger.info "Total amount: #{@total_with_tax}, Subtotal: #{@subtotal}, Tax: #{@tax}"
+        Rails.logger.info "Items count: #{@purchase_items.count}"
+        
+        # メール送信（PDF情報を含む）
+        OrderMailer.bank_transfer_instructions(
+          @purchase, 
+          @purchase_invoice,
+          {
+            company_info: @company_info,
+            bank_info: @bank_info,
+            purchase_items: @purchase_items,
+            total_with_tax: @total_with_tax,
+            subtotal: @subtotal,
+            tax: @tax
+          }
+        ).deliver_now
+        
+        Rails.logger.info "Bank transfer email sent successfully for Purchase #{@purchase.id}"
         redirect_to purchase_invoices_path, notice: '注文が完了しました。銀行振込の詳細と請求書をメールでお送りしました。'
       rescue => e
         Rails.logger.error "Failed to send bank transfer email: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
         redirect_to purchase_invoices_path, notice: '注文が完了しました。銀行振込の詳細は別途ご連絡いたします。'
       end
     else

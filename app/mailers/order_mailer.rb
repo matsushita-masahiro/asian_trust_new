@@ -1,12 +1,19 @@
 class OrderMailer < ApplicationMailer
   default from: ENV['ADMIN_EMAIL'] || 'noreply@example.com'
 
-  def bank_transfer_instructions(purchase, purchase_invoice = nil)
+  def bank_transfer_instructions(purchase, purchase_invoice = nil, pdf_info = {})
     @purchase = purchase
     @user = purchase.buyer
     @total_amount = purchase.total_price
     @purchase_items = purchase.purchase_items.includes(:product)
     @purchase_invoice = purchase_invoice
+    
+    # PDF表示用の追加情報を設定
+    @company_info = pdf_info[:company_info] || {}
+    @bank_info = pdf_info[:bank_info] || {}
+    @total_with_tax = pdf_info[:total_with_tax] || purchase.total_price
+    @subtotal = pdf_info[:subtotal] || ((@total_with_tax / 1.1).to_i)
+    @tax = pdf_info[:tax] || (@total_with_tax - @subtotal)
     
     Rails.logger.info "Preparing bank transfer email for purchase #{@purchase.id}"
     Rails.logger.info "User email: #{@user.email}"
@@ -100,19 +107,27 @@ class OrderMailer < ApplicationMailer
       amount.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
     end
     
-    # 会社情報を変数として定義
-    company_name = "株式会社アジアビジネストラスト"
-    company_department = "アジアビジネストラスト事業部"
-    company_address = "〒104-0061 東京都中央区銀座4丁目6-1"
-    company_building = "銀座医科ビル3階"
-    company_tel = "TEL:03-5904-8148"
-    company_email = "Email: abt1@asia-b-t.com"
-    company_footer = "アジアビジネストラスト 事務局"
+    # 会社情報を変数として定義（インスタンス変数があれば使用、なければデフォルト値）
+    company_name = @company_info[:name] || "株式会社アジアビジネストラスト"
+    company_department = @company_info[:department] || "アジアビジネストラスト事業部"
+    company_address = @company_info[:address] || "〒104-0061 東京都中央区銀座4丁目6-1"
+    company_building = @company_info[:building] || "銀座医科ビル3階"
+    company_tel = @company_info[:tel] || "TEL:03-5904-8148"
+    company_email = @company_info[:email] || "Email: abt1@asia-b-t.com"
+    company_footer = @company_info[:footer] || "アジアビジネストラスト 事務局"
     
-    # 税計算（内税）- 本物の請求書に合わせて
-    total_with_tax = purchase_invoice.total_amount
-    subtotal = (total_with_tax / 1.1).to_i
-    tax = total_with_tax - subtotal
+    # 銀行情報を変数として定義
+    bank_name = @bank_info[:name] || "楽天銀行"
+    bank_branch = @bank_info[:branch] || "第二営業支店"
+    bank_branch_code = @bank_info[:branch_code] || "252"
+    bank_account_type = @bank_info[:account_type] || "普通預金"
+    bank_account_number = @bank_info[:account_number] || "7747552"
+    bank_account_name = @bank_info[:account_name] || company_name
+    
+    # 税計算（内税）- 渡された値があれば使用、なければ計算
+    total_with_tax = @total_with_tax || purchase_invoice.total_amount
+    subtotal = @subtotal || (total_with_tax / 1.1).to_i
+    tax = @tax || (total_with_tax - subtotal)
     
     # 商品明細行を生成
     items_rows = purchase_invoice.purchase_items.map do |item|
@@ -427,12 +442,12 @@ class OrderMailer < ApplicationMailer
           <tr>
             <td><strong>#{purchase_invoice.due_date.strftime('%Y-%m-%d')}</strong></td>
             <td class="bank-info">
-              楽天銀行<br>
-              支店名：第二営業支店<br>
-              支店番号：252<br>
-              口座種別：普通預金<br>
-              口座番号：7747552<br>
-              口座名義：#{company_name}
+              #{bank_name}<br>
+              支店名：#{bank_branch}<br>
+              支店番号：#{bank_branch_code}<br>
+              口座種別：#{bank_account_type}<br>
+              口座番号：#{bank_account_number}<br>
+              口座名義：#{bank_account_name}
             </td>
           </tr>
         </table>
@@ -486,19 +501,27 @@ class OrderMailer < ApplicationMailer
       amount.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
     end
     
-    # 会社情報を変数として定義
-    company_name = "株式会社アジアビジネストラスト"
-    company_department = "アジアビジネストラスト事業部"
-    company_address = "〒104-0061 東京都中央区銀座4丁目6-1"
-    company_building = "銀座医科ビル3階"
-    company_tel = "TEL:03-5904-8148"
-    company_email = "Email: abt1@asia-b-t.com"
-    company_footer = "アジアビジネストラスト 事務局"
+    # 会社情報を変数として定義（インスタンス変数があれば使用、なければデフォルト値）
+    company_name = @company_info[:name] || "株式会社アジアビジネストラスト"
+    company_department = @company_info[:department] || "アジアビジネストラスト事業部"
+    company_address = @company_info[:address] || "〒104-0061 東京都中央区銀座4丁目6-1"
+    company_building = @company_info[:building] || "銀座医科ビル3階"
+    company_tel = @company_info[:tel] || "TEL:03-5904-8148"
+    company_email = @company_info[:email] || "Email: abt1@asia-b-t.com"
+    company_footer = @company_info[:footer] || "アジアビジネストラスト 事務局"
     
-    # 税計算（内税）- テキスト版も内税に統一
-    total_with_tax = purchase_invoice.total_amount
-    subtotal = (total_with_tax / 1.1).to_i
-    tax = total_with_tax - subtotal
+    # 銀行情報を変数として定義
+    bank_name = @bank_info[:name] || "楽天銀行"
+    bank_branch = @bank_info[:branch] || "第二営業支店"
+    bank_branch_code = @bank_info[:branch_code] || "252"
+    bank_account_type = @bank_info[:account_type] || "普通預金"
+    bank_account_number = @bank_info[:account_number] || "7747552"
+    bank_account_name = @bank_info[:account_name] || company_name
+    
+    # 税計算（内税）- 渡された値があれば使用、なければ計算
+    total_with_tax = @total_with_tax || purchase_invoice.total_amount
+    subtotal = @subtotal || (total_with_tax / 1.1).to_i
+    tax = @tax || (total_with_tax - subtotal)
     
     # 商品明細
     items_text = purchase_invoice.purchase_items.map do |item|
@@ -536,12 +559,12 @@ class OrderMailer < ApplicationMailer
       ┌─────────────┬──────────────────────────────────────────────────────┐
       │   入金期日   │                    振込先                            │
       ├─────────────┼──────────────────────────────────────────────────────┤
-      │             │ 楽天銀行                                             │
-      │             │ 支店名：第二営業支店                                 │
-      │ #{purchase_invoice.due_date.strftime('%Y-%m-%d').ljust(11)} │ 支店番号：252                                        │
-      │             │ 口座種別：普通預金                                   │
-      │             │ 口座番号：7747552                                    │
-      │             │ 口座名義：#{company_name}             │
+      │             │ #{bank_name}                                             │
+      │             │ 支店名：#{bank_branch}                                 │
+      │ #{purchase_invoice.due_date.strftime('%Y-%m-%d').ljust(11)} │ 支店番号：#{bank_branch_code}                                        │
+      │             │ 口座種別：#{bank_account_type}                                   │
+      │             │ 口座番号：#{bank_account_number}                                    │
+      │             │ 口座名義：#{bank_account_name}             │
       └─────────────┴──────────────────────────────────────────────────────┘
 
       ┌──────────────────────────────────┬────────┬──────────┬──────────────┐

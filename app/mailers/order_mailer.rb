@@ -3,7 +3,7 @@ class OrderMailer < ApplicationMailer
 
   def bank_transfer_instructions(purchase, purchase_invoice = nil, pdf_info = {}, pdf_content = nil)
     @purchase = purchase
-    @user = purchase.buyer
+    @user = purchase.user
     @total_amount = purchase.total_price
     @purchase_items = purchase.purchase_items.includes(:product)
     @purchase_invoice = purchase_invoice
@@ -51,7 +51,7 @@ class OrderMailer < ApplicationMailer
 
   def payment_confirmed(purchase)
     @purchase = purchase
-    @user = purchase.buyer
+    @user = purchase.user
     @total_amount = purchase.total_price
     @purchase_items = purchase.purchase_items.includes(:product)
     
@@ -349,7 +349,7 @@ class OrderMailer < ApplicationMailer
         <!-- 上部セクション -->
         <div class="top-section">
           <div class="customer-info">
-            <div class="customer-name">#{purchase_invoice.buyer.name} 様</div>
+            <div class="customer-name">#{purchase_invoice.user.name} 様</div>
           </div>
           
           <div class="right-section">
@@ -504,7 +504,7 @@ class OrderMailer < ApplicationMailer
                                     請求書
 
 
-      #{purchase_invoice.buyer.name} 様                                請求日         #{purchase_invoice.invoice_date.strftime('%Y-%m-%d')}
+      #{purchase_invoice.user.name} 様                                請求日         #{purchase_invoice.invoice_date.strftime('%Y-%m-%d')}
                                                               請求書番号     #{purchase_invoice.invoice_number}
                                                               登録番号       T4210001009156
 

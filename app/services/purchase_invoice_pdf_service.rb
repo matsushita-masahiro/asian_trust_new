@@ -41,67 +41,35 @@ class PurchaseInvoicePdfService
     @purchase.reload
     purchase_items = @purchase.purchase_items.includes(:product)
     buyer = User.find(@purchase.buyer_id) if @purchase.buyer_id
-    
-    Rails.logger.info "=== Detailed Debug Info ==="
-    Rails.logger.info "Purchase buyer_id: #{@purchase.buyer_id}"
-    Rails.logger.info "Buyer found: #{buyer.present?}"
-    Rails.logger.info "Buyer name: #{buyer&.name}"
-    Rails.logger.info "Purchase items count: #{purchase_items.count}"
+
     if purchase_items.any?
       first_item = purchase_items.first
-      Rails.logger.info "First item product_id: #{first_item.product_id}"
-      Rails.logger.info "First item product present: #{first_item.product.present?}"
-      Rails.logger.info "First item product name: #{first_item.product&.name}"
     end
-    Rails.logger.info "Invoice base present: #{invoice_base.present?}"
-    Rails.logger.info "Company info present: #{company_info.present?}"
-    Rails.logger.info "Company name from invoice_base: #{invoice_base&.company_name}"
-    Rails.logger.info "Company name from invoice_recipients: #{company_info&.name}"
     
     # 税計算（外税）
     total_with_tax = @purchase_invoice.total_amount
     subtotal = (total_with_tax / 1.1).to_i
     tax = total_with_tax - subtotal
     
-    # デバッグ情報をログ出力
-    Rails.logger.info "=== PurchaseInvoicePdfService Debug ==="
-    Rails.logger.info "Purchase Invoice ID: #{@purchase_invoice.id}"
-    Rails.logger.info "Purchase ID: #{@purchase.id}"
-    Rails.logger.info "Buyer: #{@purchase.buyer&.name || 'nil'}"
-    Rails.logger.info "Invoice Base present: #{invoice_base.present?}"
-    Rails.logger.info "Purchase Items count: #{purchase_items.count}"
-    Rails.logger.info "Total with tax: #{total_with_tax}"
-    Rails.logger.info "Subtotal: #{subtotal}"
-    Rails.logger.info "Tax: #{tax}"
-    
-    # デバッグ用：変数の値を確認
-    Rails.logger.info "=== Template Variables Debug ==="
-    Rails.logger.info "invoice_base present: #{invoice_base.present?}"
-    Rails.logger.info "company_name: #{invoice_base&.company_name}"
-    Rails.logger.info "bank_name: #{invoice_base&.bank_name}"
-    Rails.logger.info "purchase_items count: #{purchase_items.count}"
-    Rails.logger.info "first product name: #{purchase_items.first&.product&.name}"
-    
     # 会社情報を直接設定
     if invoice_base
       company_name = invoice_base.company_name.presence || "株式会社アジアビジネストラスト"
-      company_address = "#{invoice_base.postal_code.presence || '〒104-0061'} #{invoice_base.address.presence || '東京都中央区銀座4丁目6-1'} 銀座医科ビル3階"
-      company_tel = "TEL:03-5904-8148"
+      company_address = "#{invoice_base.postal_code.presence || '〒104-0061'} #{invoice_base.address.presence || '東京都中央区銀座4丁目6-1 銀座医科ビル3階'} "
+      company_tel = invoice_base.tel.presence || "03-5904-8148"
       company_email = "Email: #{invoice_base.email.presence || 'abt1@asia-b-t.com'}"
       company_footer = "アジアビジネストラスト 事務局"
       registration_number = "T4210001009156"
       
       bank_name = invoice_base.bank_name.presence || "楽天銀行"
       bank_branch = invoice_base.bank_branch_name.presence || "第二営業支店"
-      bank_branch_code = "252"
       bank_account_type = invoice_base.bank_account_type.presence || "普通預金"
       bank_account_number = invoice_base.bank_account_number.presence || "7747552"
       bank_account_name = invoice_base.bank_account_name.presence || company_name
     else
       company_name = "株式会社アジアビジネストラスト"
       company_address = "〒104-0061 東京都中央区銀座4丁目6-1 銀座医科ビル3階"
-      company_tel = "TEL:03-5904-8148"
-      company_email = "Email: abt1@asia-b-t.com"
+      company_tel = "03-5904-8148"
+      company_email = "abt1@asia-b-t.com"
       company_footer = "アジアビジネストラスト 事務局"
       registration_number = "T4210001009156"
       
@@ -116,7 +84,7 @@ class PurchaseInvoicePdfService
     # 実際のテンプレートを使用してPDFを生成
     html_content = controller.render_to_string(
       template: 'order_mailer/purchase_invoice_pdf',
-      layout: false,
+      layout: 'pdf',
       locals: {
         purchase_invoice: @purchase_invoice,
         purchase: @purchase,

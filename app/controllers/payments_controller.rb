@@ -30,19 +30,20 @@ class PaymentsController < ApplicationController
         pdf_content = pdf_service.generate_and_upload_pdf
         Rails.logger.info "PDF generated and uploaded successfully for PurchaseInvoice #{@purchase_invoice.id}"
         
-        # DBから会社情報を取得（invoice_basesテーブルから）
-        # 管理者ユーザーのinvoice_baseを取得（admin=trueのユーザー）
+        # DBから会社情報を取得（invoice_recipientテーブルから）
+        # 管理者ユーザーのinvoice_recipientを取得（admin=trueのユーザー）
         admin_user = User.find_by(admin: true)
+        invoice_recipient = admin_user&.invoice_recipient
         invoice_base = admin_user&.invoice_base
         
-        if invoice_base
+        if invoice_recipient
           @company_info = {
-            name: invoice_base.company_name || "株式会社アジアビジネストラスト",
-            department: invoice_base.department || "アジアビジネストラスト事業部",
-            address: invoice_base.address || "〒104-0061 東京都中央区銀座4丁目6-1",
-            building: "", # invoice_baseにはbuilding項目がないため空文字
-            tel: "TEL:03-5904-8148", # 固定値（DBに項目がない）
-            email: invoice_base.email || "abt1@asia-b-t.com",
+            name: invoice_recipient.company_name || "株式会社アジアビジネストラスト",
+            department: invoice_recipient.department || "アジアビジネストラスト事業部",
+            address: invoice_recipient.address || "〒104-0061 東京都中央区銀座4丁目6-1",
+            building: "", # invoice_recipientにはbuilding項目がないため空文字
+            tel: invoice_recipient.tel || "03-5904-8148", # 固定値（DBに項目がない）
+            email: invoice_recipient.email || "abt1@asia-b-t.com",
             footer: "アジアビジネストラスト 事務局", # 固定値
             registration_number: "T4210001009156" # 固定値
           }
@@ -57,7 +58,7 @@ class PaymentsController < ApplicationController
           }
         else
           # DBに情報がない場合はデフォルト値を使用
-          Rails.logger.warn "No invoice_base found for admin user, using default values"
+          Rails.logger.warn "No invoice_recipient found for admin user, using default values"
           @company_info = {
             name: "株式会社アジアビジネストラスト",
             department: "アジアビジネストラスト事業部",

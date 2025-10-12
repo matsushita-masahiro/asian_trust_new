@@ -1,26 +1,45 @@
 <%
-  # 会社情報を変数として定義
-  company_name = "株式会社アジアビジネストラスト"
-  company_department = "アジアビジネストラスト事業部"
-  company_address = "〒104-0061 東京都中央区銀座4丁目6-1"
-  company_building = "銀座医科ビル3階"
-  company_tel = "TEL:03-5904-8148"
-  company_email = "Email: abt1@asia-b-t.com"
-  company_footer = "アジアビジネストラスト 事務局"
-  registration_number = "T4210001009156"
+  # 会社情報をDBから取得（フォールバック値付き）
+  if @invoice_base
+    company_name = @invoice_base.company_name.presence || "株式会社アジアビジネストラスト"
+    company_department = @invoice_base.department.presence || "アジアビジネストラスト事業部"
+    company_address = @invoice_base.address.presence || "〒104-0061 東京都中央区銀座4丁目6-1"
+    company_building = @invoice_base.building.presence || "銀座医科ビル3階"
+    company_tel = "TEL:03-5904-8148"  # DBに項目がないため固定値
+    company_email = "Email: #{@invoice_base.email.presence || 'abt1@asia-b-t.com'}"
+    company_footer = "アジアビジネストラスト 事務局"  # 固定値
+    registration_number = "T4210001009156"  # 固定値
+    
+    # 銀行情報をDBから取得
+    bank_name = @invoice_base.bank_name.presence || "楽天銀行"
+    bank_branch = @invoice_base.bank_branch_name.presence || "第二営業支店"
+    bank_branch_code = "252"  # DBに項目がないため固定値
+    bank_account_type = @invoice_base.bank_account_type.presence || "普通預金"
+    bank_account_number = @invoice_base.bank_account_number.presence || "7747552"
+    bank_account_name = @invoice_base.bank_account_name.presence || company_name
+  else
+    # DBに情報がない場合のデフォルト値
+    company_name = "株式会社アジアビジネストラスト"
+    company_department = "アジアビジネストラスト事業部"
+    company_address = "〒104-0061 東京都中央区銀座4丁目6-1"
+    company_building = "銀座医科ビル3階"
+    company_tel = "TEL:03-5904-8148"
+    company_email = "Email: abt1@asia-b-t.com"
+    company_footer = "アジアビジネストラスト 事務局"
+    registration_number = "T4210001009156"
+    
+    bank_name = "楽天銀行"
+    bank_branch = "第二営業支店"
+    bank_branch_code = "252"
+    bank_account_type = "普通預金"
+    bank_account_number = "7747552"
+    bank_account_name = company_name
+  end
   
-  # 銀行情報を変数として定義
-  bank_name = "楽天銀行"
-  bank_branch = "第二営業支店"
-  bank_branch_code = "252"
-  bank_account_type = "普通預金"
-  bank_account_number = "7747552"
-  bank_account_name = company_name
-  
-  # 税計算（内税）
-  total_with_tax = @purchase_invoice.total_amount
-  subtotal = (total_with_tax / 1.1).to_i
-  tax = total_with_tax - subtotal
+  # 税計算（外税）
+  total_with_tax = @total_with_tax
+  subtotal = @subtotal
+  tax = @tax
 %>
 
 <!DOCTYPE html>
@@ -233,7 +252,7 @@
   <!-- ヘッダー情報 -->
   <div class="header">
     <div class="invoice-info">
-      <div class="customer-name"><%= @purchase_invoice.buyer.name %> 様</div>
+      <div class="customer-name"><%= @buyer&.name || @purchase_invoice.buyer&.name || "お客様" %> 様</div>
       <p><strong>請求書番号:</strong> <%= @purchase_invoice.invoice_number %></p>
       <p><strong>発行日:</strong> <%= @purchase_invoice.invoice_date.strftime('%Y年%m月%d日') %></p>
       <p><strong>支払期限:</strong> <%= @purchase_invoice.due_date.strftime('%Y年%m月%d日') %></p>
@@ -275,17 +294,18 @@
       </tr>
     </thead>
     <tbody>
-      <% @purchase_invoice.purchase_items.each do |item| %>
+      <% @purchase_items.each do |item| %>
       <tr>
         <td class="item-name"><%= item.product.name %></td>
         <td class="quantity"><%= item.quantity %></td>
         <td class="price">¥<%= number_with_delimiter(item.unit_price) %></td>
-        <td class="price">¥<%= number_with_delimiter(item.total_price) %></td>
+        <td class="price">¥<%= number_with_delimiter(item.unit_price * item.quantity) %></td>
       </tr>
       <% end %>
       
       <!-- 空行を追加（最大10行まで） -->
-      <% (10 - @purchase_invoice.purchase_items.count).times do %>
+      <% empty_rows = [10 - @purchase_items.count, 0].max %>
+      <% empty_rows.times do %>
       <tr>
         <td class="item-name">&nbsp;</td>
         <td class="quantity">&nbsp;</td>

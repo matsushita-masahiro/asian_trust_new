@@ -29,35 +29,11 @@ class PurchaseInvoicePdfService
     controller.request = ActionDispatch::Request.new({})
     controller.response = ActionDispatch::Response.new
     
-    # 会社情報を取得
+    # 会社情報をDBから取得
     admin_user = User.find_by(admin: true)
     invoice_base = admin_user&.invoice_base
     
-    company_info = if invoice_base
-      {
-        name: invoice_base.company_name || "株式会社アジアビジネストラスト",
-        department: invoice_base.department || "アジアビジネストラスト事業部",
-        address: invoice_base.address || "〒104-0061 東京都中央区銀座4丁目6-1",
-        building: "",
-        tel: "TEL:03-5904-8148",
-        email: invoice_base.email || "abt1@asia-b-t.com",
-        footer: "アジアビジネストラスト 事務局",
-        registration_number: "T4210001009156"
-      }
-    else
-      {
-        name: "株式会社アジアビジネストラスト",
-        department: "アジアビジネストラスト事業部",
-        address: "〒104-0061 東京都中央区銀座4丁目6-1",
-        building: "銀座医科ビル3階",
-        tel: "TEL:03-5904-8148",
-        email: "abt1@asia-b-t.com",
-        footer: "アジアビジネストラスト 事務局",
-        registration_number: "T4210001009156"
-      }
-    end
-    
-    # 購入商品情報を取得
+    # 購入商品情報を取得（関連データを含む）
     purchase_items = @purchase.purchase_items.includes(:product)
     
     # 税計算（外税）
@@ -69,7 +45,8 @@ class PurchaseInvoicePdfService
     controller.instance_variable_set(:@purchase_invoice, @purchase_invoice)
     controller.instance_variable_set(:@purchase, @purchase)
     controller.instance_variable_set(:@user, @purchase.user)
-    controller.instance_variable_set(:@company_info, company_info)
+    controller.instance_variable_set(:@buyer, @purchase.buyer)
+    controller.instance_variable_set(:@invoice_base, invoice_base)
     controller.instance_variable_set(:@purchase_items, purchase_items)
     controller.instance_variable_set(:@total_with_tax, total_with_tax)
     controller.instance_variable_set(:@subtotal, subtotal)

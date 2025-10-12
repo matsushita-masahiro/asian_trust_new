@@ -80,9 +80,9 @@ class PaymentsController < ApplicationController
           }
         end
         
-        # 送付先メールアドレスを取得（invoice_recipientsテーブルから）
-        # ユーザーの最初のinvoice_recipientのemailを使用
-        invoice_recipient = current_user.invoice_recipients.first
+        # 送付先メールアドレスを取得（invoice_recipientテーブルから）
+        # ユーザーのinvoice_recipientのemailを使用
+        invoice_recipient = current_user.invoice_recipient
         @recipient_email = invoice_recipient&.email || current_user.email
         
         Rails.logger.info "Recipient email: #{@recipient_email}"

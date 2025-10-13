@@ -52,7 +52,25 @@
             </tr>
             <tr>
               <th>メールアドレス:</th>
-              <td><%= @user.email %></td>
+              <td>
+                <div id="email-display">
+                  <%= @user.email %>
+                  <% if @user == current_user %>
+                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="toggleEmailEdit()">
+                      <i class="fas fa-edit"></i> 編集
+                    </button>
+                  <% end %>
+                </div>
+                <% if @user == current_user %>
+                  <div id="email-edit" style="display: none;">
+                    <%= form_with model: @user, url: user_path(@user), method: :patch, local: true, class: "d-flex align-items-center" do |f| %>
+                      <%= f.email_field :email, value: @user.email, class: "form-control form-control-sm me-2", style: "width: 250px;" %>
+                      <%= f.submit "保存", class: "btn btn-sm btn-success me-2" %>
+                      <button type="button" class="btn btn-sm btn-secondary" onclick="toggleEmailEdit()">キャンセル</button>
+                    <% end %>
+                  </div>
+                <% end %>
+              </td>
             </tr>
             <tr>
               <th>登録日:</th>
@@ -541,3 +559,20 @@
     }
   }
 </style>
+
+<script>
+function toggleEmailEdit() {
+  const displayDiv = document.getElementById('email-display');
+  const editDiv = document.getElementById('email-edit');
+  
+  if (displayDiv.style.display === 'none') {
+    displayDiv.style.display = 'block';
+    editDiv.style.display = 'none';
+  } else {
+    displayDiv.style.display = 'none';
+    editDiv.style.display = 'block';
+    // フォーカスをメールアドレス入力欄に設定
+    editDiv.querySelector('input[type="email"]').focus();
+  }
+}
+</script>

@@ -111,7 +111,7 @@ Rails.application.routes.draw do
 
   # 一般ユーザー用マイページ
   get 'mysales', to: 'users#mysales', as: :mysales
-  resources :users, only: [:show] do  # /users/:id → 下位ユーザー詳細
+  resources :users, only: [:show, :update] do  # /users/:id → 下位ユーザー詳細
     member do
       get :purchases  # /users/:id/purchases → 販売履歴
     end

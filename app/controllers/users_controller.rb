@@ -17,6 +17,23 @@ class UsersController < ApplicationController
     end
   end
 
+  # メールアドレス更新
+  def update
+    @user = User.find(params[:id])
+    
+    # 自分自身のみ更新可能
+    unless @user == current_user
+      redirect_to user_path(@user), alert: "権限がありません。"
+      return
+    end
+    
+    if @user.update(user_params)
+      redirect_to user_path(@user), notice: "メールアドレスを更新しました。"
+    else
+      redirect_to user_path(@user), alert: "メールアドレスの更新に失敗しました。#{@user.errors.full_messages.join(', ')}"
+    end
+  end
+
   # 販売履歴・購入履歴表示
   def purchases
     @user = User.find(params[:id])
@@ -110,5 +127,9 @@ class UsersController < ApplicationController
         options << [label, value]
       end
       options
+    end
+
+    def user_params
+      params.require(:user).permit(:email)
     end
 end

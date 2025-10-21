@@ -2,16 +2,41 @@ puts "🔄 Seeding started......"
 
 adapter = ActiveRecord::Base.connection.adapter_name
 
-# SQLite環境のみ、外部キー制約を一時無効化
+# データを適切な順序で削除（外部キー制約を考慮）
+puts "🗑️ Cleaning existing data..."
+
+# 1. 購入関連データを削除
+PurchaseItem.delete_all
+Purchase.delete_all
+
+# 2. 請求書関連データを削除
+Invoice.delete_all
+
+# 3. レベル変更申請を削除
+LevelChangeApplication.delete_all
+
+# 4. 紹介招待を削除
+ReferralInvitation.delete_all
+
+# 5. ユーザーレベル履歴を削除
+UserLevelHistory.delete_all
+
+# 6. カート関連データを削除
+CartItem.delete_all
+Cart.delete_all
+
+# 7. アクセスログを削除
+AccessLog.delete_all
+
+# 8. 最後にユーザーを削除
+User.delete_all
+
+# SQLite環境のみ、シーケンスをリセット
 if adapter == "SQLite"
-  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
-  User.delete_all
   ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='users'")
-  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
-else
-  # PostgreSQL など他の環境では普通に削除
-  User.delete_all
 end
+
+puts "✅ Data cleanup completed"
 
 user_id_seq = 1
 lstep_id_seq = 1

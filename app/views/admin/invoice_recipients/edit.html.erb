@@ -77,6 +77,47 @@
               <%= f.text_area :notes, class: "form-control", rows: 3, placeholder: "その他の情報や備考を入力してください" %>
             </div>
 
+            <!-- 銀行口座情報セクション -->
+            <div class="card mt-4">
+              <div class="card-header bg-info text-white">
+                <h6 class="mb-0">💳 振込先銀行口座情報</h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <%= f.label :bank_name, "銀行名", class: "form-label" %>
+                    <%= f.text_field :bank_name, class: "form-control", placeholder: "三菱UFJ銀行" %>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <%= f.label :bank_branch_name, "支店名", class: "form-label" %>
+                    <%= f.text_field :bank_branch_name, class: "form-control", placeholder: "新宿支店" %>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <%= f.label :bank_account_type, "口座種別", class: "form-label" %>
+                    <%= f.select :bank_account_type, 
+                        options_for_select([
+                          ['普通', '普通'],
+                          ['当座', '当座'],
+                          ['貯蓄', '貯蓄']
+                        ], @invoice_recipient.bank_account_type), 
+                        { prompt: '選択してください' }, 
+                        { class: "form-select" } %>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <%= f.label :bank_account_number, "口座番号", class: "form-label" %>
+                    <%= f.text_field :bank_account_number, class: "form-control", placeholder: "1234567" %>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <%= f.label :bank_account_name, "口座名義", class: "form-label" %>
+                    <%= f.text_field :bank_account_name, class: "form-control", placeholder: "カ）サンプル" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
               <%= link_to "キャンセル", admin_invoice_recipient_path, class: "btn btn-outline-secondary me-md-2" %>
               <%= f.submit "請求先情報を更新", class: "btn btn-primary" %>

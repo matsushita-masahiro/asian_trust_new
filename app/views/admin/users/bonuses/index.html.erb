@@ -1,51 +1,43 @@
-<div class="container-fluid" style="padding-top: 100px;">
-  <!-- ヘッダーセクション -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card border shadow-sm bg-white">
-        <div class="card-body p-4">
-          <!-- タイトル行 -->
-          <div class="row align-items-center mb-3">
-            <div class="col-md-8">
+<!-- 固定ヘッダーセクション -->
+<div class="sticky-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body p-4">
+          <!-- コンパクトなタイトル行 -->
+          <div class="row align-items-center">
+            <div class="col-md-6">
               <div class="d-flex align-items-center">
-                <i class="fas fa-user-tie fa-2x me-3 text-primary"></i>
+                <i class="fas fa-user-tie fa-lg me-2 text-primary"></i>
                 <div>
-                  <h3 class="mb-0 fw-bold text-dark"><%= @user.name.present? ? @user.name : @user.email %></h3>
-                  <p class="mb-0 text-muted">インセンティブ詳細レポート</p>
+                  <h4 class="mb-0 fw-bold text-dark"><%= @user.name.present? ? @user.name : @user.email %></h4>
+                  <small class="text-muted">インセンティブ詳細レポート</small>
                 </div>
               </div>
             </div>
-            <div class="col-md-4 text-md-end">
-              <div class="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
-                <%= link_to admin_bonuses_path(month: @selected_month), class: "btn btn-outline-secondary btn-sm" do %>
-                  <i class="fas fa-arrow-left me-1"></i>一覧に戻る
-                <% end %>
-                <%= link_to admin_root_path, class: "btn btn-outline-primary btn-sm" do %>
-                  <i class="fas fa-tachometer-alt me-1"></i>ダッシュボード
-                <% end %>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 月選択行 -->
-          <div class="row">
-            <div class="col-12">
-              <%= form_with url: admin_user_bonuses_path(@user), method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
-                <label class="form-label me-3 mb-0 text-dark">対象月:</label>
-                <div class="input-group" style="width: 200px;">
-                  <span class="input-group-text bg-white border-0">
+            <div class="col-md-6">
+              <!-- 対象月選択 -->
+              <%= form_with url: admin_user_bonuses_path(@user), method: :get, local: true, class: "d-flex align-items-center justify-content-end flex-nowrap", id: "month-form" do |f| %>
+                <label class="form-label me-2 mb-0 text-dark small text-nowrap">対象月:</label>
+                <div class="input-group flex-shrink-0" style="width: 160px;">
+                  <span class="input-group-text bg-white border-0 p-1">
                     <i class="fas fa-calendar-alt text-muted"></i>
                   </span>
-                  <%= f.month_field :month, value: @selected_month, class: "form-control border-0", onchange: "document.getElementById('month-form').submit();" %>
+                  <%= f.month_field :month, value: @selected_month, class: "form-control border-0 form-control-sm", onchange: "document.getElementById('month-form').submit();" %>
                 </div>
               <% end %>
             </div>
+          </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+</div>
 
+<!-- メインコンテンツエリア -->
+<div class="container-fluid" style="padding-top: 20px;">
   <!-- 統計情報 -->
   <div class="row mb-5">
     <div class="col-md-3 mb-4">
@@ -149,25 +141,24 @@
                     <% purchase.purchase_items.each_with_index do |item, index| %>
                       <% total = item.unit_price * item.quantity %>
                       <% # 各アイテムごとにインセンティブを計算（統一されたロジックを使用） %>
-                      <% if purchase.user == @user %>
-                        <% # 自分の販売の場合 %>
-                        <% item_bonus = @user.bonus_for_purchase_item(item) %>
-                      <% else %>
-                        <% # 子孫の販売の場合：モデルのロジックを使用 %>
-                        <% purchase_user_level = purchase.user.level_at(purchase.purchased_at) %>
-                        <% my_level_at_purchase = @user.level_at(purchase.purchased_at) %>
-                        <% purchase_user_price = item.product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0 %>
-                        <% my_price = item.product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0 %>
-                        <% if purchase_user_price > my_price %>
-                          <% item_bonus = (purchase_user_price - my_price) * item.quantity %>
-                        <% else %>
-                          <% item_bonus = 0 %>
-                        <% end %>
-                      <% end %>
+                      <% item_bonus = @user.bonus_for_purchase_item(item) %>
                       <% total_sum += total %>
                       <% total_bonus_sum += item_bonus %>
                       <% is_first_item = index == 0 %>
                       <% row_class = purchase.purchase_items.count > 1 ? "bg-info bg-opacity-10" : "" %>
+                      <% 
+                        # 購入者がお客様（level:6）の場合の表示ロジック
+                        is_customer = purchase.user&.level&.value == 6
+                        if is_customer
+                          # お客様の場合：販売店は紹介者、購入者はお客様
+                          seller_name = purchase.user&.referrer&.name || purchase.user&.referrer&.email || "不明"
+                          buyer_name = purchase.user&.name || purchase.user&.email || "お客様"
+                        else
+                          # それ以外の場合：販売店と購入者は同じなので販売店は非表示
+                          seller_name = ""
+                          buyer_name = purchase.user&.name || purchase.user&.email || "-"
+                        end
+                      %>
                       <tr class="<%= row_class %>">
                         <!-- 購入ID -->
                         <td class="text-nowrap">
@@ -180,13 +171,13 @@
                             <span class="text-muted">└</span>
                           <% end %>
                         </td>
-                        <!-- 販売店（同じ購入IDの場合は非表示） -->
+                        <!-- 販売店（お客様の場合のみ表示） -->
                         <td class="fw-bold text-nowrap">
-                          <%= is_first_item ? (purchase.user.name.present? ? purchase.user.name : purchase.user.email) : "" %>
+                          <%= is_first_item ? seller_name : "" %>
                         </td>
                         <!-- 購入者名（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
-                          <%= is_first_item ? (purchase.buyer&.name || "-") : "" %>
+                          <%= is_first_item ? buyer_name : "" %>
                         </td>
                         <!-- 商品名（常に表示） -->
                         <td class="text-nowrap">
@@ -214,11 +205,11 @@
                         </td>
                         <!-- メール（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
-                          <%= is_first_item ? (purchase.buyer&.email || "-") : "" %>
+                          <%= is_first_item ? (purchase.user&.email || "-") : "" %>
                         </td>
                         <!-- 電話番号（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
-                          <%= is_first_item ? (purchase.buyer&.phone || "-") : "" %>
+                          <%= is_first_item ? (purchase.user&.phone || "-") : "" %>
                         </td>
                         <!-- 住所（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
@@ -254,3 +245,107 @@
     </div>
   </div>
 </div>
+
+<style>
+  /* コンパクトな固定ヘッダーエリア */
+  .sticky-header {
+    position: fixed !important;
+    top: 60px !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    background: white !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    width: 100% !important;
+    height: 80px !important; /* 固定の高さを設定 */
+  }
+  
+  /* メインコンテンツエリアのマージン調整 */
+  .sticky-header + .container-fluid {
+    margin-top: 80px !important; /* ヘッダーの高さに合わせて調整 */
+  }
+  
+  /* カード内のコンテンツ - コンパクト化 */
+  .sticky-header .card {
+    border: none !important;
+    box-shadow: none !important;
+    height: 100% !important;
+  }
+  
+  .sticky-header .card-body {
+    background: white !important;
+    padding: 0.75rem 1rem !important; /* パディングを縮小 */
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  /* アイコンとテキストのサイズ調整 */
+  .sticky-header h4 {
+    font-size: 1.1rem !important;
+    margin-bottom: 0 !important;
+  }
+  
+  .sticky-header small {
+    font-size: 0.75rem !important;
+  }
+  
+  .sticky-header .fa-user-tie {
+    font-size: 1.2rem !important;
+  }
+  
+  /* フォーム要素のコンパクト化 */
+  .sticky-header .form-control-sm {
+    font-size: 0.8rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+  
+  .sticky-header .input-group-text {
+    padding: 0.25rem 0.5rem !important;
+  }
+  
+  .sticky-header .btn-sm {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+  
+  /* 改行防止 */
+  .sticky-header .flex-nowrap {
+    flex-wrap: nowrap !important;
+  }
+  
+  .sticky-header .text-nowrap {
+    white-space: nowrap !important;
+  }
+  
+  .sticky-header .flex-shrink-0 {
+    flex-shrink: 0 !important;
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 768px) {
+    .sticky-header {
+      top: 50px !important;
+      height: 70px !important;
+    }
+    
+    .sticky-header + .container-fluid {
+      margin-top: 70px !important;
+    }
+    
+    .sticky-header .card-body {
+      padding: 0.5rem !important;
+    }
+    
+    .sticky-header h4 {
+      font-size: 1rem !important;
+    }
+  }
+  
+  /* 統計情報カードの通常表示 */
+  .row.mb-5 .card {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+</style>

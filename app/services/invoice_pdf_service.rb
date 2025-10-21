@@ -141,99 +141,39 @@ class InvoicePdfService
     selected_month_start = Date.strptime(@invoice.target_month, "%Y-%m").beginning_of_month
     selected_month_end = Date.strptime(@invoice.target_month, "%Y-%m").end_of_month
     
-    # 管理画面と同じ正確な計算ロジックを使用
+    # InvoicesControllerと同じ正確な計算ロジックを使用
     details = []
     user = @invoice.user
     
-    # 自分の販売に対するボーナス
-    self_purchases = user.purchases.includes(purchase_items: :product).where(purchased_at: selected_month_start..selected_month_end)
+    # 自分と下位ユーザーの販売に対するボーナス（sales/index.html.erbと同じ）
+    user_ids = [user.id] + user.descendant_ids
+    all_purchases = Purchase.includes(purchase_items: :product, user: [])
+                           .where(user_id: user_ids)
+                           .where(purchased_at: selected_month_start..selected_month_end)
     
-    self_purchases.each do |purchase|
+    all_purchases.each do |purchase|
       purchase.purchase_items.each do |item|
-        bonus = user.bonus_for_purchase_item(item)
+        # 自己販売に対するインセンティブ計算
+        item_bonus = user.bonus_for_purchase_item(item)
+        unit_bonus = user.incentive_unit_price_for_item(item)
         
-        if bonus > 0
+        if item_bonus > 0
+          # 種別を判定
+          purchase_type = if purchase.user == user
+                           '自己販売'
+                         else
+                           '下位販売'
+                         end
+          
           details << {
-            type: '自己販売',
-            user_name: user.name || user.email,
+            type: purchase_type,
+            user_name: purchase.user.name || purchase.user.email,
             product_name: item.product.name,
             quantity: item.quantity,
-            unit_bonus: bonus / item.quantity,
-            total_bonus: bonus,
+            unit_bonus: unit_bonus,     # インセンティブ単価
+            total_bonus: item_bonus,    # 合計インセンティブ
             purchased_at: purchase.purchased_at,
             purchase_id: purchase.id
-          }
-        end
-      end
-    end
-    
-    # 子孫の販売に対するボーナス
-    descendant_user_ids = user.descendant_ids.reject { |uid| uid == user.id }
-    
-    if descendant_user_ids.any?
-      descendant_purchase_items = PurchaseItem.joins(:purchase)
-                                             .where(purchases: { user_id: descendant_user_ids, purchased_at: selected_month_start..selected_month_end })
-                                             .includes(:product, purchase: :user)
-      
-      descendant_purchase_items.each do |item|
-        purchase = item.purchase
-        purchase_user_level = purchase.user.level_at(purchase.purchased_at)
-        my_level_at_purchase = user.level_at(purchase.purchased_at)
-        
-        product = item.product
-        purchase_user_price = product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
-        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
-        
-        if purchase_user_price > my_price
-          diff = purchase_user_price - my_price
-          bonus = diff * item.quantity
-          
-          if bonus > 0
-            details << {
-              type: '下位販売',
-              user_name: purchase.user.name || purchase.user.email,
-              product_name: item.product.name,
-              quantity: item.quantity,
-              unit_bonus: diff,
-              total_bonus: bonus,
-              purchased_at: purchase.purchased_at,
-              purchase_id: purchase.id
-            }
-          end
-        end
-      end
-    end
-    
-    # 直下の無資格者による販売に対するボーナス
-    descendant_user_ids_set = Set.new(user.descendant_ids)
-    
-    user.referrals.reject(&:bonus_eligible?).each do |child|
-      # 既に子孫として計算済みの場合はスキップ
-      next if descendant_user_ids_set.include?(child.id)
-      
-      child_purchase_items = PurchaseItem.joins(:purchase)
-                                        .where(purchases: { user_id: child.id, purchased_at: selected_month_start..selected_month_end })
-                                        .includes(:product, purchase: :user)
-      
-      child_purchase_items.each do |item|
-        purchase_date = item.purchase.purchased_at
-        my_level_at_purchase = user.level_at(purchase_date)
-        product = item.product
-        base_price = product.base_price
-        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
-        diff = base_price - my_price
-        bonus = diff * item.quantity
-        
-        if bonus > 0
-          details << {
-            type: '無資格者販売',
-            user_name: child.name || child.email,
-            product_name: item.product.name,
-            quantity: item.quantity,
-            unit_bonus: diff,
-            total_bonus: bonus,
-            purchased_at: purchase_date,
-            purchase_id: item.purchase.id
           }
         end
       end
@@ -244,7 +184,7 @@ class InvoicePdfService
     Rails.logger.info "=== Invoice PDF Service Debug ==="
     Rails.logger.info "Total details found: #{sorted_details.count}"
     sorted_details.each_with_index do |detail, index|
-      Rails.logger.info "#{index + 1}. Purchase ID: #{detail[:purchase_id]}, User: #{detail[:user_name]}, Amount: #{detail[:total_bonus]}"
+      Rails.logger.info "#{index + 1}. Purchase ID: #{detail[:purchase_id]}, User: #{detail[:user_name]}, Unit: #{detail[:unit_bonus]}, Total: #{detail[:total_bonus]}"
     end
     Rails.logger.info "=== End Invoice PDF Service Debug ==="
     

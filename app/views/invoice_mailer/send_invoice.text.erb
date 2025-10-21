@@ -9,7 +9,7 @@
 添付のPDFファイルをご確認ください。
 
 【請求書情報】
-・請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %>
+・請求書番号: <%= @invoice.invoice_number || "INV-#{@invoice.id.to_s.rjust(6, '0')}" %>
 ・発行日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %>
 ・支払期限: <%= @invoice.due_date&.strftime("%Y年%m月%d日") %>
 ・請求金額: ¥<%= number_with_delimiter(@invoice.total_amount) %>

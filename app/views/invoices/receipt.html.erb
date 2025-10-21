@@ -29,7 +29,7 @@
                 <h3 class="text-primary">領収書</h3>
                 <p class="mb-1">領収書番号: REC-<%= @invoice.id.to_s.rjust(6, '0') %></p>
                 <p class="mb-1">発行日: <%= Date.current.strftime("%Y年%m月%d日") %></p>
-                <p class="mb-0">請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+                <p class="mb-0">請求書番号: <%= @invoice.invoice_number || "INV-#{@invoice.id.to_s.rjust(6, '0')}" %></p>
               </div>
               <div class="col-6 text-end">
                 <!-- 発行者情報（右上に表示） -->

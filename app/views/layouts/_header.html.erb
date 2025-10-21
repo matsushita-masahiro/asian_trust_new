@@ -1,6 +1,9 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
   <div class="container-fluid">
-    <%= link_to ENV['COMPANY_NAME'], root_path, class: "navbar-brand" %>
+    <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
+      <%= image_tag "abt_logo.png", alt: "ABT Logo", class: "navbar-logo me-3" %>
+      <%= ENV['COMPANY_NAME'] %>
+    <% end %>
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
       aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -10,14 +13,22 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         <% if user_signed_in? %>
-          <li class="nav-item">
-            <%= link_to "予約・注文", orders_path, class: "nav-link" %>
-          </li>
+          <% unless current_user.admin? %>
+            <li class="nav-item">
+              <%= link_to "予約・注文", orders_path, class: "nav-link" %>
+            </li>
+          <% end %>
           <% if user_signed_in? && !current_user.admin %>
             <li class="nav-item">
               <%= link_to "請求書管理", invoices_path, class: "nav-link" %>
             </li>
           <% end %>
+          <% if user_signed_in? && !current_user.admin? && current_user.bonus_eligible? %>
+            <li class="nav-item">
+              <%= link_to "インセンティブ", incentives_path, class: "nav-link" %>
+            </li>
+          <% end %>
+
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="mypageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               マイページ
@@ -54,20 +65,4 @@
   </div>
 </nav>
 
-<style>
-  .dropdown-menu-custom {
-    z-index: 99999 !important;
-    position: absolute !important;
-  }
-  
-  .nav-item.dropdown {
-    position: relative !important;
-  }
-  
-  .navbar-nav .dropdown-menu {
-    z-index: 99999 !important;
-    position: absolute !important;
-    top: 100% !important;
-    left: 0 !important;
-  }
-</style>
+

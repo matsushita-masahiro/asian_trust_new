@@ -12,6 +12,9 @@ import "slider"
 import "fadein"
 import "flash"
 import "admin_inquiries"
+import "users_show"
+import "incentive"
+import "order"
 
 document.addEventListener("DOMContentLoaded", () => {
   // ✅ jQuery 確認

@@ -5,7 +5,7 @@ puts "🔄 Production seeding started......"
 # Levelデータを作成または取得
 level_data = [
   { name: "アジアビジネストラスト", value: 0 },
-  { name: "特約代理店", value: 1 },
+  { name: "総代理店", value: 1 },
   { name: "代理店", value: 2 },
   { name: "アドバイザー", value: 3 },
   { name: "サロン", value: 4 },
@@ -41,7 +41,7 @@ puts "Product: #{product.name} (ID: #{product.id})"
 # ProductPriceデータを作成（各レベルの価格設定）
 price_data = [
   { level_name: "アジアビジネストラスト", price: 40000 },
-  { level_name: "特約代理店", price: 45000 },
+  { level_name: "総代理店", price: 45000 },
   { level_name: "代理店", price: 47000 },
   { level_name: "アドバイザー", price: 49000 },
   { level_name: "サロン", price: 50000 },
@@ -102,17 +102,17 @@ if existing_users_count < 10
     unless User.exists?(email: email)
       User.create!(
         id: user_id_seq,
-        name: "特約代理店#{i + 1}",
+        name: "総代理店#{i + 1}",
         email: email,
         password: "password",
-        level_id: levels["特約代理店"].id,
+        level_id: levels["総代理店"].id,
         referred_by_id: company.id,
         lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
         confirmed_at: Time.current
       )
       user_id_seq += 1
       lstep_id_seq += 1
-      puts "  ✅ Created: 特約代理店#{i + 1}"
+      puts "  ✅ Created: 総代理店#{i + 1}"
     end
   end
   

@@ -34,28 +34,184 @@
     </div>
     
     <div class="col-md-4">
+      <!-- 配送先情報カード -->
+      <% if params[:delivery_type].present? %>
+        <div class="card mb-3">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-shipping-fast me-2"></i>
+              配送先情報
+            </h5>
+          </div>
+          <div class="card-body">
+            <% 
+              # 商品別配送先情報を準備
+              stem_cell_items = @cart&.cart_items&.select { |item| item.product.name.include?('骨髄幹細胞培培養上清液') } || []
+              other_items = @cart&.cart_items&.select { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') } || []
+              
+              has_stem_cell_product = stem_cell_items.any?
+              has_other_products = other_items.any?
+              
+              # クリニック情報
+              selected_clinic = params[:clinic_id].present? ? User.find_by(id: params[:clinic_id]) : nil
+              
+              delivery_destinations = []
+              
+              # クリニック配送先
+              if has_stem_cell_product
+                if selected_clinic&.invoice_base
+                  delivery_destinations << {
+                    title: "#{selected_clinic.name}（クリニック配送）",
+                    icon: 'fas fa-hospital',
+                    address: "〒#{selected_clinic.invoice_base.postal_code}<br>#{selected_clinic.invoice_base.address}".html_safe,
+                    note: '骨髄幹細胞培培養上清液',
+                    phone: selected_clinic.phone,
+                    type: 'clinic'
+                  }
+                else
+                  delivery_destinations << {
+                    title: 'クリニック配送',
+                    icon: 'fas fa-hospital',
+                    address: nil,
+                    note: 'クリニック情報が見つかりません',
+                    type: 'clinic'
+                  }
+                end
+              end
+              
+              # 自宅配送先
+              if has_other_products
+                delivery_destinations << {
+                  title: 'ご登録住所（自宅配送）',
+                  icon: 'fas fa-home',
+                  address: (current_user.invoice_base&.postal_code.present? && current_user.invoice_base&.address.present?) ? 
+                           "〒#{current_user.invoice_base.postal_code}<br>#{current_user.invoice_base.address.gsub("\n", "<br>")}".html_safe : 
+                           '<span class="text-danger">住所が登録されていません</span>'.html_safe,
+                  note: 'その他の商品',
+                  type: 'home'
+                }
+              end
+            %>
+            
+            <% delivery_destinations.each_with_index do |destination, index| %>
+              <div class="<%= 'mb-4' if delivery_destinations.size > 1 %>">
+                <div class="d-flex align-items-start mb-3">
+                  <i class="<%= destination[:icon] %> me-3 mt-1 text-primary"></i>
+                  <div>
+                    <div class="fw-bold"><%= destination[:title] %></div>
+                    <small class="text-muted"><%= destination[:note] %></small>
+                  </div>
+                </div>
+                
+                <% if destination[:address].present? %>
+                  <div class="alert alert-light">
+                    <i class="fas fa-map-marker-alt me-2"></i>
+                    <strong>配送先住所:</strong>
+                    <div class="mt-2"><%= destination[:address] %></div>
+                    <% if destination[:phone].present? %>
+                      <div class="mt-2">
+                        <i class="fas fa-phone me-2"></i>
+                        <strong>電話番号:</strong> <%= destination[:phone] %>
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>配送先:</strong>
+                    <div class="mt-2"><%= destination[:note] %></div>
+                  </div>
+                <% end %>
+                
+                <% if delivery_destinations.size > 1 && index < delivery_destinations.size - 1 %>
+                  <hr class="my-3">
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- 注文合計カード -->
       <div class="card">
         <div class="card-header">
           <h5>注文合計</h5>
         </div>
         <div class="card-body">
+          <% 
+            # 基本料金計算
+            subtotal = @cart&.total_amount(current_user.level_symbol) || 0
+            
+            # 配送先数を計算
+            delivery_count = delivery_destinations.size
+            shipping_fee = delivery_count * 6000
+            
+            # 事務手数料（クリニック配送がある場合）
+            admin_fee = has_stem_cell_product ? 10000 : 0
+            
+            # 合計金額
+            total_amount = subtotal + shipping_fee + admin_fee
+          %>
+          
           <div class="d-flex justify-content-between mb-2">
-            <span>小計:</span>
-            <span>¥<%= number_with_delimiter(@cart&.total_amount(current_user.level_symbol) || 0) %></span>
+            <span>商品代金:</span>
+            <span>¥<%= number_with_delimiter(subtotal) %></span>
           </div>
-          <div class="d-flex justify-content-between mb-3">
-            <span>送料:</span>
-            <span>無料</span>
+          <div class="d-flex justify-content-between mb-2">
+            <span>送料 (<%= delivery_count %>箇所):</span>
+            <span>¥<%= number_with_delimiter(shipping_fee) %></span>
+          </div>
+          <% if admin_fee > 0 %>
+            <div class="d-flex justify-content-between mb-2">
+              <span>事務手数料:</span>
+              <span class="text-warning">¥<%= number_with_delimiter(admin_fee) %></span>
+            </div>
+          <% end %>
+          <% 
+            # 税抜き合計（商品代金+送料+事務手数料）
+            subtotal_before_tax = subtotal + shipping_fee + admin_fee
+            # 消費税計算
+            tax_amount = calculate_tax(subtotal_before_tax)
+            # 税込み合計
+            total_amount_with_tax = subtotal_before_tax + tax_amount
+          %>
+          <div class="d-flex justify-content-between mb-2">
+            <span>小計（税抜）:</span>
+            <span>¥<%= number_with_delimiter(subtotal_before_tax) %></span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span>消費税（<%= tax_rate_percentage %>%）:</span>
+            <span>¥<%= number_with_delimiter(tax_amount) %></span>
           </div>
           <hr>
           <div class="d-flex justify-content-between mb-3">
             <strong>合計:</strong>
-            <strong class="text-success">¥<%= number_with_delimiter(@cart&.total_amount(current_user.level_symbol) || 0) %></strong>
+            <strong class="text-success">¥<%= number_with_delimiter(total_amount_with_tax) %></strong>
+          </div>
+          
+          <!-- 料金説明 -->
+          <div class="alert alert-light small">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>料金について:</strong>
+            <ul class="mb-0 mt-2">
+              <li>送料: 配送先1箇所につき ¥6,000</li>
+              <% if admin_fee > 0 %>
+                <li class="text-warning">事務手数料: クリニック配送 ¥10,000</li>
+              <% end %>
+            </ul>
           </div>
           
           <div class="d-grid gap-2">
-            <%= link_to "お支払い方法を選択する", select_method_payments_path, 
-                class: "btn btn-success btn-lg" %>
+            <% if params[:delivery_type].present? %>
+              <% 
+                payment_params = { delivery_type: params[:delivery_type] }
+                payment_params[:clinic_id] = params[:clinic_id] if params[:clinic_id].present?
+              %>
+              <%= link_to "お支払い方法を選択する", select_method_payments_path(payment_params), 
+                  class: "btn btn-success btn-lg" %>
+            <% else %>
+              <%= link_to "カートに戻って配送先を選択", cart_path, class: "btn btn-warning btn-lg" %>
+            <% end %>
             <%= link_to "カートに戻る", cart_path, class: "btn btn-outline-secondary" %>
             <%= link_to "商品一覧に戻る", orders_products_path, class: "btn btn-outline-primary" %>
           </div>

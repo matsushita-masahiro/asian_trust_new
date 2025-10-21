@@ -16,5 +16,8 @@ pin "slider", to: "slider.js"
 pin "fadein", to: "fadein.js"
 pin "flash", to: "flash.js" 
 pin "admin_inquiries", to: "admin_inquiries.js"
+pin "users_show", to: "users_show.js"
+pin "incentive", to: "incentive.js"
+pin "order", to: "order.js"
 
 

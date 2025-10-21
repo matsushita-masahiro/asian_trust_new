@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4 page-header">
-        <h2 class="text-primary">購入履歴編集</h2>
+        <h3 class="text-primary">購入履歴編集</h3>
         <div>
           <%= link_to "購入履歴一覧に戻る", admin_purchases_path, class: "btn btn-outline-secondary me-2" %>
           <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
@@ -25,7 +25,7 @@
                 <div class="card-body">
                   <h6 class="card-title text-muted">購入情報</h6>
                   <p class="mb-1"><strong>購入日時:</strong> <%= @purchase.purchased_at.strftime('%Y年%m月%d日 %H:%M') %></p>
-                  <p class="mb-1"><strong>購入者:</strong> <%= @purchase.buyer&.name || @purchase.buyer&.email || '不明' %></p>
+                  <p class="mb-1"><strong>購入者:</strong> <%= @purchase.user&.name || @purchase.user&.email || '不明' %></p>
                   <p class="mb-1"><strong>商品名:</strong> 
                     <% if @purchase.purchase_items.count == 1 %>
                       <%= @purchase.purchase_items.first.product.name %>
@@ -33,7 +33,28 @@
                       複数商品 (<%= @purchase.purchase_items.count %>種類)
                     <% end %>
                   </p>
-                  <p class="mb-1"><strong>販売店:</strong> <%= @purchase.user.name.present? ? @purchase.user.name : @purchase.user.email %></p>
+                  <p class="mb-1"><strong>販売店:</strong> 
+                    <% 
+                      # 購入者のレベルを確認
+                      user_level_name = @purchase.user.level&.name
+                      is_customer = user_level_name == 'お客様'
+                      is_seller = ['総代理店', '代理店', 'アドバイザー', 'クリニック', 'サロン'].include?(user_level_name)
+                    %>
+                    
+                    <% if is_seller %>
+                      <!-- 購入者が販売店の場合は「-」を表示 -->
+                      <span class="text-muted">-</span>
+                    <% elsif is_customer && @purchase.user.referrer %>
+                      <!-- 購入者がお客様の場合は紹介者の名前とレベルを表示 -->
+                      <%= @purchase.user.referrer.name.present? ? @purchase.user.referrer.name : @purchase.user.referrer.email %>
+                      <% if @purchase.user.referrer.level %>
+                        （<%= @purchase.user.referrer.level.name %>）
+                      <% end %>
+                    <% else %>
+                      <!-- その他の場合（お客様だが紹介者がいない場合など） -->
+                      <span class="text-muted">-</span>
+                    <% end %>
+                  </p>
                   <p class="mb-0">
                     <strong>支払いステータス:</strong> 
                     <% if @purchase.built? %>
@@ -124,17 +145,39 @@
               </div>
             </div>
 
-            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-              <%= link_to "キャンセル", admin_purchases_path, class: "btn btn-secondary me-md-2" %>
+            <!-- デスクトップ用レイアウト -->
+            <div class="d-none d-md-flex justify-content-between align-items-center">
+              <!-- 左側：入金確認ボタン -->
+              <div>
+                <% if @purchase.built? %>
+                  <%= link_to "入金確認", confirm_payment_admin_purchase_path(@purchase), 
+                      method: :patch, 
+                      class: "btn btn-success",
+                      data: { 
+                        confirm: "入金を確認しましたか？この操作により支払いステータスが「入金済み」に変更されます。" 
+                      } %>
+                <% end %>
+              </div>
+              
+              <!-- 右側：その他のボタン -->
+              <div class="d-flex gap-2">
+                <%= link_to "キャンセル", admin_purchases_path, class: "btn btn-secondary" %>
+                <%= form.submit "更新する", class: "btn btn-primary" %>
+              </div>
+            </div>
+            
+            <!-- モバイル用レイアウト（縦並び） -->
+            <div class="d-md-none d-grid gap-2">
               <% if @purchase.built? %>
                 <%= link_to "入金確認", confirm_payment_admin_purchase_path(@purchase), 
                     method: :patch, 
-                    class: "btn btn-success me-md-2",
+                    class: "btn btn-success",
                     data: { 
                       confirm: "入金を確認しましたか？この操作により支払いステータスが「入金済み」に変更されます。" 
                     } %>
               <% end %>
-              <%= form.submit "更新する", class: "btn btn-primary btn-lg" %>
+              <%= link_to "キャンセル", admin_purchases_path, class: "btn btn-secondary" %>
+              <%= form.submit "更新する", class: "btn btn-primary" %>
             </div>
           <% end %>
         </div>

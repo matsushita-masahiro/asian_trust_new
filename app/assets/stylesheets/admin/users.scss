@@ -1,0 +1,91 @@
+// Admin Users Edit Page Styles
+
+// Timeline styles for level history
+.timeline {
+  position: relative;
+  padding-left: 15px;
+  max-width: 100%;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-left: 2px solid #dee2e6;
+
+  &:last-child {
+    border-left: none;
+    margin-bottom: 0;
+  }
+
+  &.current .timeline-content {
+    background: #d4edda;
+    border-left-color: #28a745;
+  }
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -6px;
+  top: 5px;
+  background: white;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.timeline-content {
+  margin-left: 10px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #007bff;
+  text-align: center;
+}
+
+// Animation for error messages
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Mobile responsive styles for edit header
+@media (max-width: 768px) {
+  .edit-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .edit-title {
+    white-space: nowrap !important;
+    font-size: 1.3rem !important;
+    margin-bottom: 0 !important;
+    align-self: flex-start !important;
+    text-align: left !important;
+  }
+
+  .edit-buttons {
+    display: flex !important;
+    gap: 0.75rem !important;
+    width: 100%;
+
+    .btn {
+      flex: 1 !important;
+      margin-right: 0 !important;
+    }
+  }
+}

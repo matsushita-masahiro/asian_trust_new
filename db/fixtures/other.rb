@@ -40,8 +40,8 @@ class OtherFixture
     
     puts "📊 Found #{csv_users.count} CSV users for test data creation"
     
-    # 特約代理店レベルのユーザーを取得
-    special_agents = csv_users.joins(:level).where(levels: { name: "特約代理店" })
+    # 総代理店レベルのユーザーを取得
+    special_agents = csv_users.joins(:level).where(levels: { name: "総代理店" })
     
     # アドバイザーレベルのユーザーを取得
     advisors = csv_users.joins(:level).where(levels: { name: "アドバイザー" })
@@ -51,7 +51,7 @@ class OtherFixture
     
     purchase_count = 0
     
-    # 特約代理店の購入データを作成
+    # 総代理店の購入データを作成
     special_agents.limit(5).each_with_index do |user, i|
       # 2025年8月の購入データ
       purchase = Purchase.create!(
@@ -64,7 +64,7 @@ class OtherFixture
         product: product,
         quantity: 30 + (i * 10),
         unit_price: 50000,
-        seller_price: 45000  # 特約代理店の購入価格
+        seller_price: 45000  # 総代理店の購入価格
       )
       
       purchase_count += 1
@@ -142,7 +142,7 @@ class OtherFixture
       
       # レベルに応じて価格を調整
       seller_price = case user.level.name
-                    when "特約代理店"
+                    when "総代理店"
                       45000
                     when "代理店"
                       47000

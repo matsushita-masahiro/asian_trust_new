@@ -1,0 +1,203 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+        <h2 class="text-primary">レベル変更申請管理</h2>
+        <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- ステータス別サマリー -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-md-2">
+              <%= link_to admin_level_change_applications_path, class: "text-decoration-none" do %>
+                <div class="status-summary">
+                  <h4 class="text-primary"><%= @status_counts[:all] %></h4>
+                  <small class="text-muted">全申請</small>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-2">
+              <%= link_to admin_level_change_applications_path(status: 'pending'), class: "text-decoration-none" do %>
+                <div class="status-summary">
+                  <h4 class="text-warning"><%= @status_counts[:pending] %></h4>
+                  <small class="text-muted">申請中</small>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-2">
+              <%= link_to admin_level_change_applications_path(status: 'completed'), class: "text-decoration-none" do %>
+                <div class="status-summary">
+                  <h4 class="text-success"><%= @status_counts[:completed] %></h4>
+                  <small class="text-muted">完了</small>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-2">
+              <%= link_to admin_level_change_applications_path(status: 'cancelled'), class: "text-decoration-none" do %>
+                <div class="status-summary">
+                  <h4 class="text-secondary"><%= @status_counts[:cancelled] %></h4>
+                  <small class="text-muted">キャンセル</small>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-2">
+              <%= link_to admin_level_change_applications_path(status: 'error'), class: "text-decoration-none" do %>
+                <div class="status-summary">
+                  <h4 class="text-danger"><%= @status_counts[:error] %></h4>
+                  <small class="text-muted">エラー</small>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- フィルター -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <%= form_with url: admin_level_change_applications_path, method: :get, local: true, class: "d-flex align-items-center" do |f| %>
+        <div class="me-3">
+          <%= f.select :status, 
+                       options_for_select([
+                         ['全て', ''],
+                         ['申請中', 'pending'],
+                         ['完了', 'completed'],
+                         ['キャンセル', 'cancelled'],
+                         ['エラー', 'error']
+                       ], params[:status]), 
+                       {}, 
+                       { class: "form-select", style: "width: 150px;" } %>
+        </div>
+        <div class="me-3">
+          <%= f.submit "フィルター", class: "btn btn-outline-primary" %>
+        </div>
+        <% if params[:status].present? %>
+          <%= link_to "クリア", admin_level_change_applications_path, class: "btn btn-outline-secondary" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- 申請一覧 -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">申請一覧</h5>
+        </div>
+        <div class="card-body">
+          <% if @applications.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>対象ユーザー</th>
+                    <th>レベル変更</th>
+                    <th>申請者</th>
+                    <th>ステータス</th>
+                    <th>実行予定日</th>
+                    <th>申請日</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @applications.each do |application| %>
+                    <tr>
+                      <td><%= application.id %></td>
+                      <td>
+                        <%= link_to application.user_name, admin_user_path(application.user), class: "text-decoration-none" %>
+                      </td>
+                      <td>
+                        <span class="level-change">
+                          <%= application.current_level.name %>
+                          <i class="fas fa-arrow-right mx-2"></i>
+                          <%= application.target_level.name %>
+                        </span>
+                      </td>
+                      <td><%= application.applicant_name %></td>
+                      <td>
+                        <% case application.status %>
+                        <% when 'pending' %>
+                          <span class="badge bg-warning">申請中</span>
+                        <% when 'completed' %>
+                          <span class="badge bg-success">完了</span>
+                        <% when 'cancelled' %>
+                          <span class="badge bg-secondary">キャンセル</span>
+                        <% when 'error' %>
+                          <span class="badge bg-danger">エラー</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <%= application.scheduled_date.strftime("%Y/%m/%d") %>
+                        <% if application.pending? && application.scheduled_date <= Date.current %>
+                          <small class="text-danger">(実行対象)</small>
+                        <% end %>
+                      </td>
+                      <td><%= application.created_at.strftime("%Y/%m/%d %H:%M") %></td>
+                      <td>
+                        <%= link_to "詳細", admin_level_change_application_path(application), class: "btn btn-sm btn-outline-primary me-1" %>
+                        <% if application.cancellable? %>
+                          <%= link_to "キャンセル", 
+                                      cancel_admin_level_change_application_path(application), 
+                                      method: :patch,
+                                      class: "btn btn-sm btn-outline-danger",
+                                      data: { 
+                                        confirm: "この申請をキャンセルしますか？\n対象: #{application.user_name}\n変更: #{application.level_change_description}" 
+                                      } %>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <p class="text-muted">申請がありません</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .status-summary {
+    padding: 1rem;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+  }
+  
+  .status-summary:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .level-change {
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+  
+  @media (max-width: 768px) {
+    .table-responsive {
+      font-size: 0.875rem;
+    }
+    
+    .table th, .table td {
+      padding: 0.5rem 0.25rem;
+    }
+    
+    .level-change {
+      font-size: 0.8rem;
+    }
+  }
+</style>

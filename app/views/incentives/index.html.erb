@@ -1,0 +1,177 @@
+<% content_for :title, "インセンティブ詳細" %>
+
+<div class="container incentive-container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">
+          <i class="fas fa-chart-line me-2"></i>インセンティブ詳細
+          <% if defined?(@target_user) && @target_user != current_user %>
+            - <%= @target_user.name %>
+          <% end %>
+        </h3>
+        <div class="d-flex align-items-center gap-3">
+          <span class="text-muted">
+            <i class="fas fa-user me-1"></i><%= current_user.name %>
+          </span>
+          <div class="flex-shrink-0">
+            <% if action_name == 'drill_down' || @target_user.present? %>
+              <% target_user = @target_user %>
+              <% if target_user&.referrer %>
+                <%= link_to drill_down_incentive_path(target_user.referrer, target_month: params[:target_month]), class: "btn btn-outline-secondary btn-sm" do %>
+                  <i class="fas fa-arrow-left me-1"></i>1つ上の階層に戻る
+                <% end %>
+              <% else %>
+                <%= link_to incentives_path(target_month: params[:target_month]), class: "btn btn-outline-secondary btn-sm" do %>
+                  <i class="fas fa-arrow-left me-1"></i>トップに戻る
+                <% end %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 月選択フォームとインセンティブサマリー -->
+      <div class="row mb-4">
+        <!-- 月選択フォーム -->
+        <div class="col-md-6">
+          <div class="card date-selector-card h-100">
+            <div class="card-body">
+              <% 
+                # フォームのURLも現在のアクションに応じて決定
+                form_url = if action_name == 'drill_down' && @target_user.present?
+                  drill_down_incentive_path(@target_user)
+                else
+                  incentives_path
+                end
+              %>
+              <%= form_with url: form_url, method: :get, local: true, class: "row g-3", id: "month-selector-form" do |form| %>
+                <div class="col-12">
+                  <%= form.label :target_month, "対象月", class: "form-label" %>
+                  <%= form.month_field :target_month, value: @target_month, class: "form-control", id: "target_month_field" %>
+                  <div class="form-text">過去のインセンティブも確認できます</div>
+                </div>
+                <div class="col-12">
+                  <div class="quick-select-buttons">
+                    <% 
+                      # 現在のアクションとユーザーに応じてリンク先を決定
+                      if action_name == 'drill_down' && @target_user.present?
+                        # drill_downモードの場合は現在のユーザーを保持
+                        today_link = drill_down_incentive_path(@target_user, target_month: Date.current.strftime("%Y-%m"))
+                        last_month_link = drill_down_incentive_path(@target_user, target_month: 1.month.ago.strftime("%Y-%m"))
+                        three_months_ago_link = drill_down_incentive_path(@target_user, target_month: 3.months.ago.strftime("%Y-%m"))
+                      else
+                        # 通常のindexモードの場合
+                        today_link = incentives_path(target_month: Date.current.strftime("%Y-%m"))
+                        last_month_link = incentives_path(target_month: 1.month.ago.strftime("%Y-%m"))
+                        three_months_ago_link = incentives_path(target_month: 3.months.ago.strftime("%Y-%m"))
+                      end
+                    %>
+                    <%= link_to "今月", today_link, class: "btn btn-outline-secondary btn-sm" %>
+                    <%= link_to "先月", last_month_link, class: "btn btn-outline-secondary btn-sm" %>
+                    <%= link_to "3ヶ月前", three_months_ago_link, class: "btn btn-outline-secondary btn-sm" %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <!-- インセンティブサマリー -->
+        <div class="col-md-6">
+          <div class="card incentive-summary-card h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+              <div class="text-center mb-3">
+                <h5 class="mb-0">
+                  <i class="fas fa-calendar-alt me-2"></i>
+                  インセンティブサマリー（<%= @target_date.strftime("%Y年%m月") %>）
+                  <% if @target_date.strftime("%Y-%m") == Date.current.strftime("%Y-%m") %>
+                    <small class="d-block mt-1" style="opacity: 0.8;">- <%= @end_date.strftime("%m月%d日") %>現在</small>
+                  <% else %>
+                    <small class="d-block mt-1" style="opacity: 0.8;">- 月末確定</small>
+                  <% end %>
+                </h5>
+              </div>
+              <div class="text-center">
+                <div class="summary-item">
+                  <div class="summary-label">インセンティブ</div>
+                  <div class="summary-value">¥<%= number_with_delimiter(@incentive_summary[:total_incentive]) %></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 直下位ユーザー一覧 -->
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-users me-2"></i>直下位ユーザー
+          </h5>
+          <div class="export-buttons">
+            <%# <%= link_to export_incentive_path(current_user, format: :csv, target_month: @target_month), class: "btn btn-outline-secondary btn-sm" do %>
+              <%# <i class="fas fa-file-csv me-1"></i>CSV出力 %>
+            <%# <% end %>
+            <%# <%= link_to export_incentive_path(current_user, format: :pdf, target_month: @target_month), class: "btn btn-outline-secondary btn-sm" do %>
+              <%# <i class="fas fa-file-pdf me-1"></i>PDF出力 %>
+            <%# <% end %>
+          </div>
+        </div>
+        <div class="card-body">
+          <% if @direct_referrals.any? %>
+            <div class="table-responsive">
+              <table class="table table-striped hierarchy-table">
+                <thead>
+                  <tr>
+                    <th>ユーザー名</th>
+                    <th>レベル</th>
+                    <th>売上合計</th>
+                    <th>インセンティブ金額</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @hierarchy_data.each do |referral_id, data| %>
+                    <% referral = data[:user] %>
+                    <tr>
+                      <td>
+                        <%= referral.name %>
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary level-badge"><%= data[:level] %></span>
+                      </td>
+                      <td class="sales-amount">¥<%= number_with_delimiter(data[:sales_total]) %></td>
+                      <td class="incentive-amount">¥<%= number_with_delimiter(data[:incentive_amount]) %></td>
+                      <td>
+                        <% unless referral.level&.value&.in?([4, 5, 6]) %>
+                          <%= link_to incentive_path(referral, target_month: @target_month), class: "btn btn-sm btn-outline-primary me-1" do %>
+                            <i class="fas fa-eye me-1"></i>詳細
+                          <% end %>
+                        <% end %>
+                        <% if data[:has_descendants] %>
+                          <%= link_to drill_down_incentive_path(referral, target_month: @target_month), class: "btn btn-sm btn-outline-info" do %>
+                            <i class="fas fa-sitemap me-1"></i>階層表示
+                          <% end %>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="empty-state">
+              <div class="empty-icon">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="empty-message">直下位ユーザーはいません</div>
+              <div class="empty-description">紹介機能を使って新しいユーザーを招待してみましょう</div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

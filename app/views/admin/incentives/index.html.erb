@@ -1,0 +1,119 @@
+<div class="" style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 100px;">
+        <div class="d-flex align-items-center">
+          <h4 class="text-primary me-3">支払いインセンティブ管理</h4>
+          <%= form_with url: admin_incentives_path, method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
+            <label class="form-label me-2 mb-0">対象月:</label>
+            <%= f.month_field :target_month, value: @target_month, class: "form-control", style: "width: 180px;", onchange: "document.getElementById('month-form').submit();" %>
+          <% end %>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <%= link_to "今月", admin_incentives_path(target_month: Date.current.strftime("%Y-%m")), class: "btn btn-outline-secondary btn-sm" %>
+          <%= link_to "先月", admin_incentives_path(target_month: 1.month.ago.strftime("%Y-%m")), class: "btn btn-outline-secondary btn-sm" %>
+          <%= link_to "3ヶ月前", admin_incentives_path(target_month: 3.months.ago.strftime("%Y-%m")), class: "btn btn-outline-secondary btn-sm" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統計情報 -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">支払い対象者数</h6>
+              <h3 class="mb-0"><%= @incentive_data.count %></h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-users fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">総支払いインセンティブ</h6>
+              <h3 class="mb-0">¥<%= number_with_delimiter(@incentive_data.sum { |data| data[:incentive_amount] }) %></h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-yen-sign fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- インセンティブ一覧テーブル -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">支払いインセンティブ一覧 (<%= Date.strptime(@target_month, "%Y-%m").strftime("%Y年%m月") %>)</h5>
+        </div>
+        <div class="card-body">
+          <% if @incentive_data.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>代理店名</th>
+          <th>支払いインセンティブ額</th>
+                    <th>直紹介者数</th>
+                    <th>レベル</th>
+                    <th>売上</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @incentive_data.each do |data| %>
+                    <% user = data[:user] %>
+                    <% incentive_amount = data[:incentive_amount] %>
+                    <tr>
+                      <td>
+                        <strong><%= user.name.present? ? user.name : user.email %></strong>
+                      </td>
+                      <td>
+                        <span class="text-success">¥<%= number_with_delimiter(incentive_amount) %></span>
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary"><%= user.referrals.count %></span>
+                      </td>
+                      <td>
+                        <span class="badge bg-primary"><%= user.level&.name || "未設定" %></span>
+                      </td>
+                      <td>
+                        <span class="text-primary fw-bold">¥<%= number_with_delimiter(user.total_sales_with_descendants(@target_month)) %></span>
+                      </td>
+                      <td>
+                        <% unless user.level&.value&.in?([4, 5, 6]) %>
+                          <%= link_to "詳細", admin_incentive_path(user, target_month: @target_month), class: "btn btn-sm btn-outline-primary me-1" %>
+                        <% end %>
+                        <%= link_to "階層表示", drill_down_admin_incentive_path(user, target_month: @target_month), class: "btn btn-sm btn-outline-info" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">支払い対象のインセンティブがありません</h5>
+              <p class="text-muted">選択した月（<%= Date.strptime(@target_month, "%Y-%m").strftime("%Y年%m月") %>）には支払うべきインセンティブがありません。</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

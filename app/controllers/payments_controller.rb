@@ -156,13 +156,50 @@ class PaymentsController < ApplicationController
           )
         end
 
+        # 料金計算
+        product_amount = purchase.total_price
+        
+        # 商品別配送先判定
+        purchase_items = purchase.purchase_items.includes(:product)
+        stem_cell_items = purchase_items.select { |item| item.product.name.include?('骨髄幹細胞培培養上清液') }
+        other_items = purchase_items.select { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') }
+        
+        has_stem_cell_product = stem_cell_items.any?
+        has_other_products = other_items.any?
+        
+        # 配送先数を計算
+        delivery_destinations = 0
+        delivery_destinations += 1 if has_stem_cell_product  # クリニック配送
+        delivery_destinations += 1 if has_other_products     # 自宅配送
+        
+        shipping_fee = delivery_destinations * 6000
+        
+        # 事務手数料（クリニック配送の場合）
+        admin_fee = has_stem_cell_product ? 10000 : 0
+        
+        # 税抜き合計（商品代金+送料+事務手数料）
+        subtotal_before_tax = product_amount + shipping_fee + admin_fee
+        
+        # 消費税計算
+        tax_rate = ENV.fetch('TAX_RATE', '0.1').to_f
+        tax_amount = (subtotal_before_tax * tax_rate).to_i
+        
+        # 税込み合計
+        total_with_tax = subtotal_before_tax + tax_amount
+
         # 購入請求書を自動生成
         purchase_invoice = PurchaseInvoice.create!(
           purchase: purchase,
           invoice_number: PurchaseInvoice.generate_invoice_number,
           invoice_date: Date.current,
           due_date: Date.current + 30.days,
-          total_amount: purchase.total_price,
+          total_amount: product_amount,
+          shipping_fee: shipping_fee,
+          admin_fee: admin_fee,
+          tax_amount: tax_amount,
+          tax_rate: tax_rate,
+          subtotal_before_tax: subtotal_before_tax,
+          total_with_tax: total_with_tax,
           status: PurchaseInvoice::DRAFT,
           notes: "商品購入に関する請求書"
         )

@@ -16,5 +16,25 @@ module ApplicationHelper
      def format_postal_code(postal_code)
       postal_code.to_s.insert(3, '-')
      end
+
+     # 消費税率を取得
+     def tax_rate
+       ENV.fetch('TAX_RATE', '0.1').to_f
+     end
+
+     # 消費税率をパーセント表示で取得
+     def tax_rate_percentage
+       (tax_rate * 100).to_i
+     end
+
+     # 消費税を計算
+     def calculate_tax(amount)
+       (amount.to_f * tax_rate).to_i
+     end
+
+     # 税込み金額を計算
+     def calculate_total_with_tax(amount)
+       amount.to_i + calculate_tax(amount)
+     end
     
 end

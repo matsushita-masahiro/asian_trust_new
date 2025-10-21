@@ -95,7 +95,8 @@ class OrderMailer < ApplicationMailer
     
     # 税計算（内税）- 渡された値があれば使用、なければ計算
     total_with_tax = @total_with_tax || purchase_invoice.total_amount
-    subtotal = @subtotal || (total_with_tax / 1.1).to_i
+    tax_rate = ENV.fetch('TAX_RATE', '0.1').to_f
+    subtotal = @subtotal || (total_with_tax / (1 + tax_rate)).to_i
     tax = @tax || (total_with_tax - subtotal)
     
     # 商品明細行を生成
@@ -440,11 +441,11 @@ class OrderMailer < ApplicationMailer
         <!-- 税計算 -->
         <table class="tax-summary">
           <tr>
-            <td><strong>内税 10%対象(税抜)</strong></td>
+            <td><strong>内税 #{(tax_rate * 100).to_i}%対象(税抜)</strong></td>
             <td><strong>#{format_price(subtotal)}円</strong></td>
           </tr>
           <tr>
-            <td><strong>10%消費税</strong></td>
+            <td><strong>#{(tax_rate * 100).to_i}%消費税</strong></td>
             <td><strong>#{format_price(tax)}円</strong></td>
           </tr>
         </table>
@@ -489,7 +490,8 @@ class OrderMailer < ApplicationMailer
     
     # 税計算（内税）- 渡された値があれば使用、なければ計算
     total_with_tax = @total_with_tax || purchase_invoice.total_amount
-    subtotal = @subtotal || (total_with_tax / 1.1).to_i
+    tax_rate = ENV.fetch('TAX_RATE', '0.1').to_f
+    subtotal = @subtotal || (total_with_tax / (1 + tax_rate)).to_i
     tax = @tax || (total_with_tax - subtotal)
     
     # 商品明細
@@ -541,8 +543,8 @@ class OrderMailer < ApplicationMailer
       ├──────────────────────────────────┼────────┼──────────┼──────────────┤
       #{items_text}
       ├──────────────────────────────────┴────────┴──────────┼──────────────┤
-      │                          内税  10%対象(税抜)        │ #{format_price(subtotal).rjust(10)}円 │
-      │                               10%消費税             │ #{format_price(tax).rjust(10)}円 │
+      │                          内税  #{(tax_rate * 100).to_i}%対象(税抜)        │ #{format_price(subtotal).rjust(10)}円 │
+      │                               #{(tax_rate * 100).to_i}%消費税             │ #{format_price(tax).rjust(10)}円 │
       └─────────────────────────────────────────────────────┴──────────────┘
 
       ┌─────────────────────────────────────────────────────────────────────────┐

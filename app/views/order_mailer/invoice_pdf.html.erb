@@ -412,7 +412,7 @@
   <!-- ヘッダー情報 -->
   <div class="header">
     <div class="invoice-info">
-      <div class="customer-name"><%= buyer&.name || buyer&.email || purchase_invoice&.buyer&.name || purchase_invoice&.buyer&.email || "お客様" %> 様</div>
+      <div class="customer-name"><%= buyer&.name || buyer&.email || purchase_invoice&.user&.name || purchase_invoice&.user&.email || "お客様" %> 様</div>
       <p><strong>請求書番号:</strong> <%= purchase_invoice&.invoice_number %></p>
       <p><strong>発行日:</strong> <%= purchase_invoice&.invoice_date&.strftime('%Y年%m月%d日') %></p>
       <p><strong>支払期限:</strong> <%= purchase_invoice&.due_date&.strftime('%Y年%m月%d日') %></p>
@@ -477,7 +477,7 @@
         <td class="price"><strong>¥<%= number_with_delimiter(subtotal) %></strong></td>
       </tr>
       <tr class="total-row">
-        <td colspan="3"><strong>消費税（10%）</strong></td>
+        <td colspan="3"><strong>消費税（<%= tax_rate_percentage %>%）</strong></td>
         <td class="price"><strong>¥<%= number_with_delimiter(tax) %></strong></td>
       </tr>
       <tr class="total-row">

@@ -77,7 +77,7 @@
                   <% @invoices.each do |invoice| %>
                     <tr>
                       <td>
-                        <strong>INV-<%= invoice.id.to_s.rjust(6, '0') %></strong>
+                        <strong><%= invoice.invoice_number || "INV-#{invoice.id.to_s.rjust(6, '0')}" %></strong>
                       </td>
                       <td>
                         <%= invoice.user.name.presence || invoice.user.email %>

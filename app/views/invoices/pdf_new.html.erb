@@ -4,7 +4,7 @@
     <div>
       <h1 class="invoice-title">請求書</h1>
       <div class="invoice-info">
-        <p>請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+        <p>請求書番号: <%= @invoice.invoice_number || "INV-#{@invoice.id.to_s.rjust(6, '0')}" %></p>
         <p>発行日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></p>
         <p>支払期限: <%= @invoice.due_date&.strftime("%Y年%m月%d日") %></p>
       </div>

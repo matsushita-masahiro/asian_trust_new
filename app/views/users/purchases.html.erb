@@ -91,7 +91,7 @@
                 <% unless @is_customer_view %>
                   <% 
                     # 各アイテムに対するボーナスを個別計算
-                    temp_purchase = Purchase.new(user: purchase.user, buyer: purchase.buyer, purchased_at: purchase.purchased_at)
+                    temp_purchase = Purchase.new(user: purchase.user, purchased_at: purchase.purchased_at)
                     temp_item = PurchaseItem.new(purchase: temp_purchase, product: item.product, quantity: item.quantity, unit_price: item.unit_price, seller_price: item.seller_price)
                     temp_purchase.purchase_items = [temp_item]
                     item_bonus = @user.bonus_for_purchase(temp_purchase)
@@ -123,7 +123,7 @@
                   <% else %>
                     <!-- 販売履歴表示 -->
                     <% if index == 0 %>
-                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.buyer&.name || "-" %></td>
+                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.user&.name || "-" %></td>
                     <% end %>
                     <td><%= item.product.name %></td>
                     <td class="text-end"><%= number_with_delimiter(item.unit_price) %></td>
@@ -132,7 +132,7 @@
                     <td class="text-end text-info fw-bold"><%= number_with_delimiter(item.seller_price) %></td>
                     <td class="text-end text-success fw-bold"><%= number_with_delimiter(item_bonus) %></td>
                     <% if index == 0 %>
-                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.buyer&.email || "-" %></td>
+                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.user&.email || "-" %></td>
                       <td rowspan="<%= purchase.purchase_items.count %>">-</td>
                       <td rowspan="<%= purchase.purchase_items.count %>">-</td>
                       <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %></td>

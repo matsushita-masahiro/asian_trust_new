@@ -8,9 +8,13 @@ puts "\n📋 Execution Order:"
 puts "  1. Level data (from seeds.rb or existing fixtures)"
 puts "  2. Product data (from existing fixtures)"
 puts "  3. User data cleanup and creation (from CSV)"
-puts "  4. Purchase data creation (based on CSV users)"
+puts "  4. Clinic data creation"
+puts "  5. Purchase data creation (based on CSV users)"
 
 puts "\n🔄 Starting data creation process..."
+
+# クリニックデータを作成
+load Rails.root.join('db', 'fixtures', 'clinics.rb')
 
 # 統計情報を表示
 puts "\n📊 Database Statistics:"

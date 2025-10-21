@@ -72,6 +72,43 @@
                   <% end %>
                 </td>
               </tr>
+            </table>
+
+            <!-- 銀行口座情報セクション -->
+            <% if @invoice_recipient.bank_name.present? || @invoice_recipient.bank_branch_name.present? || @invoice_recipient.bank_account_number.present? %>
+            <div class="card mt-3">
+              <div class="card-header bg-info text-white">
+                <h6 class="mb-0">💳 振込先銀行口座情報</h6>
+              </div>
+              <div class="card-body">
+                <table class="table table-borderless mb-0">
+                  <tr>
+                    <th width="30%">銀行名:</th>
+                    <td><%= @invoice_recipient.bank_name.presence || "未設定" %></td>
+                  </tr>
+                  <tr>
+                    <th>支店名:</th>
+                    <td><%= @invoice_recipient.bank_branch_name.presence || "未設定" %></td>
+                  </tr>
+                  <tr>
+                    <th>口座種別:</th>
+                    <td><%= @invoice_recipient.bank_account_type.presence || "未設定" %></td>
+                  </tr>
+                  <tr>
+                    <th>口座番号:</th>
+                    <td><%= @invoice_recipient.bank_account_number.presence || "未設定" %></td>
+                  </tr>
+                  <tr>
+                    <th>口座名義:</th>
+                    <td><%= @invoice_recipient.bank_account_name.presence || "未設定" %></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <% end %>
+
+            <table class="table table-borderless">
+              <tr style="display: none;"></tr>
               <tr>
                 <th>最終更新:</th>
                 <td><%= @invoice_recipient.updated_at.strftime("%Y年%m月%d日 %H:%M") %></td>
@@ -149,6 +186,47 @@
               <div class="mb-3">
                 <%= f.label :notes, "備考", class: "form-label" %>
                 <%= f.text_area :notes, class: "form-control", rows: 3, placeholder: "その他の情報や備考を入力してください" %>
+              </div>
+
+              <!-- 銀行口座情報セクション -->
+              <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                  <h6 class="mb-0">💳 振込先銀行口座情報</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <%= f.label :bank_name, "銀行名", class: "form-label" %>
+                      <%= f.text_field :bank_name, class: "form-control", placeholder: "三菱UFJ銀行" %>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <%= f.label :bank_branch_name, "支店名", class: "form-label" %>
+                      <%= f.text_field :bank_branch_name, class: "form-control", placeholder: "新宿支店" %>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <%= f.label :bank_account_type, "口座種別", class: "form-label" %>
+                      <%= f.select :bank_account_type, 
+                          options_for_select([
+                            ['普通', '普通'],
+                            ['当座', '当座'],
+                            ['貯蓄', '貯蓄']
+                          ]), 
+                          { prompt: '選択してください' }, 
+                          { class: "form-select" } %>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <%= f.label :bank_account_number, "口座番号", class: "form-label" %>
+                      <%= f.text_field :bank_account_number, class: "form-control", placeholder: "1234567" %>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <%= f.label :bank_account_name, "口座名義", class: "form-label" %>
+                      <%= f.text_field :bank_account_name, class: "form-control", placeholder: "カ）サンプル" %>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="d-grid">

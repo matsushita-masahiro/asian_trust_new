@@ -21,7 +21,55 @@
               <td><%= link_to invoice.invoice_number, purchase_invoice_path(invoice), class: "text-decoration-none" %></td>
               <td><%= invoice.invoice_date.strftime("%Y/%m/%d") %></td>
               <td><%= invoice.due_date.strftime("%Y/%m/%d") %></td>
-              <td class="text-end"><%= number_with_delimiter(invoice.total_amount.to_i) %>円</td>
+              <td class="text-end">
+                <% 
+                  # DBから保存された値を取得（新しいレコードの場合）
+                  if invoice.total_with_tax.present? && invoice.total_with_tax > 0
+                    # DBに保存された値を使用
+                    product_amount = invoice.total_amount.to_i
+                    shipping_fee = invoice.shipping_fee.to_i
+                    admin_fee = invoice.admin_fee.to_i
+                    tax_amount = invoice.tax_amount.to_i
+                    subtotal_before_tax = invoice.subtotal_before_tax.to_i
+                    total_with_tax = invoice.total_with_tax.to_i
+                    tax_rate_percent = (invoice.tax_rate.to_f * 100).to_i
+                    
+                    # 配送先数を表示用に計算
+                    delivery_destinations = 0
+                    delivery_destinations += 1 if shipping_fee > 0 && admin_fee > 0  # クリニック配送
+                    delivery_destinations += 1 if shipping_fee > 6000  # 複数配送先
+                    delivery_destinations = 1 if delivery_destinations == 0 && shipping_fee > 0  # 単一配送先
+                  else
+                    # 既存レコード用：従来の計算方法
+                    product_amount = invoice.total_amount.to_i
+                    
+                    # 商品別配送先判定
+                    purchase_items = invoice.purchase.purchase_items
+                    stem_cell_items = purchase_items.select { |item| item.product.name.include?('骨髄幹細胞培培養上清液') }
+                    other_items = purchase_items.select { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') }
+                    
+                    has_stem_cell_product = stem_cell_items.any?
+                    has_other_products = other_items.any?
+                    
+                    # 配送先数を計算
+                    delivery_destinations = 0
+                    delivery_destinations += 1 if has_stem_cell_product  # クリニック配送
+                    delivery_destinations += 1 if has_other_products     # 自宅配送
+                    
+                    shipping_fee = delivery_destinations * 6000
+                    admin_fee = has_stem_cell_product ? 10000 : 0
+                    subtotal_before_tax = product_amount + shipping_fee + admin_fee
+                    tax_amount = calculate_tax(subtotal_before_tax)
+                    total_with_tax = subtotal_before_tax + tax_amount
+                    tax_rate_percent = tax_rate_percentage
+                  end
+                %>
+                <span data-bs-toggle="tooltip" data-bs-placement="top" 
+                      title="商品代金: ¥<%= number_with_delimiter(product_amount) %><% if shipping_fee > 0 %>&#13;&#10;送料(<%= delivery_destinations %>箇所): ¥<%= number_with_delimiter(shipping_fee) %><% end %><% if admin_fee > 0 %>&#13;&#10;事務手数料: ¥<%= number_with_delimiter(admin_fee) %><% end %>&#13;&#10;小計（税抜）: ¥<%= number_with_delimiter(subtotal_before_tax) %>&#13;&#10;消費税（<%= tax_rate_percent %>%）: ¥<%= number_with_delimiter(tax_amount) %>">
+                  <%= number_with_delimiter(total_with_tax) %>円
+                  <i class="fas fa-info-circle text-muted ms-1"></i>
+                </span>
+              </td>
               <td>
                 <span class="badge bg-<%= invoice.status == 0 ? 'secondary' : invoice.status == 1 ? 'warning' : invoice.status == 2 ? 'success' : 'info' %>">
                   <%= invoice.status_display_name %>
@@ -52,3 +100,36 @@
     <%= link_to "商品一覧に戻る", orders_products_path, class: "btn btn-secondary" %>
   </div>
 </div>
+
+<style>
+.tooltip-inner {
+  white-space: pre-line !important;
+  text-align: left !important;
+  max-width: 300px !important;
+}
+</style>
+
+<script>
+// ツールチップを有効化（Turbo対応）
+function initializeTooltips() {
+  // 既存のtooltipを破棄
+  var existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  existingTooltips.forEach(function(element) {
+    var tooltip = bootstrap.Tooltip.getInstance(element);
+    if (tooltip) {
+      tooltip.dispose();
+    }
+  });
+  
+  // 新しいtooltipを初期化
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+}
+
+// 複数のイベントでtooltipを初期化
+document.addEventListener('DOMContentLoaded', initializeTooltips);
+document.addEventListener('turbo:load', initializeTooltips);
+document.addEventListener('turbo:render', initializeTooltips);
+</script>

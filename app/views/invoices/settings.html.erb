@@ -1,9 +1,8 @@
-<div class="container py-5 pt-5 mt-5">
+<div class="container py-5 pt-5">
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary">⚙️ 請求書情報設定</h2>
-        <%= link_to "請求書管理に戻る", invoices_path, class: "btn btn-outline-secondary" %>
+        <h3 class="text-primary">⚙️ 請求書情報設定</h3>
       </div>
     </div>
   </div>
@@ -30,7 +29,7 @@
               </div>
               <div class="col-md-6 mb-3">
                 <%= f.label :department, "部署", class: "form-label" %>
-                <%= f.text_field :department, class: "form-control", placeholder: "営業部" %>
+                <%= f.text_field :department, class: "form-control" %>
               </div>
             </div>
 
@@ -41,14 +40,22 @@
                   placeholder: "info@example.com" %>
             </div>
 
-            <div class="mb-3">
-              <%= f.label :postal_code, "郵便番号", class: "form-label" %>
-              <%= f.text_field :postal_code, class: "form-control", placeholder: "100-0001" %>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <%= f.label :postal_code, "郵便番号", class: "form-label" %>
+                <div class="input-group">
+                  <%= f.text_field :postal_code, class: "form-control", placeholder: "150-0045", id: "postal_code_field" %>
+                  <button type="button" class="btn btn-outline-secondary" id="address_search_btn">
+                    <i class="fas fa-search"></i> 住所検索
+                  </button>
+                </div>
+                <div class="form-text">郵便番号を入力すると自動で住所が入力されます</div>
+              </div>
             </div>
 
             <div class="mb-3">
               <%= f.label :address, "住所", class: "form-label" %>
-              <%= f.text_area :address, class: "form-control", rows: 2, placeholder: "東京都千代田区千代田1-1-1", required: true %>
+              <%= f.text_area :address, class: "form-control", rows: 2, placeholder: "東京都千代田区千代田1-1-1", required: true, id: "address_field" %>
               <div class="invalid-feedback">
                 住所を入力してください。
               </div>
@@ -123,4 +130,103 @@
     });
   }, false);
 })();
+
+// 郵便番号から住所を自動取得
+document.addEventListener('DOMContentLoaded', function() {
+  const postalCodeField = document.getElementById('postal_code_field');
+  const addressField = document.getElementById('address_field');
+  const searchBtn = document.getElementById('address_search_btn');
+
+  // 郵便番号フォーマット関数
+  function formatPostalCode(value) {
+    const digitsOnly = value.replace(/\D/g, '');
+    if (digitsOnly.length === 7) {
+      return digitsOnly.slice(0, 3) + '-' + digitsOnly.slice(3);
+    }
+    return value;
+  }
+
+  // 住所検索関数
+  async function searchAddress(postalCode) {
+    const formattedCode = formatPostalCode(postalCode);
+    const digitsOnly = formattedCode.replace(/\D/g, '');
+    
+    if (digitsOnly.length !== 7) {
+      alert('郵便番号は7桁で入力してください');
+      return;
+    }
+
+    try {
+      searchBtn.disabled = true;
+      searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 検索中...';
+      
+      // 郵便番号APIを使用（zipcloud.ibsnet.co.jp）
+      const response = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${digitsOnly}`);
+      const data = await response.json();
+      
+      if (data.status === 200 && data.results && data.results.length > 0) {
+        const result = data.results[0];
+        const fullAddress = result.address1 + result.address2 + result.address3;
+        
+        // 郵便番号をフォーマットして設定
+        postalCodeField.value = formattedCode;
+        // 住所を設定
+        addressField.value = fullAddress;
+        
+        // 成功メッセージ
+        showMessage('住所を自動入力しました', 'success');
+      } else {
+        showMessage('該当する住所が見つかりませんでした', 'warning');
+      }
+    } catch (error) {
+      console.error('住所検索エラー:', error);
+      showMessage('住所検索に失敗しました', 'danger');
+    } finally {
+      searchBtn.disabled = false;
+      searchBtn.innerHTML = '<i class="fas fa-search"></i> 住所検索';
+    }
+  }
+
+  // メッセージ表示関数
+  function showMessage(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-2`;
+    alertDiv.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    postalCodeField.parentNode.parentNode.appendChild(alertDiv);
+    
+    // 3秒後に自動で消す
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        alertDiv.remove();
+      }
+    }, 3000);
+  }
+
+  // 検索ボタンクリック時
+  searchBtn.addEventListener('click', function() {
+    const postalCode = postalCodeField.value.trim();
+    if (postalCode) {
+      searchAddress(postalCode);
+    } else {
+      alert('郵便番号を入力してください');
+    }
+  });
+
+  // 郵便番号入力時の自動フォーマット
+  postalCodeField.addEventListener('input', function() {
+    this.value = formatPostalCode(this.value);
+  });
+
+  // Enterキーで検索
+  postalCodeField.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      searchBtn.click();
+    }
+  });
+});
 </script>

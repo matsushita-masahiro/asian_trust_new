@@ -42,27 +42,222 @@
       </div>
       
       <div class="col-md-4">
+        <!-- 配送先選択カード -->
+        <div class="card mb-3">
+          <div class="card-header">
+            <h5>
+              <i class="fas fa-shipping-fast me-2"></i>
+              配送先を選択してください
+            </h5>
+          </div>
+          <div class="card-body">
+            <% 
+              # カート内の商品を詳細にチェック
+              stem_cell_items = @cart_items.select { |item| item.product.name.include?('骨髄幹細胞培培養上清液') }
+              other_items = @cart_items.select { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') }
+              
+              has_stem_cell_product = stem_cell_items.any?
+              has_other_products = other_items.any?
+              
+              # クリニック情報を取得
+              clinic_level = Level.find_by(name: 'クリニック')
+              clinics = clinic_level ? User.joins(:invoice_base).where(level: clinic_level).includes(:invoice_base) : []
+            %>
+            
+            <%= form_with url: orders_checkout_path, method: :get, local: true, id: "delivery-form" do |f| %>
+              <div class="delivery-options">
+                <% if has_stem_cell_product && has_other_products %>
+                  <!-- 複数商品がある場合：配送先情報の説明 -->
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>配送先について:</strong>
+                    <ul class="mb-0 mt-2">
+                      <li><strong>骨髄幹細胞培培養上清液</strong> → クリニック配送</li>
+                      <li><strong>その他の商品</strong> → ご登録住所配送</li>
+                    </ul>
+                    <div class="mt-2 text-warning">
+                      <i class="fas fa-exclamation-triangle me-1"></i>
+                      複数の配送先になるため、送料が複数箇所分かかります。
+                    </div>
+                  </div>
+                <% elsif has_stem_cell_product %>
+                  <!-- 骨髄幹細胞培養上清液のみの場合 -->
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>骨髄幹細胞培培養上清液</strong>はクリニックへの配送が必要です。
+                  </div>
+                <% end %>
+
+                <% if has_stem_cell_product %>
+                  <!-- 骨髄幹細胞培養上清液がある場合：クリニック選択 -->
+                  <div class="delivery-option mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="fas fa-hospital me-2"></i>
+                      骨髄幹細胞培培養上清液の配送先クリニック
+                    </label>
+                    
+                    <% if clinics.any? %>
+                      <select name="clinic_id" id="clinic-select" class="form-select" required>
+                        <option value="">クリニックを選択してください</option>
+                        <% clinics.each do |clinic| %>
+                          <option value="<%= clinic.id %>" 
+                                  data-name="<%= clinic.name %>"
+                                  data-address="〒<%= clinic.invoice_base.postal_code %>|<%= clinic.invoice_base.address %>"
+                                  data-phone="<%= clinic.phone %>">
+                            <%= clinic.name %>
+                          </option>
+                        <% end %>
+                      </select>
+                    <% else %>
+                      <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        登録されているクリニックがありません。管理者にお問い合わせください。
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+
+                <% if has_other_products && has_stem_cell_product %>
+                  <!-- 複数商品がある場合：その他商品の配送先 -->
+                  <div class="delivery-option mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="fas fa-home me-2"></i>
+                      その他商品の配送先
+                    </label>
+                    <div class="alert alert-success">
+                      <i class="fas fa-check-circle me-2"></i>
+                      <strong>配送先:</strong> ご登録の住所へ配送いたします
+                      <% if current_user.invoice_base&.postal_code.present? && current_user.invoice_base&.address.present? %>
+                        <div class="mt-2 small">
+                          〒<%= current_user.invoice_base.postal_code %><br>
+                          <%= current_user.invoice_base.address %>
+                        </div>
+                      <% else %>
+                        <div class="mt-2 text-danger">
+                          <i class="fas fa-exclamation-triangle me-1"></i>
+                          住所が登録されていません。<%= link_to "請求書管理", "/invoices/settings", class: "text-decoration-underline" %>から住所を登録してください。
+                        </div>
+                      <% end %>
+                    </div>
+                    <input type="hidden" name="has_other_products" value="true">
+                  </div>
+                <% elsif has_other_products %>
+                  <!-- その他商品のみの場合：水色背景の住所表示のみ -->
+                  <% if current_user.invoice_base&.postal_code.present? && current_user.invoice_base&.address.present? %>
+                    <div class="alert alert-info">
+                      <i class="fas fa-map-marker-alt me-2"></i>
+                      <strong>配送先住所:</strong>
+                      <div class="mt-2">
+                        〒<%= current_user.invoice_base.postal_code %><br>
+                        <%= current_user.invoice_base.address %>
+                      </div>
+                    </div>
+                  <% else %>
+                    <div class="alert alert-danger">
+                      <i class="fas fa-exclamation-triangle me-2"></i>
+                      <strong>住所未登録:</strong>
+                      <div class="mt-2">
+                        住所が登録されていません。<%= link_to "請求書管理", "/invoices/settings", class: "text-decoration-underline" %>から住所を登録してください。
+                      </div>
+                    </div>
+                  <% end %>
+                  <input type="hidden" name="delivery_type" value="home">
+                <% end %>
+              </div>
+
+              <% if has_stem_cell_product %>
+                <div class="delivery-address mt-3" id="delivery-address" style="display: none;">
+                  <div class="alert alert-info">
+                    <i class="fas fa-map-marker-alt me-2"></i>
+                    <strong>配送先住所:</strong>
+                    <div id="selected-address" class="mt-2"></div>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+
+        <!-- カート合計カード -->
         <div class="card">
           <div class="card-header">
             <h5>カート合計</h5>
           </div>
           <div class="card-body">
+            <% 
+              # 基本料金計算
+              subtotal = @cart.total_amount(current_user.level_symbol)
+              
+              # 配送先数を計算
+              delivery_destinations = 0
+              delivery_destinations += 1 if has_stem_cell_product  # クリニック配送
+              delivery_destinations += 1 if has_other_products     # 自宅配送
+              
+              shipping_fee = delivery_destinations * 6000
+              
+              # 事務手数料（クリニック配送の場合）
+              admin_fee = has_stem_cell_product ? 10000 : 0
+              
+              # 合計金額
+              total_amount = subtotal + shipping_fee + admin_fee
+            %>
+            
             <div class="d-flex justify-content-between mb-2">
               <span>商品数:</span>
               <span><%= @cart.total_items %>個</span>
             </div>
-            <div class="d-flex justify-content-between mb-3">
-              <span>小計:</span>
-              <span>¥<%= number_with_delimiter(@cart.total_amount(current_user.level_symbol)) %></span>
+            <div class="d-flex justify-content-between mb-2">
+              <span>商品代金:</span>
+              <span>¥<%= number_with_delimiter(subtotal) %></span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span>送料 (<%= delivery_destinations %>箇所):</span>
+              <span id="shipping-fee">¥<%= number_with_delimiter(shipping_fee) %></span>
+            </div>
+            <% if has_stem_cell_product %>
+              <div class="d-flex justify-content-between mb-2">
+                <span>事務手数料 (クリニック配送):</span>
+                <span class="text-warning">¥<%= number_with_delimiter(admin_fee) %></span>
+              </div>
+            <% end %>
+            <% 
+              # 税抜き合計（商品代金+送料+事務手数料）
+              subtotal_before_tax = subtotal + shipping_fee + admin_fee
+              # 消費税計算
+              tax_amount = calculate_tax(subtotal_before_tax)
+              # 税込み合計
+              total_amount_with_tax = subtotal_before_tax + tax_amount
+            %>
+            <div class="d-flex justify-content-between mb-2">
+              <span>小計（税抜）:</span>
+              <span>¥<%= number_with_delimiter(subtotal_before_tax) %></span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span>消費税（<%= tax_rate_percentage %>%）:</span>
+              <span>¥<%= number_with_delimiter(tax_amount) %></span>
             </div>
             <hr>
             <div class="d-flex justify-content-between mb-3">
               <strong>合計:</strong>
-              <strong class="text-success">¥<%= number_with_delimiter(@cart.total_amount(current_user.level_symbol)) %></strong>
+              <strong class="text-success" id="total-amount">¥<%= number_with_delimiter(total_amount_with_tax) %></strong>
+            </div>
+            
+            <!-- 料金説明 -->
+            <div class="alert alert-light small">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>料金について:</strong>
+              <ul class="mb-0 mt-2">
+                <li>送料: 配送先1箇所につき ¥6,000</li>
+                <% if has_stem_cell_product %>
+                  <li class="text-warning">事務手数料: クリニック配送 ¥10,000</li>
+                <% end %>
+              </ul>
             </div>
             
             <div class="d-grid">
-              <%= link_to "購入手続きへ", orders_checkout_path, class: "btn btn-success btn-lg" %>
+              <button type="button" id="checkout-btn" class="btn btn-success btn-lg" disabled>
+                配送先を選択してください
+              </button>
             </div>
           </div>
         </div>
@@ -76,3 +271,192 @@
     </div>
   <% end %>
 </div>
+<script>
+// Turbo対応のイベントリスナー
+function initializeCartDelivery() {
+  const checkoutBtn = document.getElementById('checkout-btn');
+  const deliveryAddress = document.getElementById('delivery-address');
+  const selectedAddress = document.getElementById('selected-address');
+  const deliveryForm = document.getElementById('delivery-form');
+  const clinicSelect = document.getElementById('clinic-select');
+  
+  // 要素が存在しない場合は処理を終了
+  if (!checkoutBtn) {
+    console.log('Cart delivery elements not found, skipping initialization');
+    return;
+  }
+  
+  // 商品タイプをチェック
+  const hasStemCellProduct = <%= @cart_items.any? { |item| item.product.name.include?('骨髄幹細胞培培養上清液') } %>;
+  const hasOtherProducts = <%= @cart_items.any? { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') } %>;
+  
+  // 登録住所の情報
+  const hasAddress = '<%= current_user.invoice_base&.postal_code.present? && current_user.invoice_base&.address.present? %>' === 'true';
+
+  // 初期状態の設定
+  function updateCheckoutButton() {
+    if (!checkoutBtn) return;
+    
+    let canCheckout = true;
+    let buttonText = '購入手続きへ';
+    let buttonClass = 'btn btn-success btn-lg';
+    
+    // クリニック配送が必要な場合のチェック
+    if (hasStemCellProduct && clinicSelect) {
+      if (!clinicSelect.value) {
+        canCheckout = false;
+        buttonText = 'クリニックを選択してください';
+        buttonClass = 'btn btn-secondary btn-lg';
+      }
+    }
+    
+    // 自宅配送が必要で住所未登録の場合
+    if (hasOtherProducts && !hasAddress) {
+      canCheckout = false;
+      buttonText = '住所登録が必要です';
+      buttonClass = 'btn btn-secondary btn-lg';
+    }
+    
+    checkoutBtn.disabled = !canCheckout;
+    checkoutBtn.textContent = buttonText;
+    checkoutBtn.className = buttonClass;
+  }
+
+  // クリニック選択イベント
+  if (hasStemCellProduct && clinicSelect) {
+    // 既存のイベントリスナーを削除（重複防止）
+    clinicSelect.removeEventListener('change', handleClinicChange);
+    
+    // イベントハンドラー関数を定義
+    function handleClinicChange() {
+      console.log('Clinic selection changed:', this.value);
+      const selectedOption = this.options[this.selectedIndex];
+      
+      if (this.value && selectedAddress) {
+        // 選択されたクリニックの住所を表示（パイプ文字をbrタグに変換）
+        const clinicAddress = selectedOption.dataset.address.replace(/\|/g, '<br>');
+        console.log('Clinic address:', clinicAddress);
+        selectedAddress.innerHTML = clinicAddress;
+        if (deliveryAddress) {
+          deliveryAddress.style.display = 'block';
+        }
+      } else {
+        if (deliveryAddress) {
+          deliveryAddress.style.display = 'none';
+        }
+      }
+      
+      // ボタン状態を更新（現在のclinicSelectを参照）
+      updateCheckoutButtonWithCurrentState();
+    }
+    
+    // 新しいイベントリスナーを追加
+    clinicSelect.addEventListener('change', handleClinicChange);
+  }
+
+  // 現在の状態でボタンを更新する関数
+  function updateCheckoutButtonWithCurrentState() {
+    const currentCheckoutBtn = document.getElementById('checkout-btn');
+    const currentClinicSelect = document.getElementById('clinic-select');
+    
+    if (!currentCheckoutBtn) return;
+    
+    let canCheckout = true;
+    let buttonText = '購入手続きへ';
+    let buttonClass = 'btn btn-success btn-lg';
+    
+    // クリニック配送が必要な場合のチェック
+    if (hasStemCellProduct && currentClinicSelect) {
+      if (!currentClinicSelect.value) {
+        canCheckout = false;
+        buttonText = 'クリニックを選択してください';
+        buttonClass = 'btn btn-secondary btn-lg';
+      }
+    }
+    
+    // 自宅配送が必要で住所未登録の場合
+    if (hasOtherProducts && !hasAddress) {
+      canCheckout = false;
+      buttonText = '住所登録が必要です';
+      buttonClass = 'btn btn-secondary btn-lg';
+    }
+    
+    currentCheckoutBtn.disabled = !canCheckout;
+    currentCheckoutBtn.textContent = buttonText;
+    currentCheckoutBtn.className = buttonClass;
+  }
+
+  // 初期状態の設定
+  updateCheckoutButtonWithCurrentState();
+  
+  // 自宅配送のみの場合は住所表示処理をスキップ（HTMLで既に表示済み）
+
+  // チェックアウトボタンのクリックイベント
+  if (checkoutBtn) {
+    // 既存のイベントリスナーを削除（重複防止）
+    checkoutBtn.removeEventListener('click', handleCheckoutClick);
+    
+    // イベントハンドラー関数を定義
+    function handleCheckoutClick() {
+      const currentClinicSelect = document.getElementById('clinic-select');
+      const url = new URL('<%= orders_checkout_path %>', window.location.origin);
+      
+      // 複数配送先の場合
+      if (hasStemCellProduct && hasOtherProducts) {
+        url.searchParams.set('delivery_type', 'multiple');
+        if (currentClinicSelect && currentClinicSelect.value) {
+          url.searchParams.set('clinic_id', currentClinicSelect.value);
+        }
+      } else if (hasStemCellProduct) {
+        // クリニック配送のみ
+        url.searchParams.set('delivery_type', 'clinic');
+        if (currentClinicSelect && currentClinicSelect.value) {
+          url.searchParams.set('clinic_id', currentClinicSelect.value);
+        }
+      } else {
+        // 自宅配送のみ
+        url.searchParams.set('delivery_type', 'home');
+      }
+      
+      window.location.href = url.toString();
+    }
+    
+    // 新しいイベントリスナーを追加
+    checkoutBtn.addEventListener('click', handleCheckoutClick);
+  }
+}
+
+// Turbo対応のイベントリスナー
+document.addEventListener('DOMContentLoaded', initializeCartDelivery);
+document.addEventListener('turbo:load', initializeCartDelivery);
+document.addEventListener('turbo:render', initializeCartDelivery);
+</script>
+
+<style>
+.delivery-option .btn-check:checked + .btn-outline-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.delivery-option .btn-check:checked + .btn-outline-info {
+  background-color: #0dcaf0;
+  border-color: #0dcaf0;
+  color: white;
+}
+
+.delivery-option .btn-check:checked + .btn-outline-success {
+  background-color: #198754;
+  border-color: #198754;
+  color: white;
+}
+
+.delivery-option .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.delivery-option .btn {
+  transition: all 0.2s ease;
+}
+</style>

@@ -60,7 +60,13 @@ class InvoicesController < ApplicationController
       # 請求元情報（invoice_base）を作成または更新
       @invoice_base = current_user.invoice_base || current_user.build_invoice_base
       
-      if @invoice_base.update(invoice_base_params)
+      # 郵便番号のフォーマット処理
+      formatted_params = invoice_base_params
+      if formatted_params[:postal_code].present?
+        formatted_params[:postal_code] = format_postal_code(formatted_params[:postal_code])
+      end
+      
+      if @invoice_base.update(formatted_params)
         redirect_to settings_invoices_path, notice: '請求元情報が保存されました。'
         return
       else
@@ -82,6 +88,10 @@ class InvoicesController < ApplicationController
     # ボーナス内訳を取得
     @bonus_details = get_bonus_details(@selected_month_start, @selected_month_end)
     @total_bonus = current_user.bonus_in_month(@selected_month)
+    
+    # 管理者ユーザーのinvoice_recipientから会社名を取得
+    admin_user = User.find_by(admin: true)
+    @company_name = admin_user&.invoice_recipient&.name || "株式会社アジアビジネストラスト"
     
     # デバッグ情報
     Rails.logger.info "=== Invoice Show Debug ==="
@@ -284,6 +294,18 @@ class InvoicesController < ApplicationController
 
   private
 
+  def format_postal_code(postal_code)
+    # 数字のみを抽出
+    digits_only = postal_code.gsub(/\D/, '')
+    
+    # 7桁の場合のみフォーマット
+    if digits_only.length == 7
+      "#{digits_only[0..2]}-#{digits_only[3..6]}"
+    else
+      postal_code # 7桁でない場合はそのまま返す
+    end
+  end
+
   def invoice_params
     params.require(:invoice).permit(:invoice_date, :due_date, :total_amount, :bank_name, :bank_branch_name, :bank_account_type, :bank_account_number, :bank_account_name, :notes, :sent_at, :invoice_recipient_id, :target_month)
   end
@@ -302,24 +324,36 @@ class InvoicesController < ApplicationController
     Rails.logger.info "=== get_bonus_details Debug ==="
     Rails.logger.info "Date range: #{start_date} to #{end_date}"
     
-    # 自分の販売に対するボーナス
-    self_purchases = current_user.purchases.includes(purchase_items: :product).where(purchased_at: start_date..end_date)
-    Rails.logger.info "Self purchases found: #{self_purchases.count}"
+    # 自分と下位ユーザーの販売に対するボーナス（sales/index.html.erbと同じ）
+    user_ids = [current_user.id] + current_user.descendant_ids
+    all_purchases = Purchase.includes(purchase_items: :product, user: [])
+                           .where(user_id: user_ids)
+                           .where(purchased_at: start_date..end_date)
+    Rails.logger.info "All purchases found: #{all_purchases.count}"
     
-    self_purchases.each do |purchase|
+    all_purchases.each do |purchase|
       purchase.purchase_items.each do |item|
-        bonus = current_user.bonus_for_purchase_item(item)
+        # 自己販売に対するインセンティブ計算
+        item_bonus = current_user.bonus_for_purchase_item(item)
+        unit_bonus = current_user.incentive_unit_price_for_item(item)
         
-        Rails.logger.info "Purchase Item: #{item.product.name}, bonus: #{bonus}"
+        Rails.logger.info "Purchase Item: #{item.product.name}, unit_bonus: #{unit_bonus}, item_bonus: #{item_bonus}, quantity: #{item.quantity}"
         
-        if bonus > 0
+        if item_bonus > 0
+          # 種別を判定
+          purchase_type = if purchase.user == current_user
+                           '自己販売'
+                         else
+                           '下位販売'
+                         end
+          
           details << {
-            type: '自己販売',
-            user_name: current_user.name || current_user.email,
+            type: purchase_type,
+            user_name: purchase.user.name || purchase.user.email,
             product_name: item.product.name,
             quantity: item.quantity,
-            unit_bonus: bonus / item.quantity,
-            total_bonus: bonus,
+            unit_bonus: unit_bonus,     # 単価インセンティブ
+            total_bonus: item_bonus,    # 合計インセンティブ
             purchased_at: purchase.purchased_at,
             purchase_id: purchase.id
           }
@@ -327,81 +361,9 @@ class InvoicesController < ApplicationController
       end
     end
     
-    # 子孫の販売に対するボーナス
-    descendant_user_ids = current_user.descendant_ids.reject { |uid| uid == current_user.id }
+    # 最初の処理で既に全データを処理済みのため、重複処理を削除
     
-    if descendant_user_ids.any?
-      descendant_purchase_items = PurchaseItem.joins(:purchase)
-                                             .where(purchases: { user_id: descendant_user_ids, purchased_at: start_date..end_date })
-                                             .includes(:product, purchase: :user)
-      
-      Rails.logger.info "Descendant purchase items found: #{descendant_purchase_items.count}"
-      
-      descendant_purchase_items.each do |item|
-        purchase = item.purchase
-        purchase_user_level = purchase.user.level_at(purchase.purchased_at)
-        my_level_at_purchase = current_user.level_at(purchase.purchased_at)
-        
-        product = item.product
-        purchase_user_price = product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
-        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
-        
-        if purchase_user_price > my_price
-          diff = purchase_user_price - my_price
-          bonus = diff * item.quantity
-          
-          Rails.logger.info "Descendant purchase item: #{item.product.name} by #{purchase.user.name}, bonus: #{bonus}"
-          
-          if bonus > 0
-            details << {
-              type: '下位販売',
-              user_name: purchase.user.name || purchase.user.email,
-              product_name: item.product.name,
-              quantity: item.quantity,
-              unit_bonus: diff,
-              total_bonus: bonus,
-              purchased_at: purchase.purchased_at,
-              purchase_id: purchase.id
-            }
-          end
-        end
-      end
-    end
-    
-    # 直下の無資格者による販売に対するボーナス
-    descendant_user_ids_set = Set.new(current_user.descendant_ids)
-    
-    current_user.referrals.reject(&:bonus_eligible?).each do |child|
-      # 既に子孫として計算済みの場合はスキップ
-      next if descendant_user_ids_set.include?(child.id)
-      
-      child_purchase_items = PurchaseItem.joins(:purchase)
-                                        .where(purchases: { user_id: child.id, purchased_at: start_date..end_date })
-                                        .includes(:product, purchase: :user)
-      
-      child_purchase_items.each do |item|
-        purchase_date = item.purchase.purchased_at
-        my_level_at_purchase = current_user.level_at(purchase_date)
-        product = item.product
-        base_price = product.base_price
-        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
-        diff = base_price - my_price
-        bonus = diff * item.quantity
-        
-        if bonus > 0
-          details << {
-            type: '無資格者販売',
-            user_name: child.name || child.email,
-            product_name: item.product.name,
-            quantity: item.quantity,
-            unit_bonus: diff,
-            total_bonus: bonus,
-            purchased_at: purchase_date,
-            purchase_id: item.purchase.id
-          }
-        end
-      end
-    end
+    # 無資格者販売処理も最初の処理に含まれているため削除
     
     # 購入ID順でソート
     sorted_details = details.sort_by { |d| d[:purchase_id] }

@@ -1,0 +1,326 @@
+<!-- 固定ヘッダーセクション -->
+<div class="sticky-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body p-4">
+            <!-- コンパクトなタイトル行 -->
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-user-tie fa-lg me-2 text-primary"></i>
+                  <div>
+                    <h4 class="mb-0 fw-bold text-dark"><%= @target_user.name.present? ? @target_user.name : @target_user.email %></h4>
+                    <small class="text-muted text-nowrap">
+                      <% if action_name == 'drill_down' %>
+                        階層表示（管理者用）
+                      <% else %>
+                        インセンティブ詳細（管理者用）
+                      <% end %>
+                    </small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="d-flex align-items-center justify-content-end" style="gap: 0.5rem;">
+                  <!-- 対象月選択 -->
+                  <div class="flex-shrink-0">
+                    <% 
+                      form_url = if action_name == 'drill_down'
+                        drill_down_admin_incentive_path(@target_user)
+                      else
+                        admin_incentive_path(@target_user)
+                      end
+                    %>
+                    <%= form_with url: form_url, method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
+                      <label class="form-label me-2 mb-0 text-dark small text-nowrap">対象月:</label>
+                      <div class="input-group" style="width: 160px;">
+                        <span class="input-group-text bg-white border-0 p-1">
+                          <i class="fas fa-calendar-alt text-muted"></i>
+                        </span>
+                        <%= f.month_field :target_month, value: @target_month, class: "form-control border-0 form-control-sm", onchange: "document.getElementById('month-form').submit();" %>
+                      </div>
+                    <% end %>
+                  </div>
+                  
+                  <!-- drill_downの場合は戻るボタンを表示 -->
+                  <% if action_name == 'drill_down' %>
+                    <div class="flex-shrink-0">
+                      <% if @target_user.referrer %>
+                        <%= link_to drill_down_admin_incentive_path(@target_user.referrer, target_month: @target_month), class: "btn btn-outline-secondary btn-sm text-nowrap" do %>
+                          <i class="fas fa-arrow-left me-1"></i>上の階層
+                        <% end %>
+                      <% else %>
+                        <%= link_to admin_incentives_path(target_month: @target_month), class: "btn btn-outline-secondary btn-sm text-nowrap" do %>
+                          <i class="fas fa-arrow-left me-1"></i>一覧に戻る
+                        <% end %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- メインコンテンツエリア -->
+<div class="container-fluid" style="padding-top: 20px;">
+
+  <% if @target_user.level&.value&.in?([4, 5, 6]) %>
+    <!-- お客様（レベル4,5,6）の場合の表示 -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body text-center py-5">
+            <i class="fas fa-user fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">お客様</h4>
+            <p class="text-muted">このユーザーはお客様（レベル<%= @target_user.level %>）のため、インセンティブ受給対象外です。</p>
+            <% if @target_user.purchases.any? %>
+              <div class="mt-4">
+                <h6 class="text-muted">購入履歴</h6>
+                <p class="text-primary">総購入金額: ¥<%= number_with_delimiter(@target_user.purchases.sum(:amount)) %></p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <!-- 統計情報 -->
+    <div class="row mb-5">
+      <div class="col-md-4 mb-4">
+        <div class="card bg-info text-white shadow-sm">
+          <div class="card-body py-4">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title">インセンティブ</h6>
+                <h4 class="mb-0">¥<%= number_with_delimiter(@incentive_summary[:total_incentive]) %></h4>
+              </div>
+              <div class="align-self-center">
+                <i class="fas fa-yen-sign fa-2x opacity-75"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <div class="card bg-success text-white shadow-sm">
+          <div class="card-body py-4">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title">自己購入金額</h6>
+                <h4 class="mb-0">¥<%= number_with_delimiter(@incentive_summary[:own_sales_amount] || 0) %></h4>
+              </div>
+              <div class="align-self-center">
+                <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <div class="card bg-primary text-white shadow-sm">
+          <div class="card-body py-4">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title">直接紹介数</h6>
+                <h4 class="mb-0"><%= @direct_referrals.count %></h4>
+              </div>
+              <div class="align-self-center">
+                <i class="fas fa-users fa-2x opacity-75"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 直下位ユーザー一覧 -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">直下位ユーザー (<%= Date.strptime(@target_month, "%Y-%m").strftime("%Y年%m月") %>)</h5>
+          </div>
+          <div class="card-body">
+            <% if @hierarchy_data.any? %>
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead class="table-light">
+                    <tr>
+                      <th>ユーザー名</th>
+                      <th>レベル</th>
+                      <th>売上合計</th>
+                      <th>インセンティブ金額</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% @hierarchy_data.each do |referral_id, data| %>
+                      <% referral = data[:user] %>
+                      <tr>
+                        <td>
+                          <%= referral.name %>
+                        </td>
+                        <td>
+                          <span class="badge bg-secondary"><%= data[:level] %></span>
+                        </td>
+                        <td class="text-primary fw-bold">¥<%= number_with_delimiter(data[:sales_total]) %></td>
+                        <td class="text-success fw-bold">¥<%= number_with_delimiter(data[:incentive_amount]) %></td>
+                        <td>
+                          <% unless referral.level&.value&.in?([4, 5, 6]) %>
+                            <%= link_to admin_incentive_path(referral, target_month: @target_month), class: "btn btn-sm btn-outline-primary me-1" do %>
+                              <i class="fas fa-eye me-1"></i>詳細
+                            <% end %>
+                          <% end %>
+                          <% if data[:has_descendants] %>
+                            <%= link_to drill_down_admin_incentive_path(referral, target_month: @target_month), class: "btn btn-sm btn-outline-info" do %>
+                              <i class="fas fa-sitemap me-1"></i>階層表示
+                            <% end %>
+                          <% end %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% else %>
+              <div class="text-center py-5">
+                <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">直下位ユーザーはいません</h5>
+                <p class="text-muted">このユーザーには直接紹介したユーザーがいません。</p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+<style>
+  /* コンパクトな固定ヘッダーエリア */
+  .sticky-header {
+    position: fixed !important;
+    top: 60px !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    background: white !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    width: 100% !important;
+    height: 80px !important; /* 固定の高さを設定 */
+  }
+  
+  /* メインコンテンツエリアのマージン調整 */
+  .sticky-header + .container-fluid {
+    margin-top: 80px !important; /* ヘッダーの高さに合わせて調整 */
+  }
+  
+  /* カード内のコンテンツ - コンパクト化 */
+  .sticky-header .card {
+    border: none !important;
+    box-shadow: none !important;
+    height: 100% !important;
+  }
+  
+  .sticky-header .card-body {
+    background: white !important;
+    padding: 0.75rem 1rem !important; /* パディングを縮小 */
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  /* アイコンとテキストのサイズ調整 */
+  .sticky-header h4 {
+    font-size: 1.1rem !important;
+    margin-bottom: 0 !important;
+  }
+  
+  .sticky-header small {
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+  }
+  
+  .sticky-header .fa-user-tie {
+    font-size: 1.2rem !important;
+  }
+  
+  /* フォーム要素のコンパクト化 */
+  .sticky-header .form-control-sm {
+    font-size: 0.8rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+  
+  .sticky-header .input-group-text {
+    padding: 0.25rem 0.5rem !important;
+  }
+  
+  .sticky-header .btn-sm {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+  
+  /* 戻るボタンのスタイル */
+  .sticky-header .btn-outline-secondary {
+    border-color: #6c757d !important;
+    color: #6c757d !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .sticky-header .btn-outline-secondary:hover {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+  }
+  
+  /* 改行防止 */
+  .sticky-header .flex-nowrap {
+    flex-wrap: nowrap !important;
+  }
+  
+  .sticky-header .text-nowrap {
+    white-space: nowrap !important;
+  }
+  
+  .sticky-header .flex-shrink-0 {
+    flex-shrink: 0 !important;
+  }
+  
+  /* 右側のボタンとフォームの配置 */
+  .sticky-header .gap-2 {
+    gap: 0.5rem !important;
+  }
+  
+  .sticky-header .d-flex.gap-2 > * {
+    flex-shrink: 0 !important;
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 768px) {
+    .sticky-header {
+      top: 50px !important;
+      height: 70px !important;
+    }
+    
+    .sticky-header + .container-fluid {
+      margin-top: 70px !important;
+    }
+    
+    .sticky-header .card-body {
+      padding: 0.5rem !important;
+    }
+    
+    .sticky-header h4 {
+      font-size: 1rem !important;
+    }
+  }
+</style>

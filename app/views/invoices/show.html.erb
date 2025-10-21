@@ -33,53 +33,33 @@
           <div class="invoice-preview p-4" style="background: white; border: 1px solid #ddd;">
             <!-- ヘッダー -->
             <div class="row mb-4">
-              <!-- スマホ時は請求先情報を上に表示 -->
+              <!-- スマホ時のタイトル表示 -->
               <div class="col-12 d-md-none mb-3">
-                <% if @invoice.invoice_recipient %>
-                  <h5><%= @invoice.invoice_recipient.name %></h5>
-                  <% if @invoice.invoice_recipient.representative_name.present? %>
-                    <p class="mb-1"><%= @invoice.invoice_recipient.representative_name %> 様</p>
-                  <% end %>
-                  <% if @invoice.invoice_recipient.department.present? %>
-                    <p class="mb-1"><%= @invoice.invoice_recipient.department %></p>
-                  <% end %>
-                  <% if @invoice.invoice_recipient.address.present? %>
-                    <p class="mb-1"><%= @invoice.invoice_recipient.address %></p>
-                  <% end %>
-                  <% if @invoice.invoice_recipient.email.present? %>
-                    <p class="mb-0"><%= @invoice.invoice_recipient.email %></p>
-                  <% end %>
-                <% end %>
-              </div>
-              
-              <!-- 請求書情報 -->
-              <div class="col-12 col-md-6">
-                <h3 class="text-primary">請求書</h3>
-                <div class="bg-info text-white p-2 rounded mb-2">
+                <div class="mb-3">
                   <strong>📅 <%= @invoice.target_month_display %>分 インセンティブ請求書</strong>
                 </div>
-                <p class="mb-1">請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
-                <p class="mb-1">発行日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></p>
-                <p class="mb-0">支払期限: <%= @invoice.due_date&.strftime("%Y年%m月%d日") %></p>
               </div>
               
-              <!-- デスクトップ時の請求先情報 -->
-              <div class="col-md-6 text-end d-none d-md-block">
-                <% if @invoice.invoice_recipient %>
-                  <h5><%= @invoice.invoice_recipient.name %></h5>
-                  <% if @invoice.invoice_recipient.representative_name.present? %>
-                    <p class="mb-1"><%= @invoice.invoice_recipient.representative_name %> 様</p>
-                  <% end %>
-                  <% if @invoice.invoice_recipient.department.present? %>
-                    <p class="mb-1"><%= @invoice.invoice_recipient.department %></p>
-                  <% end %>
-                  <% if @invoice.invoice_recipient.address.present? %>
-                    <p class="mb-1"><%= @invoice.invoice_recipient.address %></p>
-                  <% end %>
-                  <% if @invoice.invoice_recipient.email.present? %>
-                    <p class="mb-0"><%= @invoice.invoice_recipient.email %></p>
-                  <% end %>
-                <% end %>
+              <!-- 請求書タイトル（中央配置） -->
+              <div class="col-12 text-center mb-3">
+                <h3 class="text-primary">請求書</h3>
+                <p class="mb-0" style="font-weight: bold; font-size: 1.5em; border-bottom: 2px solid #000; display: inline-block; padding-left: 20px; padding-right: 20px;"><%= @company_name %>&nbsp;&nbsp;様</p>
+              </div>
+              
+              <!-- 請求書情報と青いタイトル -->
+              <div class="row">
+                <div class="col-12 col-md-6">
+                  <p class="mb-1">請求書番号: <%= @invoice.invoice_number || "INV-#{@invoice.id.to_s.rjust(6, '0')}" %></p>
+                  <p class="mb-1">発行日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></p>
+                  <p class="mb-0">支払期限: <%= @invoice.due_date&.strftime("%Y年%m月%d日") %></p>
+                </div>
+                
+                <!-- デスクトップ時のタイトル（支払期限と同じ高さ） -->
+                <div class="col-md-6 d-none d-md-flex align-items-end justify-content-end">
+                  <div>
+                    <strong>📅 <%= @invoice.target_month_display %>分 インセンティブ請求書</strong>
+                  </div>
+                </div>
               </div>
             </div>
 

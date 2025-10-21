@@ -130,8 +130,8 @@
                   <thead class="table-light">
                     <tr>
                       <th style="min-width: 120px;">直接売上</th>
-                      <th style="min-width: 120px;">総売上</th>
-                      <th style="min-width: 120px;">LステップID</th>
+                      <th style="min-width: 120px;">売上合計</th>
+                      <th style="min-width: 120px;">インセンティブ</th>
                       <th style="min-width: 100px;">登録日</th>
                       <th style="min-width: 80px;">操作</th>
                     </tr>
@@ -146,11 +146,8 @@
                           <span class="text-success">¥<%= number_with_delimiter(user.total_sales_with_descendants(selected_month)) %></span>
                         </td>
                         <td>
-                          <% if user.lstep_user_id.present? %>
-                            <span class="badge bg-info"><%= user.lstep_user_id %></span>
-                          <% else %>
-                            <span class="text-muted">未設定</span>
-                          <% end %>
+                          <% incentive_amount = user.monthly_incentive_with_details(selected_month)[:total] || 0 %>
+                          <span class="text-success">¥<%= number_with_delimiter(incentive_amount) %></span>
                         </td>
                         <td><%= user.created_at.strftime("%Y/%m/%d") %></td>
                         <td>

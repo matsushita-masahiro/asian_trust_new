@@ -52,6 +52,12 @@ class Admin::UsersController < Admin::BaseController
     @referrer_chain = @user.ancestors
     @referrals = @user.referrals
 
+    # ✅ 住所情報を取得
+    @invoice_base = @user.invoice_base
+    
+    # ✅ 申請中のレベル変更情報を取得
+    @pending_application = LevelChangeApplication.where(user: @user, status: 'pending').first
+
     # ✅ 自身の購入履歴（選択月）
     @purchases = @user.purchases.in_period(@selected_month_start, @selected_month_end)
 
@@ -61,26 +67,39 @@ class Admin::UsersController < Admin::BaseController
                                           .in_period(@selected_month_start, @selected_month_end)
 
     @total_sales_amount = @purchases_with_descendants.joins(purchase_items: :product).sum('purchase_items.unit_price * purchase_items.quantity')
+    
+    # drill_downと同じ方法でインセンティブを計算
+    @incentive_summary = calculate_incentive_summary_for_user(@user)
+
+    # ✅ レベル別の子孫数を計算
+    descendants = @user.descendants
+    @level_counts = {
+      total_agents: descendants.count { |u| u.level&.name == "総代理店" },
+      agents: descendants.count { |u| u.level&.name == "代理店" },
+      advisors: descendants.count { |u| u.level&.name == "アドバイザー" },
+      salons: descendants.count { |u| u.level&.name == "サロン" },
+      clinics: descendants.count { |u| u.level&.name == "クリニック" },
+      customers: descendants.count { |u| u.level&.name == "お客様" }
+    }
 
     # ✅ ref ごとの売上・ボーナスを算出
     @referral_stats = {}
 
     @referrals.each do |ref|
-      # ref自身の購入（選択月）
-      purchases = ref.purchases.in_period(@selected_month_start, @selected_month_end)
-      sales = purchases.joins(purchase_items: :product).sum('purchase_items.unit_price * purchase_items.quantity')
-
-      # ✅ refに起因する全購入（その子孫含む）
+      # refとその子孫全体の売上（選択月）
       descendant_ids = ref.descendant_ids
       related_ids = [ref.id] + descendant_ids
-
-      # ✅ ref経由で発生した全購入のうち、選択月に該当するもの
+      
+      # ref経由で発生した全購入のうち、選択月に該当するもの
       descendant_purchases = Purchase
         .where(user_id: related_ids)
         .where(purchased_at: @selected_month_start..@selected_month_end)
+      
+      # 売上合計（refとその子孫全体）
+      sales = descendant_purchases.joins(purchase_items: :product).sum('purchase_items.unit_price * purchase_items.quantity')
 
-      # ✅ @userにとってのボーナス合計（このrefツリーによるものだけ）
-      bonus = descendant_purchases.sum { |p| @user.bonus_for_purchase(p) }
+      # refのインセンティブ（選択月）
+      bonus = ref.monthly_incentive_with_details(@selected_month)[:total] || 0
 
       @referral_stats[ref.id] = { sales: sales, bonus: bonus }
     end
@@ -90,6 +109,17 @@ class Admin::UsersController < Admin::BaseController
     @levels = Level.where.not(name: 'アジアビジネストラスト').order(:value)
     @users = User.where.not(id: @user.id).order(:name, :email)
     @level_histories = @user.user_level_histories.includes(:level, :changed_by).recent.limit(10)
+    
+    # 申請中のレベル変更情報を取得
+    @pending_application = LevelChangeApplication.where(user: @user, status: 'pending').first
+    
+    # セッションからエラーメッセージを取得
+    @admin_password_error = session.delete(:admin_password_error)
+    @level_change_reason_error = session.delete(:level_change_reason_error)
+    @general_error = session.delete(:general_error)
+    
+    # セッションからフォームパラメータを取得
+    @form_params = session.delete(:form_params) || {}
   end
 
   def update
@@ -98,25 +128,35 @@ class Admin::UsersController < Admin::BaseController
                    params[:user][:level_id].to_i != @user.level_id
 
     if level_changed
-      # レベル変更時の認証とバリデーション
-      unless validate_level_change
-        render :edit and return
+      # レベル変更申請の認証とバリデーション
+      unless validate_level_change_application
+        # エラーメッセージをセッションに保存
+        session[:admin_password_error] = @admin_password_error if @admin_password_error.present?
+        session[:level_change_reason_error] = @level_change_reason_error if @level_change_reason_error.present?
+        session[:general_error] = @general_error if @general_error.present?
+        
+        # フォームの入力値を保持
+        session[:form_params] = params.to_unsafe_h
+        
+        redirect_to edit_admin_user_path(@user) and return
       end
       
-      # レベル変更処理
-      if process_level_change
+      # レベル変更申請処理
+      if create_level_change_application
         redirect_to admin_user_path(@user), 
-                   notice: "ユーザー情報とレベルが更新されました。レベル変更履歴が記録されました。"
+                   notice: "レベル変更申請が作成されました。変更は#{next_month_first_day.strftime('%Y年%m月%d日')}に実行されます。"
       else
-        flash.now[:error] = "レベル変更に失敗しました。"
-        render :edit
+        session[:general_error] = "レベル変更申請の作成に失敗しました。"
+        session[:form_params] = params.to_unsafe_h
+        redirect_to edit_admin_user_path(@user)
       end
     else
       # 通常の更新処理
       if @user.update(user_params)
         redirect_to admin_user_path(@user), notice: 'ユーザー情報が更新されました。'
       else
-        render :edit
+        session[:form_params] = params.to_unsafe_h
+        redirect_to edit_admin_user_path(@user)
       end
     end
   end
@@ -148,78 +188,146 @@ class Admin::UsersController < Admin::BaseController
   def set_selected_month_range
     selected_month = params[:month].presence || Date.today.strftime("%Y-%m")
     @selected_month = selected_month
-    @selected_month_start = Date.strptime(selected_month, "%Y-%m").beginning_of_month
-    @selected_month_end   = Date.strptime(selected_month, "%Y-%m").end_of_month
+    
+    # drill_downと同じ方法で日付範囲を設定
+    target_date = Date.strptime(selected_month, "%Y-%m")
+    @selected_month_start = target_date.beginning_of_month
+    @selected_month_end = target_date.end_of_month
     @selected_month_display = @selected_month_start.strftime("%Y/%m")
+    
+    Rails.logger.info "DEBUG: Date range setup - start: #{@selected_month_start}, end: #{@selected_month_end}"
   end
 
   def user_params
     params.require(:user).permit(:name, :email, :lstep_user_id, :level_id, :referred_by_id)
   end
 
-  def validate_level_change
+  def validate_level_change_application
     # 管理者パスワードの確認
     admin_password = params[:admin_password]
     if admin_password.blank?
-      flash.now[:error] = "レベル変更には管理者パスワードが必要です。"
+      @admin_password_error = "レベル変更申請には管理者パスワードが必要です。"
       return false
     end
 
     # 現在のユーザー（管理者）のパスワード認証
     unless current_user.valid_password?(admin_password)
-      flash.now[:error] = "管理者パスワードが正しくありません。"
+      @admin_password_error = "管理者パスワードが正しくありません。"
+      Rails.logger.info "Admin password validation failed for user #{current_user.id} (#{current_user.name})"
       return false
     end
 
     # 変更理由の確認
     change_reason = params[:level_change_reason]
     if change_reason.blank?
-      flash.now[:error] = "レベル変更の理由を入力してください。"
+      @level_change_reason_error = "レベル変更申請の理由を入力してください。"
+      return false
+    end
+
+    if change_reason.length < 10
+      @level_change_reason_error = "レベル変更申請の理由は10文字以上で入力してください。"
       return false
     end
 
     # 自己変更の禁止
     if @user == current_user
-      flash.now[:error] = "自分自身のレベルを変更することはできません。"
+      @general_error = "自分自身のレベルを変更申請することはできません。"
       return false
     end
 
     # 管理者権限の確認
     unless current_user.admin?
-      flash.now[:error] = "レベル変更の権限がありません。"
+      @general_error = "レベル変更申請の権限がありません。"
+      return false
+    end
+
+    # 重複申請チェック
+    existing_application = LevelChangeApplication.where(
+      user: @user,
+      status: 'pending'
+    ).first
+
+    if existing_application
+      @general_error = "このユーザーには既に未実行の申請が存在します。実行予定日: #{existing_application.scheduled_date.strftime('%Y年%m月%d日')}"
       return false
     end
 
     true
   end
 
-  def process_level_change
+  def create_level_change_application
     new_level_id = params[:user][:level_id].to_i
     change_reason = params[:level_change_reason]
     ip_address = request.remote_ip
 
-    # レベル変更履歴の更新
-    success = @user.update_level_history(
-      new_level_id,
-      change_reason,
-      current_user,
-      ip_address
-    )
+    begin
+      application = LevelChangeApplication.create!(
+        user: @user,
+        current_level_id: @user.level_id,
+        target_level_id: new_level_id,
+        applicant: current_user,
+        reason: change_reason,
+        scheduled_date: next_month_first_day,
+        ip_address: ip_address
+      )
 
-    if success
-      # 他のユーザー情報も更新
+      # 他のユーザー情報も更新（レベル以外）
       other_params = user_params.except(:level_id)
       @user.update(other_params) if other_params.present?
-      
-      # ログ記録
-      Rails.logger.info "Level changed: User #{@user.id} (#{@user.name}) " \
-                       "from #{@user.level_id} to #{new_level_id} " \
+
+      # ログ記録と通知
+      Rails.logger.info "Level change application created: User #{@user.id} (#{@user.name}) " \
+                       "from #{@user.level.name} to #{Level.find(new_level_id).name} " \
                        "by #{current_user.id} (#{current_user.name}) " \
-                       "from IP #{ip_address}. Reason: #{change_reason}"
+                       "from IP #{ip_address}. Scheduled: #{application.scheduled_date}"
       
+      # 申請作成通知
+      LevelChangeErrorNotifier.notify_application_created(application)
+
       true
-    else
+    rescue => e
+      Rails.logger.error "Level change application failed: #{e.message}"
+      @error_message = "申請作成中にエラーが発生しました: #{e.message}"
+      @user.errors.add(:base, @error_message)
       false
     end
+  end
+
+  def next_month_first_day
+    Date.current.next_month.beginning_of_month
+  end
+
+  def calculate_incentive_summary_for_user(user)
+    incentive_data = user.monthly_incentive_with_details(@selected_month)
+    
+    # 自己購入金額を計算
+    own_sales_amount = calculate_own_sales_amount(user)
+    
+    # デバッグ情報
+    Rails.logger.debug "=== Incentive Summary Debug ==="
+    Rails.logger.debug "User: #{user.name}"
+    Rails.logger.debug "Month: #{@selected_month}"
+    Rails.logger.debug "Incentive data: #{incentive_data}"
+    Rails.logger.debug "Total: #{incentive_data[:total]}"
+    Rails.logger.debug "Own sales: #{incentive_data.dig(:details, :own_sales)}"
+    Rails.logger.debug "Descendant sales: #{incentive_data.dig(:details, :descendant_sales)}"
+    Rails.logger.debug "Own sales amount: #{own_sales_amount}"
+    
+    {
+      total_incentive: incentive_data[:total] || 0,
+      own_sales_incentive: incentive_data.dig(:details, :own_sales) || 0,
+      descendant_incentive: incentive_data.dig(:details, :descendant_sales) || 0,
+      own_sales_amount: own_sales_amount,
+      direct_referrals_count: user.referrals.count,
+      purchase_count: incentive_data.dig(:details, :purchase_count) || 0
+    }
+  end
+  
+  def calculate_own_sales_amount(user)
+    # 指定期間内の自己購入金額を計算
+    user.purchases
+        .where(purchased_at: @selected_month_start..@selected_month_end)
+        .joins(:purchase_items)
+        .sum('purchase_items.unit_price * purchase_items.quantity')
   end
 end

@@ -1,11 +1,11 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
-        <h4 class="text-danger">ユーザー編集（要注意）</h4>
-        <div>
-          <%= link_to "戻る", admin_user_path(@user), class: "btn btn-outline-secondary me-2" %>
+      <div class="d-flex justify-content-between align-items-center mb-4 edit-header" style="margin-top: 80px;">
+        <h4 class="text-danger edit-title">ユーザー編集（要注意）</h4>
+        <div class="edit-buttons">
           <%= link_to "代理店一覧", admin_users_path, class: "btn btn-outline-primary" %>
+          <%= link_to "戻る", admin_user_path(@user), class: "btn btn-outline-secondary me-2" %>
         </div>
       </div>
     </div>
@@ -19,15 +19,43 @@
         </div>
         <div class="card-body">
           <%= form_with model: [:admin, @user], local: true, class: "row g-3" do |f| %>
-            <% if @user.errors.any? %>
+            <!-- 一般的なエラーメッセージ表示 -->
+            <% general_error_messages = [] %>
+            <% general_error_messages << @general_error if @general_error.present? %>
+            <% general_error_messages << flash[:error] if flash[:error].present? %>
+            <% general_error_messages << flash.now[:error] if flash.now[:error].present? %>
+            <% general_error_messages.concat(@user.errors.full_messages) if @user.errors.any? %>
+            
+            <!-- デバッグ情報（開発環境のみ） -->
+            <% if Rails.env.development? %>
+              <!-- Debug: @admin_password_error = <%= @admin_password_error.inspect %> -->
+              <!-- Debug: @level_change_reason_error = <%= @level_change_reason_error.inspect %> -->
+              <!-- Debug: @general_error = <%= @general_error.inspect %> -->
+              <!-- Debug: flash[:error] = <%= flash[:error].inspect %> -->
+              <!-- Debug: @user.errors.full_messages = <%= @user.errors.full_messages.inspect %> -->
+            <% end %>
+            
+            <% if general_error_messages.any? %>
               <div class="col-12">
-                <div class="alert alert-danger">
-                  <h6>エラーが発生しました:</h6>
-                  <ul class="mb-0">
-                    <% @user.errors.full_messages.each do |message| %>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert" data-has-errors="true">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  <strong>エラーが発生しました:</strong>
+                  <ul class="mb-0 mt-2">
+                    <% general_error_messages.each do |message| %>
                       <li><%= message %></li>
                     <% end %>
                   </ul>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              </div>
+            <% end %>
+            
+            <!-- 成功メッセージ表示 -->
+            <% if flash[:notice].present? %>
+              <div class="col-12">
+                <div class="alert alert-success">
+                  <i class="fas fa-check-circle me-2"></i>
+                  <%= flash[:notice] %>
                 </div>
               </div>
             <% end %>
@@ -42,52 +70,82 @@
               <%= f.email_field :email, class: "form-control", placeholder: "メールアドレスを入力" %>
             </div>
 
-            <div class="col-md-6">
-              <%= f.label :lstep_user_id, "LステップID", class: "form-label" %>
-              <%= f.text_field :lstep_user_id, class: "form-control", placeholder: "LステップIDを入力" %>
-            </div>
+
 
             <div class="col-12">
               <div class="card border-warning">
                 <div class="card-header bg-warning text-dark">
                   <h6 class="card-title mb-0">
-                    <i class="fas fa-shield-alt me-2"></i>
-                    会員レベル変更（要認証）
+                    <i class="fas fa-file-alt me-2"></i>
+                    会員レベル変更申請（要認証）
                   </h6>
                 </div>
                 <div class="card-body">
+                  <!-- 申請中の表示 -->
+                  <% if @pending_application %>
+                    <div class="alert alert-info mb-3">
+                      <i class="fas fa-clock me-2"></i>
+                      <strong>申請中:</strong> 
+                      <%= @pending_application.current_level.name %> → <%= @pending_application.target_level.name %>
+                      <br>
+                      <small>実行予定日: <%= @pending_application.scheduled_date.strftime('%Y年%m月%d日') %></small>
+                      <div class="mt-2">
+                        <%= link_to "申請詳細を見る", admin_level_change_application_path(@pending_application), 
+                            class: "btn btn-sm btn-outline-info" %>
+                      </div>
+                    </div>
+                  <% end %>
+                  
                   <div class="row g-3">
                     <div class="col-md-6">
-                      <%= f.label :level_id, "新しい会員レベル", class: "form-label" %>
+                      <%= f.label :level_id, "申請する会員レベル", class: "form-label" %>
                       <%= f.select :level_id, 
                             options_from_collection_for_select(@levels, :id, :name, @user.level_id), 
                             { prompt: "レベルを選択してください" }, 
-                            { class: "form-select", id: "user_level_id" } %>
+                            { class: "form-select", id: "user_level_id", disabled: @pending_application.present? } %>
+                      <% if @pending_application %>
+                        <div class="form-text text-warning">
+                          <i class="fas fa-exclamation-triangle me-1"></i>
+                          申請中のため変更できません
+                        </div>
+                      <% end %>
                     </div>
                     
                     <div class="col-md-6" id="level-change-fields" style="display: none;">
                       <%= label_tag :admin_password, "管理者パスワード", class: "form-label text-danger" %>
-                      <%= password_field_tag :admin_password, "", 
-                            class: "form-control", 
+                      <%= password_field_tag :admin_password, @form_params.dig('admin_password'), 
+                            class: "form-control #{'is-invalid' if @admin_password_error.present?}", 
                             placeholder: "レベル変更には管理者パスワードが必要です" %>
+                      <% if @admin_password_error.present? %>
+                        <div class="invalid-feedback d-block">
+                          <i class="fas fa-exclamation-circle me-1"></i>
+                          <%= @admin_password_error %>
+                        </div>
+                      <% end %>
                     </div>
                     
                     <div class="col-12" id="change-reason-field" style="display: none;">
-                      <%= label_tag :level_change_reason, "レベル変更理由", class: "form-label text-danger" %>
-                      <%= text_area_tag :level_change_reason, "", 
-                            class: "form-control", 
+                      <%= label_tag :level_change_reason, "レベル変更申請理由", class: "form-label text-danger" %>
+                      <%= text_area_tag :level_change_reason, @form_params.dig('level_change_reason'), 
+                            class: "form-control #{'is-invalid' if @level_change_reason_error.present?}", 
                             rows: 3,
-                            placeholder: "レベル変更の理由を詳しく記入してください（必須）" %>
+                            placeholder: "レベル変更申請の理由を詳しく記入してください（10文字以上必須）" %>
+                      <% if @level_change_reason_error.present? %>
+                        <div class="invalid-feedback d-block">
+                          <i class="fas fa-exclamation-circle me-1"></i>
+                          <%= @level_change_reason_error %>
+                        </div>
+                      <% end %>
                     </div>
                     
                     <div class="col-12" id="level-change-warning" style="display: none;">
-                      <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>重要な警告:</strong>
+                      <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>レベル変更申請について:</strong>
                         <ul class="mb-0 mt-2">
-                          <li>レベル変更は<strong>取り消すことができません</strong></li>
-                          <li>過去のインセンティブ計算に影響する可能性があります</li>
-                          <li>変更履歴は永続的に記録されます</li>
+                          <li>申請は<strong>翌月1日に自動実行</strong>されます</li>
+                          <li>実行前であれば申請をキャンセルできます</li>
+                          <li>申請履歴は永続的に記録されます</li>
                           <li>管理者パスワードによる認証が必要です</li>
                         </ul>
                       </div>
@@ -109,68 +167,22 @@
             <div class="col-12">
               <div class="alert alert-warning">
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                <span class="text-danger fw-bold">注意: ユーザー情報の変更は慎重に行ってください。特に紹介者やレベルの変更は、ボーナス計算に影響する可能性があります。</span>
+                <span class="text-danger fw-bold">注意: ユーザー情報の変更は慎重に行ってください。特に紹介者やレベルの変更は、インセンティブ計算に影響する可能性があります。</span>
               </div>
               <hr>
               <div class="d-flex justify-content-end gap-2">
                 <%= link_to "キャンセル", admin_user_path(@user), class: "btn btn-secondary" %>
                 <%= f.submit "更新", class: "btn btn-danger", id: "submit-btn", 
                     data: { 
-                      confirm: "レベル変更を実行しますか？\n\nこの操作は取り消すことができません。" 
+                      confirm: "レベル変更申請を作成しますか？\n\n申請は翌月1日に自動実行されます。" 
                     } %>
               </div>
             </div>
 
-            <style>
-              .timeline {
-                position: relative;
-                padding-left: 15px;
-                max-width: 100%;
-              }
-              
-              .timeline-item {
-                position: relative;
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-                border-left: 2px solid #dee2e6;
-              }
-              
-              .timeline-item:last-child {
-                border-left: none;
-                margin-bottom: 0;
-              }
-              
-              .timeline-marker {
-                position: absolute;
-                left: -6px;
-                top: 5px;
-                background: white;
-                border-radius: 50%;
-                width: 12px;
-                height: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1;
-              }
-              
-              .timeline-content {
-                margin-left: 10px;
-                padding: 12px;
-                background: #f8f9fa;
-                border-radius: 8px;
-                border-left: 3px solid #007bff;
-                text-align: center;
-              }
-              
-              .timeline-item.current .timeline-content {
-                background: #d4edda;
-                border-left-color: #28a745;
-              }
-            </style>
+
 
             <script>
-              document.addEventListener('DOMContentLoaded', function() {
+              function initializeLevelChangeForm() {
                 const levelSelect = document.getElementById('user_level_id');
                 const originalLevelId = '<%= @user.level_id %>';
                 const levelChangeFields = document.getElementById('level-change-fields');
@@ -180,58 +192,169 @@
                 const adminPasswordField = document.querySelector('#admin_password');
                 const changeReasonTextarea = document.querySelector('#level_change_reason');
 
+                // 要素の存在チェック
+                if (!levelSelect) {
+                  console.error('Level select element not found');
+                  return;
+                }
+
                 function toggleLevelChangeFields() {
-                  const isLevelChanged = levelSelect.value !== originalLevelId;
+                  // レベルセレクトが無効化されている場合は何もしない
+                  if (levelSelect.disabled) {
+                    console.log('Level select is disabled, skipping toggle');
+                    return;
+                  }
+
+                  const currentValue = levelSelect.value;
+                  const isLevelChanged = currentValue !== originalLevelId && currentValue !== '';
+                  
+                  console.log('Toggle debug:', {
+                    currentValue: currentValue,
+                    originalLevelId: originalLevelId,
+                    isLevelChanged: isLevelChanged,
+                    levelChangeFields: !!levelChangeFields,
+                    changeReasonField: !!changeReasonField,
+                    levelChangeWarning: !!levelChangeWarning
+                  });
                   
                   if (isLevelChanged) {
-                    levelChangeFields.style.display = 'block';
-                    changeReasonField.style.display = 'block';
-                    levelChangeWarning.style.display = 'block';
+                    if (levelChangeFields) levelChangeFields.style.display = 'block';
+                    if (changeReasonField) changeReasonField.style.display = 'block';
+                    if (levelChangeWarning) levelChangeWarning.style.display = 'block';
+                    console.log('Showing level change fields');
                   } else {
-                    levelChangeFields.style.display = 'none';
-                    changeReasonField.style.display = 'none';
-                    levelChangeWarning.style.display = 'none';
-                    adminPasswordField.value = '';
-                    changeReasonTextarea.value = '';
+                    if (levelChangeFields) levelChangeFields.style.display = 'none';
+                    if (changeReasonField) changeReasonField.style.display = 'none';
+                    if (levelChangeWarning) levelChangeWarning.style.display = 'none';
+                    if (adminPasswordField) adminPasswordField.value = '';
+                    if (changeReasonTextarea) changeReasonTextarea.value = '';
+                    console.log('Hiding level change fields');
                   }
                 }
 
+                // 既存のイベントリスナーを削除（重複防止）
+                levelSelect.removeEventListener('change', toggleLevelChangeFields);
+                
+                // レベル変更イベントリスナー
                 levelSelect.addEventListener('change', toggleLevelChangeFields);
 
                 // フォーム送信時の検証
                 const form = document.querySelector('form');
                 if (form) {
                   form.addEventListener('submit', function(e) {
-                    const isLevelChanged = levelSelect.value !== originalLevelId;
+                    // レベルセレクトが無効化されている場合は通常の送信
+                    if (levelSelect.disabled) {
+                      return true;
+                    }
+
+                    const isLevelChanged = levelSelect.value !== originalLevelId && levelSelect.value !== '';
                     
                     if (isLevelChanged) {
                       // レベル変更時の必須チェック
                       if (!adminPasswordField || !adminPasswordField.value.trim()) {
                         e.preventDefault();
-                        alert('レベル変更には管理者パスワードの入力が必要です。');
+                        alert('レベル変更申請には管理者パスワードの入力が必要です。');
                         if (adminPasswordField) adminPasswordField.focus();
                         return false;
                       }
                       
                       if (!changeReasonTextarea || !changeReasonTextarea.value.trim()) {
                         e.preventDefault();
-                        alert('レベル変更の理由を入力してください。');
+                        alert('レベル変更申請の理由を入力してください。');
                         if (changeReasonTextarea) changeReasonTextarea.focus();
                         return false;
                       }
+                      
+                      if (changeReasonTextarea.value.trim().length < 10) {
+                        e.preventDefault();
+                        alert('レベル変更申請の理由は10文字以上で入力してください。');
+                        changeReasonTextarea.focus();
+                        return false;
+                      }
 
-                      // 最終確認は data-confirm に任せる
+                      console.log('Level change application form submitted');
                       return true;
                     }
                     
-                    // 通常の更新時はそのまま送信
+                    console.log('Normal user update form submitted');
                     return true;
                   });
                 }
 
                 // 初期状態の設定
                 toggleLevelChangeFields();
-              });
+                
+                // エラーがある場合、レベル変更フィールドを表示
+                <% if (@admin_password_error.present? || @level_change_reason_error.present?) && @form_params.dig('user', 'level_id').present? %>
+                  const hasLevelChangeError = true;
+                  const selectedLevelId = '<%= @form_params.dig('user', 'level_id') %>';
+                  if (hasLevelChangeError && selectedLevelId !== originalLevelId && selectedLevelId !== '') {
+                    // レベルセレクトの値を復元
+                    levelSelect.value = selectedLevelId;
+                    // フィールドを表示
+                    if (levelChangeFields) levelChangeFields.style.display = 'block';
+                    if (changeReasonField) changeReasonField.style.display = 'block';
+                    if (levelChangeWarning) levelChangeWarning.style.display = 'block';
+                  }
+                <% end %>
+                
+                // デバッグ情報
+                console.log('Level change form initialized');
+                console.log('Original level ID:', originalLevelId);
+                console.log('Level select disabled:', levelSelect.disabled);
+              }
+
+              // エラーメッセージがある場合はスクロールして表示
+              function scrollToErrorMessage() {
+                // まず入力欄のエラーをチェック
+                const passwordError = document.querySelector('#admin_password.is-invalid');
+                const reasonError = document.querySelector('#level_change_reason.is-invalid');
+                
+                if (passwordError) {
+                  setTimeout(() => {
+                    passwordError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    passwordError.focus();
+                  }, 100);
+                  return;
+                }
+                
+                if (reasonError) {
+                  setTimeout(() => {
+                    reasonError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    reasonError.focus();
+                  }, 100);
+                  return;
+                }
+                
+                // 一般的なエラーメッセージをチェック
+                const errorAlert = document.querySelector('.alert-danger[data-has-errors="true"]');
+                if (errorAlert) {
+                  setTimeout(() => {
+                    errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    errorAlert.style.animation = 'pulse 2s';
+                  }, 100);
+                }
+              }
+
+              // 初期化関数
+              function initializePage() {
+                initializeLevelChangeForm();
+                
+                // エラーメッセージがある場合のみスクロール処理を実行
+                const hasFieldErrors = document.querySelector('.is-invalid');
+                const hasGeneralErrors = document.querySelector('.alert-danger[data-has-errors="true"]');
+                
+                if (hasFieldErrors || hasGeneralErrors) {
+                  scrollToErrorMessage();
+                } else {
+                  // エラーがない場合は画面上部にスクロール
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }
+
+              // Turbo対応のイベントリスナー
+              document.addEventListener('turbo:load', initializePage);
+              document.addEventListener('DOMContentLoaded', initializePage);
             </script>
           <% end %>
         </div>
@@ -354,20 +477,7 @@
               </div>
             </div>
 
-            <!-- LステップID -->
-            <% if @user.lstep_user_id.present? %>
-            <div class="col-12">
-              <div class="d-flex justify-content-center align-items-center p-2 border rounded">
-                <div class="me-3">
-                  <i class="fas fa-link text-info"></i>
-                </div>
-                <div class="text-center">
-                  <small class="text-muted d-block">LステップID</small>
-                  <strong><%= @user.lstep_user_id %></strong>
-                </div>
-              </div>
-            </div>
-            <% end %>
+
           </div>
         </div>
       </div>
@@ -443,7 +553,7 @@
                     method: :patch, 
                     class: "btn btn-outline-secondary",
                     data: { 
-                      confirm: "#{@user.display_name}を退会処理しますか？\n\nこの操作により：\n・ログインできなくなります\n・ボーナス計算から除外されます\n・紹介関係は維持されます\n\n実行しますか？" 
+                      confirm: "#{@user.display_name}を退会処理しますか？\n\nこの操作により：\n・ログインできなくなります\n・インセンティブ計算から除外されます\n・紹介関係は維持されます\n\n実行しますか？" 
                     } do %>
                 <i class="fas fa-user-times me-2"></i>退会処理
               <% end %>
@@ -452,7 +562,7 @@
                     method: :patch, 
                     class: "btn btn-outline-danger",
                     data: { 
-                      confirm: "#{@user.display_name}を停止処分にしますか？\n\nこの操作により：\n・ログインできなくなります\n・ボーナス計算から除外されます\n・アカウントが一時停止されます\n\n実行しますか？" 
+                      confirm: "#{@user.display_name}を停止処分にしますか？\n\nこの操作により：\n・ログインできなくなります\n・インセンティブ計算から除外されます\n・アカウントが一時停止されます\n\n実行しますか？" 
                     } do %>
                 <i class="fas fa-ban me-2"></i>停止処分
               <% end %>
@@ -463,7 +573,7 @@
                     method: :patch, 
                     class: "btn btn-outline-success",
                     data: { 
-                      confirm: "#{@user.display_name}を再アクティブ化しますか？\n\nこの操作により：\n・再度ログインできるようになります\n・ボーナス計算に含まれます\n・通常のアクセス権限が復活します\n\n実行しますか？" 
+                      confirm: "#{@user.display_name}を再アクティブ化しますか？\n\nこの操作により：\n・再度ログインできるようになります\n・インセンティブ計算に含まれます\n・通常のアクセス権限が復活します\n\n実行しますか？" 
                     } do %>
                 <i class="fas fa-user-check me-2"></i>再アクティブ化
               <% end %>
@@ -474,3 +584,4 @@
     </div>
   </div>
 </div>
+

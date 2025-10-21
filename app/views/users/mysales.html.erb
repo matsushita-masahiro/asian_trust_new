@@ -1,5 +1,5 @@
 <div id="mypage">
-  <div class="container py-5 pt-5 mt-5 mypage-container">
+  <div class="container py-5 pt-5 mypage-container">
 
     <!-- 年月度プルダウン -->
     <div class="sticky-top bg-white z-index-sticky month-selector-wrapper">
@@ -16,7 +16,6 @@
               <h3 class="card-title"><%= @user.name %></h3>
               <p class="mb-1"><strong>📧 メール:</strong> <span class="text-break"><%= @user.email %></span></p>
               <p class="mb-1"><strong>🤏 レベル:</strong> <%= @user.level_label %></p>
-              <p class="mb-0"><strong>🆔 LステップID:</strong> <code class="text-purple"><%= @user.lstep_user_id.presence || "未登録" %></code></p>
             </div>
             <div class="text-end">
               <% if @user.level.value == 6 %>
@@ -43,7 +42,6 @@
             <div class="mb-3">
               <p class="mb-1"><strong>📧 メール:</strong> <span class="text-break"><%= @user.email %></span></p>
               <p class="mb-1"><strong>🤏 レベル:</strong> <%= @user.level_label %></p>
-              <p class="mb-0"><strong>🆔 LステップID:</strong> <code class="text-purple"><%= @user.lstep_user_id.presence || "未登録" %></code></p>
             </div>
             
             <div class="text-center">
@@ -84,7 +82,6 @@
                       <div class="col-md-8">
                         <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
                         <p class="mb-1 text-break">📧 <%= ref_user.email %></p>
-                        <p class="mb-1">🆔 <code class="text-purple"><%= ref_user.lstep_user_id.presence || "未登録" %></code></p>
                         <% if ref_user.level.value == 6 %>
                           <div>購入：<%= number_with_delimiter(ref_user.own_monthly_sales_total(@selected_month).to_i) %>円</div>
                         <% else %>
@@ -139,9 +136,6 @@
 </div>
 
 <style>
-  .mypage-container {
-    margin-top: 80px !important;
-  }
   
   /* navbarを常に最前面に表示 */
   .navbar {

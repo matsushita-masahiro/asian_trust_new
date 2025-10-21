@@ -19,6 +19,11 @@ class Admin::Users::BonusesController < Admin::BaseController
       @purchases_with_descendants = Purchase.includes(purchase_items: :product, user: [])
                                             .where(user_id: [@user.id] + descendant_ids)
                                             .where(purchased_at: @selected_month_start..@selected_month_end)
+                                            .order(purchased_at: :desc)
+                                            .order(purchased_at: :desc)
+                                            .order(purchased_at: :desc)
+                                            .order(purchased_at: :desc)
+                                            .order(purchased_at: :desc)
 
       # 安全な計算 - purchase_itemsを通じて計算
       @total_sales_amount = @purchases_with_descendants.joins(purchase_items: :product).sum('products.base_price * purchase_items.quantity') rescue 0

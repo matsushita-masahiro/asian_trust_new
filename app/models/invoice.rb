@@ -6,6 +6,9 @@ class Invoice < ApplicationRecord
   has_one_attached :pdf_file
   has_one_attached :receipt_file
   
+  # コールバック
+  before_create :set_invoice_number
+  
   # バリデーション
   validates :target_month, presence: true, format: { with: /\A\d{4}-\d{2}\z/, message: "は YYYY-MM 形式で入力してください" }, allow_blank: false
 
@@ -126,6 +129,39 @@ class Invoice < ApplicationRecord
   def target_month_bonus
     return 0 if target_month.blank?
     user.bonus_in_month(target_month)
+  end
+  
+  # インセンティブ請求書番号の生成（重複回避のため連番付き）
+  def self.generate_invoice_number(user_id, target_month)
+    return nil if user_id.blank? || target_month.blank?
+    
+    # target_monthから年月を取得（例：2025-07 → 2507）
+    year_month = Date.strptime(target_month, "%Y-%m").strftime("%y%m")
+    
+    # 基本パターン：INV-INC + user_id + 年月
+    base_pattern = "INV-INC#{user_id}#{year_month}"
+    
+    # 同じパターンで始まる請求書番号を検索
+    existing_invoices = where("invoice_number LIKE ?", "#{base_pattern}%")
+                       .order(:invoice_number)
+    
+    if existing_invoices.any?
+      # 最後の連番を取得
+      last_invoice = existing_invoices.last
+      last_number = last_invoice.invoice_number.gsub(base_pattern, "").to_i
+      next_number = last_number + 1
+    else
+      next_number = 1
+    end
+    
+    "#{base_pattern}#{next_number}"
+  end
+  
+  # 請求書番号を自動設定
+  def set_invoice_number
+    if invoice_number.blank? && user_id.present? && target_month.present?
+      self.invoice_number = self.class.generate_invoice_number(user_id, target_month)
+    end
   end
   
 end

@@ -47,8 +47,15 @@ class Admin::PurchasesController < Admin::BaseController
   def new
     @purchase = Purchase.new
     @purchase.purchase_items.build  # 空のpurchase_itemを初期化
-    @users = User.all.order(:name, :email)
+    # お客様レベルを除外したユーザーリストを取得（販売店用）
+    @sellers = User.joins(:level).where.not(levels: { name: 'お客様' }).order(:name, :email)
+    # 全ユーザーリスト（購入者用）
+    @buyers = User.all.order(:name, :email)
     @products = Product.all.order(:name)
+    
+    # 数を計算
+    @sellers_count = @sellers.count
+    @buyers_count = @buyers.count
   end
 
   def create
@@ -68,8 +75,16 @@ class Admin::PurchasesController < Admin::BaseController
     if @purchase.save
       redirect_to admin_purchases_path, notice: '購入情報を作成しました。'
     else
-      @users = User.all.order(:name, :email)
+      # お客様レベルを除外したユーザーリストを取得（販売店用）
+      @sellers = User.joins(:level).where.not(levels: { name: 'お客様' }).order(:name, :email)
+      # 全ユーザーリスト（購入者用）
+      @buyers = User.all.order(:name, :email)
       @products = Product.all.order(:name)
+      
+      # 数を計算
+      @sellers_count = @sellers.count
+      @buyers_count = @buyers.count
+      
       render :new, status: :unprocessable_entity
     end
   end

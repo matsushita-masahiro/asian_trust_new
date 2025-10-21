@@ -1,0 +1,122 @@
+<% content_for :title, "インセンティブ詳細 - #{@target_user.display_name}" %>
+
+<div class="container incentive-container">
+  <div class="row">
+    <div class="col-12">
+      <!-- パンくずリスト -->
+      <nav aria-label="breadcrumb" class="breadcrumb-custom">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <%= link_to incentives_path do %>
+              <i class="fas fa-chart-line me-1"></i>インセンティブ
+            <% end %>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page"><%= @target_user.display_name %></li>
+        </ol>
+      </nav>
+
+      <div class="d-flex justify-content-between align-items-center mb-4" style="min-height: 60px;">
+        <h4 class="mb-0">
+          <i class="fas fa-user-circle me-2"></i>インセンティブ詳細 - <%= @target_user.display_name %>
+        </h4>
+        <div class="flex-shrink-0">
+          <!-- Debug: User ID: <%= @target_user.id %>, Referrer ID: <%= @target_user.referred_by_id %> -->
+          <% if @target_user.referrer %>
+            <%= link_to drill_down_incentive_path(@target_user.referrer, target_month: params[:target_month]), class: "btn btn-outline-secondary btn-sm" do %>
+              <i class="fas fa-arrow-left me-1"></i>1つ上の階層に戻る
+            <% end %>
+          <% else %>
+            <%= link_to incentives_path(target_month: params[:target_month]), class: "btn btn-outline-secondary btn-sm" do %>
+              <i class="fas fa-arrow-left me-1"></i>トップに戻る
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      
+      <!-- ユーザー情報とインセンティブ表示 -->
+      <div class="row mb-4">
+        <!-- ユーザー情報 -->
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-12 mb-3">
+                  <h6 class="text-muted">ユーザー情報</h6>
+                  <p><strong>名前:</strong> <%= @target_user.display_name %></p>
+                  <p><strong>レベル:</strong> <span class="badge bg-secondary"><%= @target_user.level_label %></span></p>
+                </div>
+                <div class="col-12">
+                  <h6 class="text-muted">期間</h6>
+                  <p><%= @start_date.strftime("%Y年%m月%d日") %> 〜 <%= @end_date.strftime("%Y年%m月%d日") %></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 詳細インセンティブ表示 -->
+        <div class="col-md-6">
+          <div class="card incentive-category-card h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+              <div class="category-icon text-success">
+                <i class="fas fa-sitemap"></i>
+              </div>
+              <h6 class="mb-3">インセンティブ</h6>
+              <div class="category-amount text-success">¥<%= number_with_delimiter(@detailed_incentives.dig(:details, :descendant_sales) || 0) %></div>
+              <div class="category-count">購入件数: <%= @detailed_incentives.dig(:details, :purchase_details)&.select { |d| d[:category] == 'descendant_sales' }&.size || 0 %>件</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- レベル変更履歴 -->
+      <% if @detailed_incentives.dig(:details, :level_changes)&.any? %>
+        <div class="card level-history-card mb-4">
+          <div class="card-header">
+            <h6 class="mb-0">
+              <i class="fas fa-history me-2"></i>期間中のレベル変更履歴
+            </h6>
+          </div>
+          <div class="card-body">
+            <% @detailed_incentives.dig(:details, :level_changes).each do |change| %>
+              <div class="timeline-item">
+                <div class="timeline-date">
+                  <%= change[:date]&.strftime("%Y年%m月%d日 %H:%M") %>
+                </div>
+                <div class="timeline-content">
+                  <strong><%= change[:from_level] %></strong> → <strong><%= change[:to_level] %></strong>
+                  <% if change[:reason].present? %>
+                    <br><small class="text-muted">理由: <%= change[:reason] %></small>
+                  <% end %>
+                  <% if change[:changed_by].present? %>
+                    <br><small class="text-muted">変更者: <%= change[:changed_by] %></small>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- 購入アイテム詳細（プレースホルダー） -->
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">購入アイテム詳細</h6>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">詳細な購入アイテム情報は後のタスクで実装予定です。</p>
+        </div>
+      </div>
+
+      <!-- エクスポートボタン -->
+      <div class="mt-4 export-buttons">
+        <%# <%= link_to export_incentive_path(@target_user, format: :csv), class: "btn btn-outline-secondary" do %>
+          <%# <i class="fas fa-file-csv me-1"></i>CSV出力 %>
+        <%# <% end %>
+        <%# <%= link_to export_incentive_path(@target_user, format: :pdf), class: "btn btn-outline-secondary" do %>
+          <%# <i class="fas fa-file-pdf me-1"></i>PDF出力 %>
+        <%# <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -47,6 +47,11 @@ Rails.application.routes.draw do
       end
     end
     resources :bonuses, only: [:index]
+    resources :incentives, only: [:index, :show] do
+      member do
+        get :drill_down
+      end
+    end
     resources :purchases, only: [:index, :edit, :update, :new, :create] do
       member do
         patch :confirm_payment
@@ -64,6 +69,13 @@ Rails.application.routes.draw do
       end
       collection do
         get :all_users
+      end
+    end
+    
+    # レベル変更申請管理
+    resources :level_change_applications, only: [:index, :show] do
+      member do
+        patch :cancel
       end
     end
     resources :inquiries, only: [:index, :show] do
@@ -96,6 +108,17 @@ Rails.application.routes.draw do
         patch :confirm_payment   # 支払い確認
         patch :send_receipt      # 領収書発行
       end
+    end
+  end
+
+  # インセンティブ機能
+  resources :incentives, only: [:index, :show] do
+    member do
+      get :drill_down
+      get :export
+    end
+    collection do
+      get :hierarchy
     end
   end
 

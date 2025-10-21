@@ -20,7 +20,7 @@ namespace :bonus do
     puts "="*80
     
     # 階層ごとに分析
-    levels = ["特約代理店", "代理店", "アドバイザー"]
+    levels = ["総代理店", "代理店", "アドバイザー"]
     
     levels.each do |level_name|
       users_at_level = test_users.joins(:level).where(levels: { name: level_name })

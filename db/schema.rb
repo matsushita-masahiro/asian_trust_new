@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_12_204908) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_21_151135) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -116,6 +116,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_12_204908) do
     t.string "representative_name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "bank_name"
+    t.string "bank_branch_name"
+    t.string "bank_account_type"
+    t.string "bank_account_number"
+    t.string "bank_account_name"
     t.index ["user_id"], name: "index_invoice_recipients_on_user_id"
   end
 
@@ -136,8 +141,30 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_12_204908) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "target_month"
+    t.string "invoice_number"
     t.index ["invoice_recipient_id"], name: "index_invoices_on_invoice_recipient_id"
     t.index ["user_id"], name: "index_invoices_on_user_id"
+  end
+
+  create_table "level_change_applications", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "current_level_id", null: false
+    t.integer "target_level_id", null: false
+    t.integer "applicant_id", null: false
+    t.text "reason", null: false
+    t.string "status", default: "pending", null: false
+    t.date "scheduled_date", null: false
+    t.datetime "executed_at"
+    t.text "error_message"
+    t.string "ip_address", limit: 45
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["applicant_id"], name: "index_level_change_applications_on_applicant_id"
+    t.index ["current_level_id"], name: "index_level_change_applications_on_current_level_id"
+    t.index ["status", "scheduled_date"], name: "idx_status_scheduled"
+    t.index ["target_level_id"], name: "index_level_change_applications_on_target_level_id"
+    t.index ["user_id", "status"], name: "idx_user_status"
+    t.index ["user_id"], name: "index_level_change_applications_on_user_id"
   end
 
   create_table "levels", force: :cascade do |t|
@@ -183,6 +210,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_12_204908) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "shipping_fee", default: 0
+    t.integer "admin_fee", default: 0
+    t.integer "tax_amount", default: 0
+    t.decimal "tax_rate", precision: 5, scale: 4, default: "0.1"
+    t.integer "subtotal_before_tax", default: 0
+    t.integer "total_with_tax", default: 0
     t.index ["purchase_id"], name: "index_purchase_invoices_on_purchase_id"
   end
 
@@ -299,6 +332,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_12_204908) do
   add_foreign_key "invoice_recipients", "users"
   add_foreign_key "invoices", "invoice_recipients"
   add_foreign_key "invoices", "users"
+  add_foreign_key "level_change_applications", "levels", column: "current_level_id"
+  add_foreign_key "level_change_applications", "levels", column: "target_level_id"
+  add_foreign_key "level_change_applications", "users"
+  add_foreign_key "level_change_applications", "users", column: "applicant_id"
   add_foreign_key "product_prices", "levels"
   add_foreign_key "product_prices", "products"
   add_foreign_key "purchase_invoices", "purchases"

@@ -29,7 +29,7 @@
       <div class="invoice-info">
         <h3>請求書情報</h3>
         <ul>
-          <li><strong>請求書番号:</strong> INV-<%= @invoice.id.to_s.rjust(6, '0') %></li>
+          <li><strong>請求書番号:</strong> <%= @invoice.invoice_number || "INV-#{@invoice.id.to_s.rjust(6, '0')}" %></li>
           <li><strong>発行日:</strong> <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></li>
           <li><strong>支払期限:</strong> <%= @invoice.due_date&.strftime("%Y年%m月%d日") %></li>
           <li><strong>請求金額:</strong> ¥<%= number_with_delimiter(@invoice.total_amount) %></li>

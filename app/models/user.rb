@@ -44,7 +44,7 @@ class User < ApplicationRecord
     suspended: 'suspended'  # 停止処分
   }
 
-  BONUS_ELIGIBLE_LEVELS = %w[特約代理店 代理店 アドバイザー].freeze
+  BONUS_ELIGIBLE_LEVELS = %w[総代理店 代理店 アドバイザー].freeze
 
   # コールバック
   before_create :generate_referral_token
@@ -82,6 +82,10 @@ class User < ApplicationRecord
 
   def descendants
     referrals.flat_map { |child| [child] + child.descendants }
+  end
+
+  def all_descendants
+    descendants
   end
 
   def descendant_ids
@@ -172,7 +176,6 @@ class User < ApplicationRecord
     details = {
       own_sales: 0,           # 自分の販売によるインセンティブ
       descendant_sales: 0,    # 子孫の販売による階層差額
-      unqualified_sales: 0,   # 無資格者の販売によるインセンティブ
       purchase_count: 0,      # 対象購入件数
       level_changes: []       # 期間中のレベル変更履歴
     }
@@ -194,23 +197,11 @@ class User < ApplicationRecord
     end
 
     # --- (1) 自分の販売に対するインセンティブ ---
-    my_purchase_items = PurchaseItem.joins(:purchase)
-                                   .where(purchases: { user_id: id, purchased_at: from_date..to_date })
-                                   .includes(:product, purchase: :user)
-
-    my_purchase_items.each do |item|
-      purchase_date = item.purchase.purchased_at
-      my_level_at_purchase = level_at(purchase_date)
-      product = item.product
-      base_price = product.base_price
-      my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
-      
-      item_bonus = (base_price - my_price) * item.quantity
-      details[:own_sales] += item_bonus if item_bonus > 0
-      details[:purchase_count] += 1
-    end
+    # 仕様変更により自己購入インセンティブは廃止
+    # own_salesは常に0のまま
 
     # --- (2) 子孫の販売に対するインセンティブ（階層差額） ---
+    # すべての子孫を対象とする（お客様の購入も含む）
     descendant_user_ids = descendant_ids.reject { |uid| uid == id }
     
     if descendant_user_ids.any?
@@ -221,15 +212,39 @@ class User < ApplicationRecord
       descendant_purchase_items.each do |item|
         purchase = item.purchase
         purchase_date = purchase.purchased_at
-        purchase_user_level = purchase.user.level_at(purchase_date)
+        purchase_user = purchase.user
         my_level_at_purchase = level_at(purchase_date)
         
-        product = item.product
-        purchase_user_price = product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
-        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+        # 購入者から自分までの経路を確認
+        path_to_me = purchase_user.path_to_ancestor(self)
+        next unless path_to_me # 経路が見つからない場合はスキップ
         
-        if purchase_user_price > my_price
-          diff = purchase_user_price - my_price
+        # 直下位ユーザーかどうかを確認（経路の長さが2の場合：自分 -> 購入者）
+        if path_to_me.length == 2
+          # 直下位ユーザーの場合は購入者の実際の購入価格を使用
+          eligible_user_price = item.seller_price || 0
+        else
+          # 間接的な子孫の場合は、購入者と自分の間の経路でインセンティブ受領資格者を探す
+          # 自分と購入者を除いた中間の経路のみを対象とする
+          intermediate_path = path_to_me[1..-2]  # 最初（自分）と最後（購入者）を除く
+          # 自分に最も近い受給資格者を探す（逆順ではなく順序通り）
+          eligible_user_in_path = intermediate_path.find(&:bonus_eligible?)
+          
+          if eligible_user_in_path
+            # 中間にインセンティブ受領資格者がいる場合、そのユーザーのレベル価格を使用
+            eligible_user_level = eligible_user_in_path.level_at(purchase_date)
+            eligible_user_price = item.product.product_prices.find_by(level_id: eligible_user_level.id)&.price || 0
+          else
+            # 中間にインセンティブ受領資格者がいない場合（購入者の実際の購入価格を使用）
+            eligible_user_price = item.seller_price || 0
+          end
+        end
+        
+        # 自分のレベル価格を取得
+        my_price = item.product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+        
+        if eligible_user_price > my_price
+          diff = eligible_user_price - my_price
           item_bonus = diff * item.quantity
           details[:descendant_sales] += item_bonus
           details[:purchase_count] += 1
@@ -237,29 +252,9 @@ class User < ApplicationRecord
       end
     end
 
-    # --- (3) 直下の無資格者による販売に対するインセンティブ ---
-    referrals.reject(&:bonus_eligible?).each do |child|
-      child_purchase_items = PurchaseItem.joins(:purchase)
-                                        .where(purchases: { user_id: child.id, purchased_at: from_date..to_date })
-                                        .includes(:product, purchase: :user)
-      
-      child_purchase_items.each do |item|
-        purchase_date = item.purchase.purchased_at
-        my_level_at_purchase = level_at(purchase_date)
-        product = item.product
-        base_price = product.base_price
-        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
-        diff = base_price - my_price
-        
-        if diff.positive?
-          item_bonus = diff * item.quantity
-          details[:unqualified_sales] += item_bonus
-          details[:purchase_count] += 1
-        end
-      end
-    end
 
-    total_incentive = details[:own_sales] + details[:descendant_sales] + details[:unqualified_sales]
+
+    total_incentive = details[:own_sales] + details[:descendant_sales]
 
     {
       total: total_incentive,
@@ -285,6 +280,9 @@ class User < ApplicationRecord
     end
     nil
   end
+  
+  # エイリアス：path_to_ancestorとしても使用可能
+  alias_method :path_to_ancestor, :bonus_path_up_to
 
   def bonus_for_purchase(purchase)
     return 0 unless bonus_eligible?
@@ -353,18 +351,38 @@ class User < ApplicationRecord
     my_level_at_purchase = level_at(purchase_date)
     my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
     
-    # 自分の販売の場合：基本単価 - 購入時点での自分の購入単価
+    # 自分の販売の場合：インセンティブなし（仕様変更により廃止）
     if purchase_user == self
-      base_price = product.base_price
-      incentive_unit = base_price - my_price
+      incentive_unit = 0
     else
       # 他人の販売の場合：階層差額による計算
-      # 購入者の購入時点でのレベルを取得
-      purchase_user_level = purchase_user.level_at(purchase_date)
-      purchase_user_price = product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
+      # 購入者から自分までの経路を確認
+      path_to_me = purchase_user.path_to_ancestor(self)
       
-      # 階層差額：購入者の価格 - 自分の価格
-      incentive_unit = purchase_user_price - my_price
+      if path_to_me && path_to_me.length == 2
+        # 直下位ユーザーの場合は購入者の実際の購入価格を使用
+        eligible_user_price = purchase_item.seller_price || 0
+      elsif path_to_me && path_to_me.length > 2
+        # 間接的な子孫の場合は、中間の受給資格者を探す
+        intermediate_path = path_to_me[1..-2]  # 最初（自分）と最後（購入者）を除く
+        # 自分に最も近い受給資格者を探す（逆順ではなく順序通り）
+        eligible_user_in_path = intermediate_path.find(&:bonus_eligible?)
+        
+        if eligible_user_in_path
+          # 中間にインセンティブ受領資格者がいる場合、そのユーザーのレベル価格を使用
+          eligible_user_level = eligible_user_in_path.level_at(purchase_date)
+          eligible_user_price = product.product_prices.find_by(level_id: eligible_user_level.id)&.price || 0
+        else
+          # 中間にインセンティブ受領資格者がいない場合（購入者の実際の購入価格を使用）
+          eligible_user_price = purchase_item.seller_price || 0
+        end
+      else
+        # 経路がない場合は0
+        eligible_user_price = 0
+      end
+      
+      # 階層差額：有効価格 - 自分の価格
+      incentive_unit = eligible_user_price - my_price
     end
     
     # 負の値の場合は0を返す
@@ -387,17 +405,12 @@ class User < ApplicationRecord
     total_bonus = 0
 
     # --- (1) 自分の販売に対するボーナス ---
-    my_purchase_items = PurchaseItem.joins(:purchase)
-                                   .where(purchases: { user_id: id, purchased_at: range })
-                                   .includes(:product, purchase: :user)
-
-    my_purchase_items.each do |item|
-      bonus = bonus_for_purchase_item(item)
-      total_bonus += bonus
-    end
+    # 仕様変更により自己購入インセンティブは廃止
 
     # --- (2) 子孫の販売に対するボーナス（階層差額） ---
-    descendant_user_ids = descendant_ids.reject { |uid| uid == id }
+    # 直下の無資格者は除外（別途計算するため）
+    direct_non_eligible_ids = referrals.reject(&:bonus_eligible?).pluck(:id)
+    descendant_user_ids = descendant_ids.reject { |uid| uid == id || direct_non_eligible_ids.include?(uid) }
     
     if descendant_user_ids.any?
       descendant_purchase_items = PurchaseItem.joins(:purchase)
@@ -406,28 +419,40 @@ class User < ApplicationRecord
 
       descendant_purchase_items.each do |item|
         purchase = item.purchase
-        purchase_user_level = purchase.user.level_at(purchase.purchased_at)
-        my_level_at_purchase = level_at(purchase.purchased_at)
-        
+        purchase_user = purchase.user
         product = item.product
-        purchase_user_price = product.product_prices.find_by(level_id: purchase_user_level.id)&.price || 0
-        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
         
-        if purchase_user_price > my_price
-          diff = purchase_user_price - my_price
-          total_bonus += diff * item.quantity
+        # 購入者から上位階層への完全なチェーンを構築
+        full_chain = [purchase_user]
+        current = purchase_user
+        while current.referred_by_id
+          current = User.find(current.referred_by_id)
+          full_chain << current if current.bonus_eligible?
+        end
+        
+        # 自分が含まれている場合のみ処理
+        my_index = full_chain.index(self)
+        next unless my_index
+        
+        # 自分の直下の人との価格差のみを計算
+        if my_index > 0
+          lower_user = full_chain[my_index - 1]
+          lower_level = lower_user.level_at(purchase.purchased_at)
+          my_level = level_at(purchase.purchased_at)
+          
+          lower_price = product.product_prices.find_by(level_id: lower_level.id)&.price || 0
+          my_price = product.product_prices.find_by(level_id: my_level.id)&.price || 0
+          
+          if lower_price > my_price
+            diff = lower_price - my_price
+            total_bonus += diff * item.quantity
+          end
         end
       end
     end
 
     # --- (3) 直下の無資格者による販売に対するボーナス ---
-    # 既に子孫として計算されたユーザーを除外
-    descendant_user_ids_set = Set.new(descendant_ids)
-    
     referrals.reject(&:bonus_eligible?).each do |child|
-      # 既に子孫として計算済みの場合はスキップ
-      next if descendant_user_ids_set.include?(child.id)
-      
       child_purchase_items = PurchaseItem.joins(:purchase)
                                         .where(purchases: { user_id: child.id, purchased_at: range })
                                         .includes(:product, purchase: :user)

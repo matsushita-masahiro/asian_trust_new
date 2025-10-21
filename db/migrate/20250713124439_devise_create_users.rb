@@ -4,7 +4,7 @@ class DeviseCreateUsers < ActiveRecord::Migration[7.1]
       ## Custom Fields
       t.string  :name
       t.integer :referred_by_id           # 紹介者
-      t.integer :level                    # enum: 特約代理店=1, 代理店=2, ...
+      t.integer :level                    # enum: 総代理店=1, 代理店=2, ...
       t.string  :lstep_user_id            # Lステップ連携用
 
       ## Devise 基本

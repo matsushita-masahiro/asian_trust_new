@@ -1,0 +1,227 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+        <h2 class="text-primary">レベル変更申請詳細</h2>
+        <div>
+          <%= link_to "申請一覧", admin_level_change_applications_path, class: "btn btn-outline-secondary me-2" %>
+          <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- 申請情報 -->
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">申請情報</h5>
+        </div>
+        <div class="card-body">
+          <table class="table table-borderless">
+            <tr>
+              <th width="25%">申請ID:</th>
+              <td><%= @application.id %></td>
+            </tr>
+            <tr>
+              <th>対象ユーザー:</th>
+              <td>
+                <%= link_to @application.user_name, admin_user_path(@application.user), class: "text-decoration-none" %>
+                <small class="text-muted">(ID: <%= @application.user.id %>)</small>
+              </td>
+            </tr>
+            <tr>
+              <th>レベル変更:</th>
+              <td>
+                <div class="level-change-display">
+                  <span class="badge bg-info"><%= @application.current_level.name %></span>
+                  <i class="fas fa-arrow-right mx-3"></i>
+                  <span class="badge bg-success"><%= @application.target_level.name %></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th>申請者:</th>
+              <td>
+                <%= @application.applicant_name %>
+                <small class="text-muted">(ID: <%= @application.applicant.id %>)</small>
+              </td>
+            </tr>
+            <tr>
+              <th>申請理由:</th>
+              <td>
+                <div class="reason-text">
+                  <%= simple_format(@application.reason) %>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th>ステータス:</th>
+              <td>
+                <% case @application.status %>
+                <% when 'pending' %>
+                  <span class="badge bg-warning fs-6">申請中</span>
+                <% when 'completed' %>
+                  <span class="badge bg-success fs-6">完了</span>
+                <% when 'cancelled' %>
+                  <span class="badge bg-secondary fs-6">キャンセル</span>
+                <% when 'error' %>
+                  <span class="badge bg-danger fs-6">エラー</span>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>実行予定日:</th>
+              <td>
+                <%= @application.scheduled_date.strftime("%Y年%m月%d日") %>
+                <% if @application.pending? && @application.scheduled_date <= Date.current %>
+                  <span class="badge bg-warning ms-2">実行対象</span>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>申請日時:</th>
+              <td><%= @application.created_at.strftime("%Y年%m月%d日 %H:%M") %></td>
+            </tr>
+            <% if @application.executed_at %>
+              <tr>
+                <th>実行日時:</th>
+                <td><%= @application.executed_at.strftime("%Y年%m月%d日 %H:%M") %></td>
+              </tr>
+            <% end %>
+            <% if @application.error_message.present? %>
+              <tr>
+                <th>エラー内容:</th>
+                <td>
+                  <div class="alert alert-danger">
+                    <%= simple_format(@application.error_message) %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+            <% if @application.ip_address.present? %>
+              <tr>
+                <th>申請元IP:</th>
+                <td><%= @application.ip_address %></td>
+              </tr>
+            <% end %>
+          </table>
+        </div>
+      </div>
+
+      <!-- レベル変更履歴 -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">対象ユーザーのレベル変更履歴</h5>
+        </div>
+        <div class="card-body">
+          <% if @level_histories.any? %>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th>変更日時</th>
+                    <th>変更前</th>
+                    <th>変更後</th>
+                    <th>変更者</th>
+                    <th>理由</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @level_histories.each do |history| %>
+                    <tr>
+                      <td><%= history.effective_from.strftime("%Y/%m/%d %H:%M") %></td>
+                      <td>
+                        <% if history.previous_level %>
+                          <span class="badge bg-light text-dark"><%= history.previous_level.name %></span>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td><span class="badge bg-primary"><%= history.level.name %></span></td>
+                      <td>
+                        <% if history.changed_by %>
+                          <%= history.changed_by.name.present? ? history.changed_by.name : history.changed_by.email %>
+                        <% else %>
+                          <span class="text-muted">システム</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <small><%= truncate(history.change_reason, length: 50) %></small>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <p class="text-muted">レベル変更履歴がありません</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- アクション -->
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">操作</h5>
+        </div>
+        <div class="card-body">
+          <% if @application.cancellable? %>
+            <div class="mb-3">
+              <%= link_to cancel_admin_level_change_application_path(@application), 
+                          method: :patch,
+                          class: "btn btn-danger w-100",
+                          data: { 
+                            confirm: "この申請をキャンセルしますか？\n\n対象: #{@application.user_name}\n変更: #{@application.level_change_description}\n\nこの操作は取り消せません。" 
+                          } do %>
+                <i class="fas fa-times me-2"></i>申請をキャンセル
+              <% end %>
+            </div>
+          <% end %>
+          
+          <div class="mb-3">
+            <%= link_to admin_user_path(@application.user), class: "btn btn-outline-primary w-100" do %>
+              <i class="fas fa-user me-2"></i>ユーザー詳細を見る
+            <% end %>
+          </div>
+          
+          <div class="mb-3">
+            <%= link_to edit_admin_user_path(@application.user), class: "btn btn-outline-warning w-100" do %>
+              <i class="fas fa-edit me-2"></i>ユーザーを編集
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .level-change-display {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+  }
+  
+  .reason-text {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    border-left: 4px solid #007bff;
+  }
+  
+  @media (max-width: 768px) {
+    .level-change-display {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .level-change-display .fas {
+      margin: 0.5rem 0;
+      transform: rotate(90deg);
+    }
+  }
+</style>

@@ -1,4 +1,4 @@
-<div class="container mt-4">
+<div class="container mt-4" data-checkout-path="<%= orders_checkout_path %>">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3>幹細胞培養上精液 商品一覧</h3>
     <div>
@@ -51,35 +51,4 @@
   <% end %>
 </div>
 
-<script>
-function directPurchase(productId) {
-  const card = event.target.closest('.card-body');
-  const quantitySelect = card.querySelector('select[name="quantity"]');
-  const quantity = quantitySelect.value;
-  
-  if (!quantity) {
-    alert('数量を選択してください');
-    return;
-  }
-  
-  // 今すぐ購入用のフォームを動的に作成して送信
-  const form = document.createElement('form');
-  form.method = 'GET';
-  form.action = '<%= orders_checkout_path %>';
-  
-  const productIdInput = document.createElement('input');
-  productIdInput.type = 'hidden';
-  productIdInput.name = 'product_id';
-  productIdInput.value = productId;
-  
-  const quantityInput = document.createElement('input');
-  quantityInput.type = 'hidden';
-  quantityInput.name = 'quantity';
-  quantityInput.value = quantity;
-  
-  form.appendChild(productIdInput);
-  form.appendChild(quantityInput);
-  document.body.appendChild(form);
-  form.submit();
-}
-</script>
+

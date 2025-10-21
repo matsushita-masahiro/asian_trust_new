@@ -47,7 +47,8 @@ class PurchaseInvoicePdfService
     
     # 税計算（外税）
     subtotal = @purchase_invoice.total_amount.to_i  # 税抜き価格（整数）
-    tax = (subtotal * 0.1).to_i  # 消費税10%（整数）
+    tax_rate = ENV.fetch('TAX_RATE', '0.1').to_f  # 環境変数から消費税率を取得（デフォルト10%）
+    tax = (subtotal * tax_rate).to_i  # 消費税（整数）
     total_with_tax = (subtotal + tax).to_i  # 税込み合計（整数）
     
     # 会社情報を直接設定
@@ -97,6 +98,7 @@ class PurchaseInvoicePdfService
         total_with_tax: total_with_tax,
         subtotal: subtotal,
         tax: tax,
+        tax_rate: tax_rate,
         company_name: company_name,
         company_postal_code: company_postal_code,
         company_address: company_address,

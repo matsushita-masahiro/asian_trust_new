@@ -62,7 +62,7 @@ class ReferralInvitationsController < ApplicationController
   end
 
   def check_referral_permission
-    unless current_user&.level&.value && ![4, 5, 6].include?(current_user.level.value)
+    unless current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value)
       redirect_to root_path, alert: 'あなたのレベルでは紹介機能をご利用いただけません。'
     end
   end

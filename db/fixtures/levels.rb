@@ -7,5 +7,6 @@ Level.seed(:value,
   { name: 'アドバイザー',           value: 3 },
   { name: 'サロン',                 value: 4 },
   { name: 'クリニック',             value: 5 },
-  { name: 'お客様',                 value: 6 }
+  { name: 'サポーター',             value: 6 },
+  { name: 'お客様',                 value: 7 }
 )

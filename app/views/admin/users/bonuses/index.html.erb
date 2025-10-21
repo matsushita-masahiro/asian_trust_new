@@ -147,8 +147,8 @@
                       <% is_first_item = index == 0 %>
                       <% row_class = purchase.purchase_items.count > 1 ? "bg-info bg-opacity-10" : "" %>
                       <% 
-                        # 購入者がお客様（level:6）の場合の表示ロジック
-                        is_customer = purchase.user&.level&.value == 6
+                        # 購入者がお客様（level:7）の場合の表示ロジック
+                        is_customer = purchase.user&.level&.value == 7
                         if is_customer
                           # お客様の場合：販売店は紹介者、購入者はお客様
                           seller_name = purchase.user&.referrer&.name || purchase.user&.referrer&.email || "不明"

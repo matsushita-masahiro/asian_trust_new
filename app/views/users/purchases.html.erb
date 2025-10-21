@@ -9,7 +9,7 @@
               class: "btn btn-outline-secondary btn-sm" %>
           
           <!-- 表示切り替えボタン -->
-          <% unless @user.level.value == 6 %>
+          <% unless @user.level.value == 7 %>
             <% if @is_own_purchases %>
               <%= link_to "販売履歴を見る", purchases_user_path(@user, month: @selected_month), 
                   class: "btn btn-outline-primary btn-sm" %>

@@ -95,7 +95,7 @@
                         <span class="text-primary fw-bold">¥<%= number_with_delimiter(user.total_sales_with_descendants(@target_month)) %></span>
                       </td>
                       <td>
-                        <% unless user.level&.value&.in?([4, 5, 6]) %>
+                        <% unless user.level&.value&.in?([4, 5, 7]) %>
                           <%= link_to "詳細", admin_incentive_path(user, target_month: @target_month), class: "btn btn-sm btn-outline-primary me-1" %>
                         <% end %>
                         <%= link_to "階層表示", drill_down_admin_incentive_path(user, target_month: @target_month), class: "btn btn-sm btn-outline-info" %>

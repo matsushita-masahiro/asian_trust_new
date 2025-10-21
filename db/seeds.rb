@@ -50,21 +50,27 @@ puts "✅ Data cleanup completed"
 user_id_seq = 1
 lstep_id_seq = 1
 
-# Levelデータを作成または取得
+# まずLevelテーブルをクリア
+Level.delete_all
+
+# Levelデータを作成（IDを明示的に指定）
 level_data = [
-  { name: "アジアビジネストラスト", value: 0 },
-  { name: "総代理店", value: 1 },
-  { name: "代理店", value: 2 },
-  { name: "アドバイザー", value: 3 },
-  { name: "サロン", value: 4 },
-  { name: "クリニック", value: 5 },
-  { name: "お客様", value: 6 }
+  { id: 1, name: "アジアビジネストラスト", value: 0 },
+  { id: 2, name: "総代理店", value: 1 },
+  { id: 3, name: "代理店", value: 2 },
+  { id: 4, name: "アドバイザー", value: 3 },
+  { id: 5, name: "サロン", value: 4 },
+  { id: 6, name: "クリニック", value: 5 },
+  { id: 7, name: "サポーター", value: 6 },
+  { id: 8, name: "お客様", value: 7 }
 ]
 
 level_data.each do |data|
-  Level.find_or_create_by(name: data[:name]) do |level|
-    level.value = data[:value]
-  end
+  Level.create!(
+    id: data[:id],
+    name: data[:name],
+    value: data[:value]
+  )
 end
 
 # Levelデータを取得（nameで検索）
@@ -105,6 +111,7 @@ price_data_1 = [
   { level_name: "アドバイザー", price: 40000 },
   { level_name: "サロン", price: 50000 },
   { level_name: "クリニック", price: 50000 },
+  { level_name: "サポーター", price: 50000 },
   { level_name: "お客様", price: 50000 }
 ]
 
@@ -115,6 +122,7 @@ price_data_2 = [
   { level_name: "アドバイザー", price: 24000 },
   { level_name: "サロン", price: 30000 },
   { level_name: "クリニック", price: 30000 },
+  { level_name: "サポーター", price: 30000 },
   { level_name: "お客様", price: 30000 }
 ]
 

@@ -144,7 +144,7 @@
                       <td class="sales-amount">¥<%= number_with_delimiter(data[:sales_total]) %></td>
                       <td class="incentive-amount">¥<%= number_with_delimiter(data[:incentive_amount]) %></td>
                       <td>
-                        <% unless referral.level&.value&.in?([4, 5, 6]) %>
+                        <% unless referral.level&.value&.in?([4, 5, 7]) %>
                           <%= link_to incentive_path(referral, target_month: @target_month), class: "btn btn-sm btn-outline-primary me-1" do %>
                             <i class="fas fa-eye me-1"></i>詳細
                           <% end %>

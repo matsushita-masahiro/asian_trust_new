@@ -36,13 +36,13 @@
             <ul class="dropdown-menu dropdown-menu-custom" aria-labelledby="mypageDropdown">
               <li><%= link_to "マイアカウント", user_path(current_user), class: "dropdown-item" %></li>
               <li>
-                <% if current_user.level.value == 6 %>
+                <% if current_user.level.value == 7 %>
                   <%= link_to "購入情報", mysales_path, class: "dropdown-item" %>
                 <% else %>
                   <%= link_to "売上情報", mysales_path, class: "dropdown-item" %>
                 <% end %>
               </li>
-              <% if current_user&.level&.value && ![4, 5, 6].include?(current_user.level.value) %>
+              <% if current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
                 <li><%= link_to "紹介機能", referrals_path, class: "dropdown-item" %></li>
               <% end %>
             </ul>

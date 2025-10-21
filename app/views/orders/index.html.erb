@@ -1,7 +1,7 @@
 <div class="container mt-4">
   <h3>予約・注文</h3>
   
-  <% is_customer = current_user.level&.value == 6 %>
+  <% is_customer = current_user.level&.value == 7 %>
   <div class="row mt-4 <%= 'justify-content-center' if is_customer %>">
     <div class="<%= is_customer ? 'col-md-6 col-lg-4' : 'col-md-4' %> mb-3">
       <div class="card h-100">

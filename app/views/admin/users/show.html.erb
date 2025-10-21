@@ -409,7 +409,7 @@
   </style>
 
   <!-- 直接紹介した代理店 -->
-  <% unless @user.level&.value&.in?([4, 5, 6]) %>
+  <% unless @user.level&.value&.in?([4, 5, 7]) %>
     <div class="row mb-4">
       <div class="col-12">
         <div class="card">
@@ -449,7 +449,7 @@
                           <span class="text-success">¥<%= number_with_delimiter(stats[:sales]) %></span>
                         </td>
                         <td>
-                          <% if referral.level&.value&.in?([4, 5, 6]) %>
+                          <% if referral.level&.value&.in?([4, 5, 7]) %>
                             <span class="text-muted">-</span>
                           <% else %>
                             <span class="text-warning">¥<%= number_with_delimiter(stats[:bonus]) %></span>

@@ -44,7 +44,7 @@ class User < ApplicationRecord
     suspended: 'suspended'  # 停止処分
   }
 
-  BONUS_ELIGIBLE_LEVELS = %w[総代理店 代理店 アドバイザー].freeze
+  BONUS_ELIGIBLE_LEVELS = %w[アジアビジネストラスト 総代理店 代理店 アドバイザー サポーター].freeze
 
   # コールバック
   before_create :generate_referral_token
@@ -584,8 +584,8 @@ class User < ApplicationRecord
   # 紹介機能が使用可能かどうか
   def can_refer?
     return false unless level&.value
-    # レベル4、5、6（クリニック・サロン）は紹介不可
-    ![4, 5, 6].include?(level.value)
+    # レベル4、5、7（サロン・クリニック・お客様）は紹介不可
+    ![4, 5, 7].include?(level.value)
   end
 
   private

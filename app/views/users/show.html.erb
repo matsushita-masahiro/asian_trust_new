@@ -6,7 +6,7 @@
           <h4 class="text-primary me-3 user-name-horizontal"><%= @user.name.present? ? @user.name : @user.email %></h4>
         </div>
         <div class="mobile-nav-buttons">
-          <% if @user == current_user && current_user&.level&.value && ![4, 5, 6].include?(current_user.level.value) %>
+          <% if @user == current_user && current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
             <%= link_to referrals_path, class: "btn btn-primary me-2" do %>
               <i class="fas fa-qrcode me-1"></i>紹介機能
             <% end %>
@@ -23,7 +23,7 @@
 
   <!-- 基本情報 -->
   <div class="row mb-4 mobile-cards">
-    <div class="<%= @user.level.value.in?([4, 5, 6]) ? 'col-12' : 'col-md-6' %>">
+    <div class="<%= @user.level.value.in?([4, 5, 7]) ? 'col-12' : 'col-md-6' %>">
       <div class="card">
         <div class="card-header">
           <h5 class="card-title mb-0">基本情報</h5>
@@ -92,7 +92,7 @@
     </div>
 
     <!-- 統計情報（サロン・クリニック・お客様レベルは非表示） -->
-    <% unless @user.level.value.in?([4, 5, 6]) %>
+    <% unless @user.level.value.in?([4, 5, 7]) %>
       <div class="col-md-6">
         <div class="card">
           <div class="card-header">
@@ -193,7 +193,7 @@
   <% end %>
 
   <!-- 直接紹介した代理店（サロン・クリニック・お客様レベルは非表示） -->
-  <% unless @user.level.value.in?([4, 5, 6]) %>
+  <% unless @user.level.value.in?([4, 5, 7]) %>
     <div class="row mb-4">
       <div class="col-12">
         <div class="card">
@@ -232,7 +232,7 @@
                           <span class="text-success">¥<%= number_with_delimiter(referral.total_sales_with_descendants(@selected_month)) %></span>
                         </td>
                         <td>
-                          <% if referral.level&.value&.in?([4, 5, 6]) %>
+                          <% if referral.level&.value&.in?([4, 5, 7]) %>
                             <span class="text-muted">——</span>
                           <% else %>
                             <span class="text-warning">¥<%= number_with_delimiter(referral.bonus_in_month(@selected_month)) %></span>

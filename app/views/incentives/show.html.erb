@@ -64,6 +64,11 @@
               <h6 class="mb-3">インセンティブ</h6>
               <div class="category-amount text-success">¥<%= number_with_delimiter(@detailed_incentives.dig(:details, :descendant_sales) || 0) %></div>
               <div class="category-count">購入件数: <%= @detailed_incentives.dig(:details, :purchase_details)&.select { |d| d[:category] == 'descendant_sales' }&.size || 0 %>件</div>
+              <div class="mt-3">
+                <%= link_to breakdown_incentive_path(@target_user, target_month: params[:target_month]), class: "btn btn-outline-primary btn-sm" do %>
+                  <i class="fas fa-list-alt me-1"></i>内訳へ
+                <% end %>
+              </div>
             </div>
           </div>
         </div>

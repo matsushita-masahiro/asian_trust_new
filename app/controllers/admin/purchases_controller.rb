@@ -1,5 +1,5 @@
 class Admin::PurchasesController < Admin::BaseController
-  before_action :set_purchase, only: [:edit, :update, :confirm_payment]
+  before_action :set_purchase, only: [:show, :edit, :update, :confirm_payment]
 #   before_action :authenticate_purchase_creation, only: [:new, :create]
 
   def index
@@ -15,8 +15,8 @@ class Admin::PurchasesController < Admin::BaseController
       @purchases = @purchases.where(status: 'built')
     end
     
-    # 統計情報
-    @total_amount = @purchases.sum(&:total_price)
+    # 統計情報（unit_priceベースで計算）
+    @total_amount = @purchases.sum { |purchase| purchase.purchase_items.sum { |item| item.quantity * item.unit_price } }
     @total_count = @purchases.count
     
     # 月選択用のオプション（過去12ヶ月分）
@@ -26,10 +26,16 @@ class Admin::PurchasesController < Admin::BaseController
     @selected_month_name = Time.zone.parse("#{@selected_month}-01").strftime('%Y年%m月')
   end
 
+  def show
+    # 複数商品の購入詳細画面
+    # purchase_itemsを再読み込みして最新の値を取得
+    @purchase.reload
+  end
+
   def edit
-    # 複数商品の購入は編集不可
+    # 複数商品の購入は詳細画面に遷移
     if @purchase.purchase_items.count > 1
-      redirect_to admin_purchases_path, alert: '複数商品を含む購入は編集できません。'
+      redirect_to admin_purchase_path(@purchase)
       return
     end
     

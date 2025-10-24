@@ -122,14 +122,14 @@
                     <th class="text-nowrap">販売店</th>
                     <th class="text-nowrap">購入者名</th>
                     <th class="text-nowrap">商品名</th>
-                    <th class="text-end text-nowrap">基本単価（円）</th>
-                    <th class="text-end text-nowrap">インセンティブ単価（円）</th>
+                    <th class="text-end text-nowrap">購入者単価（円）</th>
+                    <th class="text-end text-nowrap">インセン単価（¥）</th>
                     <th class="text-end text-nowrap">数量</th>
                     <th class="text-end text-nowrap">合計（円）</th>
-                    <th class="text-end text-nowrap">インセンティブ（円）</th>
-                    <th class="text-nowrap">メール</th>
+                    <th class="text-end text-nowrap">インセン（円）</th>
+
                     <th class="text-nowrap">電話番号</th>
-                    <th class="text-nowrap">住所</th>
+
                     <th class="text-nowrap">購入日</th>
                   </tr>
                 </thead>
@@ -139,7 +139,7 @@
 
                   <% @purchases_with_descendants.each do |purchase| %>
                     <% purchase.purchase_items.each_with_index do |item, index| %>
-                      <% total = item.unit_price * item.quantity %>
+                      <% total = item.seller_price * item.quantity %>
                       <% # 各アイテムごとにインセンティブを計算（統一されたロジックを使用） %>
                       <% item_bonus = @user.bonus_for_purchase_item(item) %>
                       <% total_sum += total %>
@@ -177,15 +177,17 @@
                         </td>
                         <!-- 購入者名（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
-                          <%= is_first_item ? buyer_name : "" %>
+                          <% if is_first_item %>
+                            <%= link_to (purchase.user&.display_name || "お客様"), admin_user_path(purchase.user, month: @selected_month), class: "text-decoration-none text-primary" %>
+                          <% end %>
                         </td>
                         <!-- 商品名（常に表示） -->
                         <td class="text-nowrap">
-                          <%= item.product.name %>
+                          <%= item.product.display_name %>
                         </td>
-                        <!-- 基本単価（常に表示） -->
+                        <!-- 購入者単価（常に表示） -->
                         <td class="text-end text-nowrap">
-                          <%= number_with_delimiter(item.product.base_price) %>
+                          <%= number_with_delimiter(item.seller_price) %>
                         </td>
                         <!-- インセンティブ単価（常に表示） -->
                         <td class="text-end text-nowrap">
@@ -203,18 +205,12 @@
                         <td class="text-end text-success fw-bold text-nowrap">
                           <%= number_with_delimiter(item_bonus) %>
                         </td>
-                        <!-- メール（同じ購入IDの場合は非表示） -->
-                        <td class="text-nowrap">
-                          <%= is_first_item ? (purchase.user&.email || "-") : "" %>
-                        </td>
+
                         <!-- 電話番号（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
                           <%= is_first_item ? (purchase.user&.phone || "-") : "" %>
                         </td>
-                        <!-- 住所（同じ購入IDの場合は非表示） -->
-                        <td class="text-nowrap">
-                          <%= is_first_item ? "-" : "" %>
-                        </td>
+
                         <!-- 購入日（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
                           <%= is_first_item ? purchase.purchased_at&.strftime("%Y/%m/%d") : "" %>
@@ -228,7 +224,7 @@
                     <td colspan="7" class="text-end text-nowrap">合計</td>
                     <td class="text-end text-primary text-nowrap"><%= number_with_delimiter(total_sum) %></td>
                     <td class="text-end text-success text-nowrap"><%= number_with_delimiter(@total_bonus) %></td>
-                    <td colspan="4"></td>
+                    <td colspan="2"></td>
                   </tr>
                 </tbody>
               </table>

@@ -1,6 +1,7 @@
 class Admin::ProductsController < Admin::BaseController
   def index
-    @products = Product.order(:id)
+    @show_deleted = params[:show_deleted] == 'true'
+    @products = @show_deleted ? Product.deleted.order(:id) : Product.active.order(:id)
   end
 
   def edit
@@ -13,6 +14,26 @@ class Admin::ProductsController < Admin::BaseController
       redirect_to admin_products_path, notice: "✅ 商品を更新しました"
     else
       render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @product = Product.find(params[:id])
+    
+    if @product.soft_delete
+      redirect_to admin_products_path, notice: "✅ 商品を削除しました"
+    else
+      redirect_to admin_products_path, alert: "❌ 商品の削除に失敗しました"
+    end
+  end
+
+  def restore
+    @product = Product.find(params[:id])
+    
+    if @product.restore
+      redirect_to admin_products_path, notice: "✅ 商品を復元しました"
+    else
+      redirect_to admin_products_path(show_deleted: true), alert: "❌ 商品の復元に失敗しました"
     end
   end
 
@@ -36,7 +57,7 @@ class Admin::ProductsController < Admin::BaseController
 
     def product_params
       params.require(:product).permit(
-        :name, :base_price,
+        :name, :short_name, :base_price, :unit_quantity, :unit_label,
         product_prices_attributes: [:id, :level_id, :price, :_destroy]
       )
     end

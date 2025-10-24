@@ -26,14 +26,24 @@ class SalesController < ApplicationController
                    .where(purchased_at: start_date..end_date)
                    .order(purchased_at: :desc)
 
-    # ✅ 各購入に対するボーナスを計算してマップ化（View用）
-    @purchase_bonus_map = @purchases.index_with do |purchase|
-      @user.bonus_for_purchase(purchase)
+    # ✅ 合計金額と合計ボーナス（購入者単価×数量で計算）
+    @total_sum = @purchases.sum { |purchase| purchase.purchase_items.sum { |item| item.seller_price * item.quantity } }
+    
+    # ✅ 合計ボーナス（アイテム別計算でビューと統一）
+    @total_bonus = 0
+    @purchases.each do |purchase|
+      purchase.purchase_items.each do |item|
+        if purchase.user == @user
+          item_bonus = 0  # 自己購入インセンティブは廃止
+        else
+          item_bonus = @user.bonus_for_purchase_item(item)
+        end
+        @total_bonus += item_bonus
+      end
     end
-
-    # ✅ 合計金額と合計ボーナス
-    @total_sum = @purchases.sum(&:total_price)
-    @total_bonus = @purchase_bonus_map.values.sum
+    
+    # ✅ ユーザーの商品単価情報を取得
+    @user_product_prices = get_user_product_prices(@user)
   end
 
 
@@ -62,13 +72,36 @@ class SalesController < ApplicationController
                    .where(purchased_at: start_date..end_date)
                    .order(purchased_at: :desc)
 
-    # ✅ 各購入に対するボーナスを計算してマップ化（View用）
-    @purchase_bonus_map = @purchases.index_with do |purchase|
-      @user.bonus_for_purchase(purchase)
-    end
-
     # ✅ 合計金額と合計ボーナス
     @total_sum = @purchases.sum(&:total_price)
-    @total_bonus = @purchase_bonus_map.values.sum
+    
+    # ✅ 合計ボーナス（アイテム別計算でビューと統一）
+    @total_bonus = 0
+    @purchases.each do |purchase|
+      purchase.purchase_items.each do |item|
+        if purchase.user == @user
+          item_bonus = 0  # 自己購入インセンティブは廃止
+        else
+          item_bonus = @user.bonus_for_purchase_item(item)
+        end
+        @total_bonus += item_bonus
+      end
+    end
+  end
+  
+  private
+  
+  def get_user_product_prices(user)
+    # アクティブな商品のみを取得
+    products = Product.active.order(:id)
+    user_level = user.level
+    
+    products.map do |product|
+      product_price = ProductPrice.find_by(product: product, level: user_level)
+      {
+        product: product,
+        price: product_price&.price || product.base_price
+      }
+    end
   end
 end

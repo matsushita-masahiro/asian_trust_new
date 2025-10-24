@@ -41,9 +41,10 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: 'dashboard#index'  # /admin → ダッシュボード
     resources :sales, only: [:index]
-    resources :products, only: [:index, :edit, :update] do
+    resources :products, only: [:index, :edit, :update, :destroy] do
       member do
         get :price_info
+        patch :restore
       end
     end
     resources :bonuses, only: [:index]
@@ -52,15 +53,19 @@ Rails.application.routes.draw do
         get :drill_down
       end
     end
-    resources :purchases, only: [:index, :edit, :update, :new, :create] do
+    resources :purchases, only: [:index, :show, :edit, :update, :new, :create] do
       member do
         patch :confirm_payment
       end
       resources :purchase_invoices, only: [:new, :create]
     end
+    
+    resources :purchase_items, only: [:edit, :update]
 
     resources :users, only: [:index, :show, :edit, :update] do
       resources :bonuses, only: [:index], controller: 'users/bonuses'
+      # 管理者用住所管理
+      resources :addresses, only: [:create, :update, :destroy]
       member do
         patch :deactivate
         patch :suspend
@@ -115,6 +120,7 @@ Rails.application.routes.draw do
   resources :incentives, only: [:index, :show] do
     member do
       get :drill_down
+      get :breakdown  # インセンティブ明細画面
       get :export
     end
     collection do
@@ -138,6 +144,8 @@ Rails.application.routes.draw do
     member do
       get :purchases  # /users/:id/purchases → 販売履歴
     end
+    # 住所管理
+    resources :addresses, only: [:create, :update, :destroy]
   end
   
   # 購入関連

@@ -41,7 +41,7 @@
     <!-- ヘッダー -->
     <div class="bg-light p-3 rounded shadow-sm mb-4">
       <h4 class="mb-2 fw-bold text-dark">
-        <%= @user.name %>の<%= @is_own_purchases ? '購入履歴' : (@is_customer_view ? '購入履歴' : '販売履歴') %>
+        <%= @user.display_name %>の<%= @is_own_purchases ? '購入履歴' : (@is_customer_view ? '購入履歴' : '販売履歴') %>
       </h4>
       <div class="text-muted fs-6">
         📅 （<%= @selected_month_name %>）<%= @is_own_purchases ? '購入実績' : (@is_customer_view ? '購入実績' : '販売実績') %>
@@ -54,11 +54,12 @@
           <thead class="table-secondary text-white">
             <tr>
               <% if @is_customer_view %>
+                <th>購入ID</th>
                 <th>商品名</th>
                 <th class="text-end">単価（円）</th>
                 <th class="text-end">数量</th>
                 <th class="text-end">合計（円）</th>
-                <th>仲介者</th>
+                <th>紹介者</th>
                 <th>購入日時・アクション</th>
               <% else %>
                 <th>購入者名</th>
@@ -101,12 +102,15 @@
                 <tr>
                   <% if @is_customer_view %>
                     <!-- お客様の購入履歴表示 -->
+                    <% if index == 0 %>
+                      <td rowspan="<%= purchase.purchase_items.count %>">#<%= purchase.id %></td>
+                    <% end %>
                     <td><%= item.product.name %></td>
                     <td class="text-end"><%= number_with_delimiter(item.unit_price) %></td>
                     <td class="text-end"><%= item.quantity %></td>
                     <td class="text-end text-danger fw-bold"><%= number_with_delimiter(item.total_price) %></td>
                     <% if index == 0 %>
-                      <td rowspan="<%= purchase.purchase_items.count %>">-</td>
+                      <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.user.referrer&.display_name || '-' %></td>
                       <td rowspan="<%= purchase.purchase_items.count %>">
                         <%= purchase.purchased_at&.strftime("%Y/%m/%d %H:%M") %>
                         <% if purchase.paid? %>
@@ -145,7 +149,7 @@
             <!-- 合計行 -->
             <tr class="table-primary fw-bold text-end">
               <% if @is_customer_view %>
-                <td colspan="3" class="text-end">合計</td>
+                <td colspan="4" class="text-end">合計</td>
                 <td class="text-end text-danger"><%= number_with_delimiter(total_sum) %></td>
                 <td colspan="2"></td>
               <% else %>

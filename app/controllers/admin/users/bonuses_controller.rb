@@ -26,7 +26,7 @@ class Admin::Users::BonusesController < Admin::BaseController
                                             .order(purchased_at: :desc)
 
       # 安全な計算 - purchase_itemsを通じて計算
-      @total_sales_amount = @purchases_with_descendants.joins(purchase_items: :product).sum('products.base_price * purchase_items.quantity') rescue 0
+      @total_sales_amount = @purchases_with_descendants.joins(purchase_items: :product).sum('purchase_items.seller_price * purchase_items.quantity') rescue 0
       
       # ボーナス計算 - 履歴ベースの正しい計算を使用
       @total_bonus = @user.bonus_in_period(@selected_month_start, @selected_month_end)

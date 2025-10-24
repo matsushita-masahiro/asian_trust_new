@@ -74,6 +74,7 @@
               <table class="table table-striped table-hover">
                 <thead class="table-dark">
                   <tr>
+                    <th class="text-center">購入ID</th>
                     <th class="text-center">購入日時</th>
                     <th class="text-center">顧客名</th>
                     <th class="text-center">商品名</th>
@@ -88,6 +89,11 @@
                 <tbody>
                   <% @purchases.each do |purchase| %>
                     <tr class="clickable-row" data-href="<%= edit_admin_purchase_path(purchase) %>" style="cursor: pointer;">
+                      <td class="text-center">
+                        <div class="fw-bold">
+                          #<%= purchase.id %>
+                        </div>
+                      </td>
                       <td>
                         <div class="fw-bold">
                           <%= purchase.purchased_at.strftime('%Y/%m/%d') %>
@@ -98,14 +104,14 @@
                       </td>
                       <td>
                         <div class="fw-bold">
-                          <%= purchase.user&.name || purchase.user&.email || '不明' %>
+                          <%= purchase.user&.display_name || '不明' %>
                         </div>
                       </td>
                       <td>
                         <% if purchase.purchase_items.count == 1 %>
                           <% item = purchase.purchase_items.first %>
                           <div class="fw-bold">
-                            <%= item.product.name %>
+                            <%= item.product.display_name %>
                           </div>
                           <small class="text-muted">
                             <%= item.product.display_unit %>
@@ -116,7 +122,7 @@
                           </div>
                           <small class="text-muted">
                             <% purchase.purchase_items.each_with_index do |item, index| %>
-                              <%= item.product.name %><%= index < purchase.purchase_items.count - 1 ? ', ' : '' %>
+                              <%= item.product.display_name %><%= index < purchase.purchase_items.count - 1 ? ', ' : '' %>
                             <% end %>
                           </small>
                         <% end %>
@@ -135,7 +141,8 @@
                       </td>
                       <td class="text-end">
                         <div class="fw-bold text-success">
-                          ¥<%= number_with_delimiter(purchase.total_price) %>
+                          <% unit_price_total = purchase.purchase_items.sum { |item| item.quantity * item.unit_price } %>
+                          ¥<%= number_with_delimiter(unit_price_total) %>
                         </div>
                       </td>
                       <td class="text-center">

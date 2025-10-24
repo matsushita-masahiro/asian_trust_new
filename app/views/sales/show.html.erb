@@ -56,7 +56,7 @@
                     <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.customer&.name || "-" %></td>
                   <% end %>
                   <td><%= item.product.name %></td>
-                  <td class="text-end"><%= number_with_delimiter(item.unit_price) %></td>
+                  <td class="text-end"><%= number_with_delimiter(item.seller_price) %></td>
                   <td class="text-end"><%= item.quantity %></td>
                   <td class="text-end text-danger fw-bold"><%= number_with_delimiter(item.total_price) %></td>
                   <td class="text-end text-info fw-bold">¥<%= number_with_delimiter(item.seller_price) %></td>

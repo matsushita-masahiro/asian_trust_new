@@ -1,0 +1,19 @@
+# Address fixtures for testing
+
+registration_address_one:
+  user: one
+  address_type: registration
+  postal_code: "123-4567"
+  address: "東京都渋谷区渋谷1-1-1"
+
+shipping_address_one:
+  user: one
+  address_type: shipping
+  postal_code: "987-6543"
+  address: "東京都新宿区新宿2-2-2"
+
+registration_address_two:
+  user: two
+  address_type: registration
+  postal_code: "111-2222"
+  address: "大阪府大阪市北区梅田3-3-3"

@@ -1,0 +1,116 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+        <h4 class="text-primary">商品編集</h4>
+        <%= link_to "← 購入詳細に戻る", admin_purchase_path(@purchase), class: "btn btn-outline-secondary" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">商品情報編集</h5>
+        </div>
+        <div class="card-body">
+          <!-- 購入情報表示 -->
+          <div class="mb-4 p-3 bg-light rounded">
+            <h6 class="mb-2">購入情報</h6>
+            <div class="row">
+              <div class="col-md-6">
+                <p class="mb-1"><strong>購入者:</strong> <%= @purchase.user.name.present? ? @purchase.user.name : @purchase.user.email %></p>
+                <p class="mb-1"><strong>購入日:</strong> <%= @purchase.purchased_at.strftime("%Y年%m月%d日 %H:%M") %></p>
+              </div>
+              <div class="col-md-6">
+                <p class="mb-1"><strong>ステータス:</strong> 
+                  <% if @purchase.built? %>
+                    <span class="badge bg-warning">入金待ち</span>
+                  <% elsif @purchase.paid? %>
+                    <span class="badge bg-success">支払い完了</span>
+                  <% else %>
+                    <span class="badge bg-secondary"><%= @purchase.status %></span>
+                  <% end %>
+                </p>
+                <p class="mb-1"><strong>商品名:</strong> <%= @purchase_item.product.name %></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 編集フォーム -->
+          <%= form_with model: [@purchase_item], url: admin_purchase_item_path(@purchase_item), method: :patch, local: true, class: "needs-validation", novalidate: true do |f| %>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <%= f.label :quantity, "数量", class: "form-label" %>
+                <%= f.number_field :quantity, class: "form-control", min: 1, required: true %>
+                <div class="invalid-feedback">
+                  数量を入力してください。
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <%= f.label :unit_price, "単価", class: "form-label" %>
+                <div class="input-group">
+                  <span class="input-group-text">¥</span>
+                  <%= f.number_field :unit_price, class: "form-control", min: 0, required: true %>
+                </div>
+                <div class="invalid-feedback">
+                  単価を入力してください。
+                </div>
+              </div>
+            </div>
+
+            <!-- 計算結果表示 -->
+            <div class="mb-4 p-3 bg-info bg-opacity-10 rounded">
+              <h6 class="mb-2">計算結果</h6>
+              <p class="mb-1" id="subtotal-display">小計: ¥<%= number_with_delimiter(@purchase_item.total_price) %></p>
+              <p class="mb-0 text-muted">※ 数量または単価を変更すると自動で計算されます</p>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <%= link_to "キャンセル", admin_purchase_path(@purchase), class: "btn btn-outline-secondary me-md-2" %>
+              <%= f.submit "更新", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Bootstrap form validation
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    var forms = document.getElementsByClassName('needs-validation');
+    var validation = Array.prototype.filter.call(forms, function(form) {
+      form.addEventListener('submit', function(event) {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  }, false);
+})();
+
+// 小計の自動計算
+document.addEventListener('DOMContentLoaded', function() {
+  const quantityField = document.getElementById('purchase_item_quantity');
+  const unitPriceField = document.getElementById('purchase_item_unit_price');
+  const subtotalDisplay = document.getElementById('subtotal-display');
+
+  function updateSubtotal() {
+    const quantity = parseInt(quantityField.value) || 0;
+    const unitPrice = parseInt(unitPriceField.value) || 0;
+    const subtotal = quantity * unitPrice;
+    
+    subtotalDisplay.textContent = `小計: ¥${subtotal.toLocaleString()}`;
+  }
+
+  quantityField.addEventListener('input', updateSubtotal);
+  unitPriceField.addEventListener('input', updateSubtotal);
+});
+</script>

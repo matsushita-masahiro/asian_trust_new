@@ -2,12 +2,12 @@
 
 one:
   user: one
-  product: one
-  price: 1
   purchased_at: 2025-07-13 12:57:00
+  payment_type: "cash"
+  status: "built"
 
 two:
   user: two
-  product: two
-  price: 1
   purchased_at: 2025-07-13 12:57:00
+  payment_type: "cash"
+  status: "built"

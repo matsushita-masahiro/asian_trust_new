@@ -3,8 +3,8 @@ class Admin::DashboardController < Admin::BaseController
     # システム状態チェック
     @system_health = SystemHealthChecker.cached_status
     
-    # 今日のアクセス数を取得
-    @today_access_count = get_today_access_count
+    # 今月の総売上を取得
+    @monthly_total_sales = get_monthly_total_sales
     
     # 未入金注文件数を取得
     @pending_payments_count = Purchase.built.count
@@ -12,26 +12,17 @@ class Admin::DashboardController < Admin::BaseController
 
   private
 
-  def get_today_access_count
-    # データベースから今日のアクセス数を取得
-    begin
-      count = AccessLog.today.user_access.count
-      Rails.logger.info "今日のアクセス数（データベース）: #{count}"
-      count
-    rescue => e
-      # AccessLogテーブルがまだ存在しない場合の代替処理
-      Rails.logger.warn "AccessLogテーブルが見つかりません。推定値を使用します: #{e.message}"
-      get_estimated_access_count
-    end
-  end
-
-  def get_estimated_access_count
-    # AccessLogテーブルがない場合の推定値
-    today_users = User.where(created_at: Date.current.beginning_of_day..Date.current.end_of_day).count
-    base_access = [User.count / 10, 3].max # 最低3アクセス
-    estimated_count = today_users * 2 + base_access
+  def get_monthly_total_sales
+    # 今月の購入データを取得してunit_priceベースで合計を計算
+    current_month_start = Date.current.beginning_of_month
+    current_month_end = Date.current.end_of_month
     
-    Rails.logger.info "推定アクセス数: 新規ユーザー(#{today_users}) × 2 + ベース(#{base_access}) = #{estimated_count}"
-    estimated_count
+    purchases = Purchase.where(purchased_at: current_month_start..current_month_end)
+    total_sales = purchases.sum { |purchase| 
+      purchase.purchase_items.sum { |item| item.quantity * item.unit_price } 
+    }
+    
+    Rails.logger.info "今月の総売上: #{total_sales}円"
+    total_sales
   end
 end

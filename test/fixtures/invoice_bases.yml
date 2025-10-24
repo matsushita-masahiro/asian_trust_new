@@ -2,18 +2,22 @@
 
 one:
   user: one
-  company_name: MyString
-  postal_code: MyString
-  address: MyText
-  department: MyString
-  email: MyString
-  notes: MyText
+  company_name: "テスト会社1"
+  postal_code: "123-4567"
+  address: "東京都渋谷区渋谷1-1-1"
+  department: "営業部"
+  email: "test1@example.com"
+  notes: "テスト用請求書基本情報1"
+  created_at: <%= 1.day.ago %>
+  updated_at: <%= 1.day.ago %>
 
 two:
   user: two
-  company_name: MyString
-  postal_code: MyString
-  address: MyText
-  department: MyString
-  email: MyString
-  notes: MyText
+  company_name: "テスト会社2"
+  postal_code: "987-6543"
+  address: "大阪府大阪市北区梅田2-2-2"
+  department: "総務部"
+  email: "test2@example.com"
+  notes: "テスト用請求書基本情報2"
+  created_at: <%= 1.day.ago %>
+  updated_at: <%= 1.day.ago %>

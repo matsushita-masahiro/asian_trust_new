@@ -10,6 +10,12 @@
         </div>
 
         <div class="mb-4">
+          <%= form.label :short_name, "商品略称", class: "form-label fw-bold" %>
+          <%= form.text_field :short_name, class: "form-control", placeholder: "例: 骨髄幹細胞" %>
+          <div class="form-text">表示用の短縮名を入力してください</div>
+        </div>
+
+        <div class="mb-4">
           <%= form.label :base_price, "基本価格（円）", class: "form-label fw-bold" %>
           <%= form.number_field :base_price, class: "form-control" %>
         </div>
@@ -26,8 +32,19 @@
 
         <%= render partial: 'level_prices', locals: { product: @product, form: form } %>
 
-        <div class="text-end mt-4">
-          <%= form.submit "更新", class: "btn btn-primary px-4" %>
+        <div class="d-flex justify-content-between mt-4">
+          <div>
+            <%= link_to "削除", admin_product_path(@product), 
+                method: :delete, 
+                class: "btn btn-danger px-4",
+                data: { 
+                  confirm: "本当に「#{@product.name}」を削除しますか？\n削除後は商品一覧に表示されなくなります。" 
+                } %>
+          </div>
+          <div>
+            <%= link_to "キャンセル", admin_products_path, class: "btn btn-secondary me-2" %>
+            <%= form.submit "更新", class: "btn btn-primary px-4" %>
+          </div>
         </div>
       <% end %>
     </div>

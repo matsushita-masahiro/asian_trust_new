@@ -66,7 +66,7 @@ class Admin::UsersController < Admin::BaseController
     @purchases_with_descendants = Purchase.where(user_id: [@user.id] + descendant_ids)
                                           .in_period(@selected_month_start, @selected_month_end)
 
-    @total_sales_amount = @purchases_with_descendants.joins(purchase_items: :product).sum('purchase_items.unit_price * purchase_items.quantity')
+    @total_sales_amount = @purchases_with_descendants.joins(purchase_items: :product).sum('purchase_items.seller_price * purchase_items.quantity')
     
     # drill_downと同じ方法でインセンティブを計算
     @incentive_summary = calculate_incentive_summary_for_user(@user)

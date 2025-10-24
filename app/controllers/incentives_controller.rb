@@ -44,6 +44,22 @@ class IncentivesController < ApplicationController
     render :index
   end
   
+  def breakdown
+    # インセンティブ明細表示
+    @target_user = params[:id] ? User.find(params[:id]) : current_user
+    
+    unless can_access_user?(@target_user)
+      flash[:alert] = "アクセス権限がありません"
+      redirect_to incentives_path and return
+    end
+    
+    @detailed_incentives = calculate_detailed_incentives(@target_user)
+    @incentive_summary = calculate_incentive_summary_for_user(@target_user)
+    
+    # ユーザーの商品単価情報を取得
+    @user_product_prices = get_user_product_prices(@target_user)
+  end
+  
   def hierarchy
     # 階層表示用のAJAXエンドポイント
     @target_user = params[:user_id] ? User.find(params[:user_id]) : current_user
@@ -189,5 +205,19 @@ class IncentivesController < ApplicationController
     # 詳細な実装は後のタスクで行う
     flash[:notice] = "PDF エクスポート機能は実装予定です"
     redirect_to incentives_path
+  end
+  
+  def get_user_product_prices(user)
+    # アクティブな商品のみを取得
+    products = Product.active.order(:id)
+    user_level = user.level
+    
+    products.map do |product|
+      product_price = ProductPrice.find_by(product: product, level: user_level)
+      {
+        product: product,
+        price: product_price&.price || product.base_price
+      }
+    end
   end
 end

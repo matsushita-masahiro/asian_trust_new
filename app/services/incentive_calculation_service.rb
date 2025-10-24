@@ -76,7 +76,11 @@ class IncentiveCalculationService
 
     # 直下位ユーザーの売上を計算
     user.referrals.each do |referral|
-      sales_data = calculate_user_sales(referral)
+      # 本人売上 + 下位売上の合計を計算
+      own_sales = calculate_user_sales(referral)[:total]
+      descendant_sales = calculate_descendant_sales(referral)
+      total_sales = own_sales + descendant_sales
+      
       # インセンティブ受給資格がないユーザーのインセンティブは0
       incentive_amount = referral.bonus_eligible? ? calculate_incentive_from_user(referral) : 0
       
@@ -84,8 +88,8 @@ class IncentiveCalculationService
         user: referral,
         user_name: referral.display_name,
         level: referral.level&.name,
-        sales_total: sales_data[:total],
-        purchase_count: sales_data[:count],
+        sales_total: total_sales,
+        purchase_count: own_sales > 0 ? 1 : 0, # 簡略化
         incentive_amount: incentive_amount,
         has_descendants: referral.referrals.any?
       }
@@ -94,13 +98,23 @@ class IncentiveCalculationService
     hierarchy_data
   end
 
+  # 特定ユーザーの下位売上を計算
+  def calculate_descendant_sales(target_user)
+    descendant_ids = target_user.descendant_ids
+    return 0 if descendant_ids.empty?
+
+    PurchaseItem.joins(:purchase)
+                .where(purchases: { user_id: descendant_ids, purchased_at: start_date..end_date })
+                .sum('purchase_items.seller_price * purchase_items.quantity')
+  end
+
   # 特定ユーザーの売上データを計算
   def calculate_user_sales(target_user)
     purchase_items = PurchaseItem.joins(:purchase)
                                 .where(purchases: { user_id: target_user.id, purchased_at: start_date..end_date })
                                 .includes(:product, purchase: :user)
 
-    total = purchase_items.sum('purchase_items.unit_price * purchase_items.quantity')
+    total = purchase_items.sum('purchase_items.seller_price * purchase_items.quantity')
     count = purchase_items.count
 
     {
@@ -203,66 +217,15 @@ class IncentiveCalculationService
 
 
 
-  # 特定ユーザーからのインセンティブを計算
+  # 特定ユーザーからのインセンティブを計算（そのユーザーの全体インセンティブを取得）
   def calculate_incentive_from_user(target_user)
-    return 0 unless user.bonus_eligible?
+    return 0 unless target_user.bonus_eligible?
 
-    total_incentive = 0
-    purchase_items = PurchaseItem.joins(:purchase)
-                                .where(purchases: { user_id: target_user.id, purchased_at: start_date..end_date })
-                                .includes(:product, purchase: :user)
-
-    purchase_items.each do |item|
-      purchase_date = item.purchase.purchased_at
-      my_level_at_purchase = user.level_at(purchase_date)
-      
-      if target_user == user
-        # 自己購入の場合：基本価格と実際の購入価格の差額
-        product = item.product
-        base_price = product.base_price
-        my_actual_price = item.seller_price || 0
-        
-        if base_price > my_actual_price
-          incentive_unit = base_price - my_actual_price
-          total_incentive += incentive_unit * item.quantity
-        end
-      else
-        # 他のユーザーの購入の場合：経路を確認
-        path_to_me = target_user.path_to_ancestor(user)
-        next unless path_to_me # 経路が見つからない場合はスキップ
-        
-        # 直下位ユーザーかどうかを確認（経路の長さが2の場合：自分 -> 購入者）
-        if path_to_me.length == 2
-          # 直下位ユーザーの場合は購入者の実際の購入価格を使用
-          eligible_user_price = item.seller_price || 0
-        else
-          # 間接的な子孫の場合は、購入者と自分の間の経路でインセンティブ受領資格者を探す
-          # 自分と購入者を除いた中間の経路のみを対象とする
-          intermediate_path = path_to_me[1..-2]  # 最初（自分）と最後（購入者）を除く
-          # 自分に最も近い受給資格者を探す（逆順ではなく順序通り）
-          eligible_user_in_path = intermediate_path.find(&:bonus_eligible?)
-          
-          if eligible_user_in_path
-            # 中間にインセンティブ受領資格者がいる場合、そのユーザーのレベル価格を使用
-            eligible_user_level = eligible_user_in_path.level_at(purchase_date)
-            eligible_user_price = item.product.product_prices.find_by(level_id: eligible_user_level.id)&.price || 0
-          else
-            # 中間にインセンティブ受領資格者がいない場合（購入者の実際の購入価格を使用）
-            eligible_user_price = item.seller_price || 0
-          end
-        end
-        
-        # 自分のレベル価格を取得
-        my_price = item.product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
-        
-        if eligible_user_price > my_price
-          incentive_unit = eligible_user_price - my_price
-          total_incentive += incentive_unit * item.quantity
-        end
-      end
-    end
-
-    total_incentive
+    # 対象ユーザーの月間インセンティブ合計を取得
+    month_string = start_date.strftime("%Y-%m")
+    incentive_data = target_user.monthly_incentive_with_details(month_string)
+    
+    incentive_data[:total] || 0
   end
 
   # レベル変更履歴を取得
@@ -288,12 +251,24 @@ class IncentiveCalculationService
     purchase = item.purchase
     product = item.product
     
+    # 田中美咲（user）の直下のユーザーを特定
+    direct_referral = find_direct_referral_for_purchase(purchase.user)
+    
+    # 直下ユーザーの単価を取得
+    direct_referral_price = if direct_referral
+      direct_referral_level = direct_referral.level_at(purchase.purchased_at)
+      product.product_prices.find_by(level_id: direct_referral_level.id)&.price || 0
+    else
+      0
+    end
+    
     {
       category: category,
       purchase_id: purchase.id,
-      purchaser_name: purchase.user.display_name,
-      purchaser_level: purchase.user.level_at(purchase.purchased_at)&.name,
-      product_name: product.name,
+      purchaser_display_name: purchase.user.display_name,
+      direct_referral_display_name: direct_referral&.display_name,
+      direct_referral_price: direct_referral_price,
+      product_name: product.display_name,
       purchase_date: purchase.purchased_at,
       quantity: item.quantity,
       unit_price: item.unit_price,
@@ -301,6 +276,17 @@ class IncentiveCalculationService
       total_incentive: item_incentive,
       calculation_details: build_calculation_details(item, incentive_unit, actual_price)
     }
+  end
+
+  # 田中美咲の直下のユーザーを特定
+  def find_direct_referral_for_purchase(purchase_user)
+    # 購入者から田中美咲（user）までの経路を取得
+    path_to_me = purchase_user.path_to_ancestor(user)
+    return nil unless path_to_me && path_to_me.length >= 2
+    
+    # 経路の2番目のユーザーが田中美咲の直下のユーザー
+    # path_to_me = [田中美咲, 鈴木愛美, 中村結衣] の場合、鈴木愛美が直下
+    path_to_me[1]
   end
 
   # 計算詳細を構築
@@ -313,15 +299,16 @@ class IncentiveCalculationService
     my_level = user.level_at(purchase_date)
     
     base_price = product.base_price
-    purchaser_price = product.product_prices.find_by(level_id: purchaser_level.id)&.price || 0
+    # 実際の購入価格（seller_price）を使用
+    actual_purchaser_price = item.seller_price || 0
     my_price = product.product_prices.find_by(level_id: my_level.id)&.price || 0
     
-    # 実際に使用された価格がある場合はそれを使用、なければ購入者の価格を使用
-    effective_price = actual_price || purchaser_price
+    # 実際に使用された価格がある場合はそれを使用、なければ実際の購入価格を使用
+    effective_price = actual_price || actual_purchaser_price
     
     {
       base_price: base_price,
-      purchaser_price: purchaser_price,
+      purchaser_price: actual_purchaser_price,  # 実際の購入価格を返す
       my_price: my_price,
       purchaser_level: purchaser_level&.name,
       my_level: my_level&.name,

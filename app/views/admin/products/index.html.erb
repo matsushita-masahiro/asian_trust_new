@@ -1,26 +1,53 @@
 <div class="container pt-5 mt-5 px-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>🧾 商品一覧</h2>
+    <div>
+      <% if @show_deleted %>
+        <%= link_to "有効な商品を表示", admin_products_path, class: "btn btn-outline-primary" %>
+      <% else %>
+        <%= link_to "削除済み商品を表示", admin_products_path(show_deleted: true), class: "btn btn-outline-secondary" %>
+      <% end %>
+    </div>
   </div>
+
+  <% if @show_deleted %>
+    <div class="alert alert-warning">
+      <i class="fas fa-trash me-2"></i>削除済み商品を表示しています
+    </div>
+  <% end %>
 
   <ul class="list-group">
     <% @products.each do |product| %>
       <li class="list-group-item d-flex justify-content-between align-items-center">
         <div>
           <strong><%= product.name %></strong><br>
+          <% if product.short_name.present? %>
+            略称：<%= product.short_name %><br>
+          <% end %>
 
           <% if product.unit_quantity.present? && product.unit_label.present? %>
             <% display_quantity = (product.unit_quantity.to_f == product.unit_quantity.to_i) ? product.unit_quantity.to_i : product.unit_quantity %>
             販売単位：<%= "#{display_quantity}#{product.unit_label}" %><br>
           <% end %>
 
-
           基本金額：¥<%= product.base_price %><br>
           <span class="badge bg-<%= product.is_active ? 'success' : 'secondary' %>">
             <%= product.is_active ? '有効' : '無効' %>
           </span>
+          <% if @show_deleted %>
+            <span class="badge bg-danger ms-1">削除済み</span>
+          <% end %>
         </div>
-        <%= link_to '編集', edit_admin_product_path(product), class: 'btn btn-sm btn-outline-primary' %>
+        <div>
+          <% if @show_deleted %>
+            <%= link_to '復元', restore_admin_product_path(product), 
+                method: :patch, 
+                class: 'btn btn-sm btn-outline-success me-2',
+                data: { confirm: "「#{product.name}」を復元しますか？" } %>
+          <% else %>
+            <%= link_to '編集', edit_admin_product_path(product), class: 'btn btn-sm btn-outline-primary' %>
+          <% end %>
+        </div>
       </li>
     <% end %>
   </ul>

@@ -6,9 +6,7 @@
         <% if user.level %>
           <span class="badge bg-secondary ms-2"><%= user.level.name %></span>
         <% end %>
-        <% if user.lstep_user_id.present? %>
-          <span class="badge bg-info ms-1"><%= user.lstep_user_id %></span>
-        <% end %>
+        <span class="badge bg-info ms-1">ID: <%= user.id %></span>
       </div>
       
       <div class="user-stats">

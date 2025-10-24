@@ -19,6 +19,11 @@ class User < ApplicationRecord
   has_one  :invoice_recipient
   has_one  :invoice_base
 
+  # 住所関連
+  has_many :addresses, dependent: :destroy
+  has_one :registration_address, -> { where(address_type: 'registration') }, class_name: 'Address'
+  has_one :shipping_address, -> { where(address_type: 'shipping') }, class_name: 'Address'
+
   # 会員レベル
   belongs_to :level
   
@@ -67,7 +72,7 @@ class User < ApplicationRecord
   end
 
   def display_name
-    name.present? ? "#{name} (#{email})" : email
+    name.present? ? "#{name} (#{level_label})" : level_label
   end
 
   def ancestors
@@ -101,11 +106,11 @@ class User < ApplicationRecord
   end
 
   def own_monthly_sales_total(month_str)
-    # 新しい構造：purchase_itemsから合計を計算
+    # 新しい構造：purchase_itemsから合計を計算（seller_priceベース）
     Purchase.joins(:purchase_items)
             .where(user: self)
             .in_month_tokyo(month_str)
-            .sum('purchase_items.unit_price * purchase_items.quantity')
+            .sum('purchase_items.seller_price * purchase_items.quantity')
   end
   
   def direct_referees_monthly_sales_total(month_str)
@@ -118,7 +123,7 @@ class User < ApplicationRecord
     Purchase.joins(:purchase_items)
             .where(user_id: descendant_ids)
             .in_month_tokyo(month_str)
-            .sum('purchase_items.unit_price * purchase_items.quantity')
+            .sum('purchase_items.seller_price * purchase_items.quantity')
   end
   
   def total_sales_with_descendants(month_str)
@@ -553,15 +558,6 @@ class User < ApplicationRecord
     false
   end
 
-  private
-
-  def check_level_hierarchy
-    return unless referrer&.level&.value && level&.value
-    if level.value < referrer.level.value
-      errors.add(:level, "紹介者より上のレベルには設定できません")
-    end
-  end
-
   # 紹介URL生成（ホスト情報が必要な場合はコントローラーで生成）
   def referral_url(host = nil)
     if host
@@ -585,7 +581,36 @@ class User < ApplicationRecord
   def can_refer?
     return false unless level&.value
     # レベル4、5、7（サロン・クリニック・お客様）は紹介不可
+    # サポーター（レベル6）は紹介可能
     ![4, 5, 7].include?(level.value)
+  end
+
+  # 後方互換性メソッド
+  def primary_address
+    registration_address&.address || invoice_base&.address
+  end
+
+  def primary_postal_code
+    registration_address&.postal_code || invoice_base&.postal_code
+  end
+
+  def full_address
+    if registration_address
+      "#{registration_address.postal_code} #{registration_address.address}".strip
+    elsif invoice_base
+      "#{invoice_base.postal_code} #{invoice_base.address}".strip
+    else
+      nil
+    end
+  end
+
+  private
+
+  def check_level_hierarchy
+    return unless referrer&.level&.value && level&.value
+    if level.value < referrer.level.value
+      errors.add(:level, "紹介者より上のレベルには設定できません")
+    end
   end
 
   private

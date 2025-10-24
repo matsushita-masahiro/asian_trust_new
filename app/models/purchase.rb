@@ -78,7 +78,28 @@ class Purchase < ApplicationRecord
   # 特定ユーザーの購入履歴
   scope :bought_by, ->(user) { where(user_id: user.id) }
 
+  # 💰 月別未入金購入分の合計金額を計算（seller_priceベース）
+  def self.monthly_pending_amount(month_str)
+    purchases = in_month_tokyo(month_str).where(status: 'built')
+    purchases.sum { |purchase| 
+      purchase.purchase_items.sum { |item| item.quantity * item.seller_price } 
+    }
+  end
 
+  # 💰 月別入金済み購入分の合計金額を計算（seller_priceベース）
+  def self.monthly_paid_amount(month_str)
+    purchases = in_month_tokyo(month_str).where(status: ['paid', 'reserved'])
+    purchases.sum { |purchase| 
+      purchase.purchase_items.sum { |item| item.quantity * item.seller_price } 
+    }
+  end
 
+  # 💰 月別総売上金額を計算（seller_priceベース）
+  def self.monthly_total_amount(month_str)
+    purchases = in_month_tokyo(month_str)
+    purchases.sum { |purchase| 
+      purchase.purchase_items.sum { |item| item.quantity * item.seller_price } 
+    }
+  end
 
 end

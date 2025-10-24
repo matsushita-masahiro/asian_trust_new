@@ -19,6 +19,16 @@ class Admin::PurchasesController < Admin::BaseController
     @total_amount = @purchases.sum { |purchase| purchase.purchase_items.sum { |item| item.quantity * item.unit_price } }
     @total_count = @purchases.count
     
+    # 未入金購入分の合計金額を計算
+    @pending_amount = @purchases.where(status: 'built').sum { |purchase| 
+      purchase.purchase_items.sum { |item| item.quantity * item.unit_price } 
+    }
+    
+    # 入金済み購入分の合計金額を計算
+    @paid_amount = @purchases.where(status: ['paid', 'reserved']).sum { |purchase| 
+      purchase.purchase_items.sum { |item| item.quantity * item.unit_price } 
+    }
+    
     # 月選択用のオプション（過去12ヶ月分）
     @month_options = generate_month_options
     
@@ -44,7 +54,9 @@ class Admin::PurchasesController < Admin::BaseController
 
   def update
     if @purchase.update(purchase_params)
-      redirect_to admin_purchases_path, notice: '購入履歴を更新しました。'
+      # 購入月を取得してリダイレクト先に含める
+      purchase_month = @purchase.purchased_at.strftime('%Y-%m')
+      redirect_to admin_purchases_path(month: purchase_month), notice: '購入履歴を更新しました。'
     else
       render :edit, status: :unprocessable_entity
     end
@@ -57,7 +69,7 @@ class Admin::PurchasesController < Admin::BaseController
     @sellers = User.joins(:level).where.not(levels: { name: 'お客様' }).order(:name, :email)
     # 全ユーザーリスト（購入者用）
     @buyers = User.all.order(:name, :email)
-    @products = Product.all.order(:name)
+    @products = Product.active.order(:name)
     
     # 数を計算
     @sellers_count = @sellers.count
@@ -71,11 +83,23 @@ class Admin::PurchasesController < Admin::BaseController
       purchased_at: params[:purchase][:purchased_at]
     )
     
+    # 購入者とその商品を取得
+    user = User.find(params[:purchase][:user_id])
+    product = Product.find(params[:purchase][:product_id])
+    
+    # 購入者のレベルに応じたseller_priceを取得
+    seller_price = if user.level
+      product.price_for(user.level.symbol) || 0
+    else
+      0
+    end
+    
     # 購入アイテムを作成
     @purchase.purchase_items.build(
       product_id: params[:purchase][:product_id],
       quantity: params[:purchase][:quantity],
-      unit_price: params[:purchase][:unit_price]
+      unit_price: params[:purchase][:unit_price],
+      seller_price: seller_price
     )
     
     if @purchase.save
@@ -85,7 +109,7 @@ class Admin::PurchasesController < Admin::BaseController
       @sellers = User.joins(:level).where.not(levels: { name: 'お客様' }).order(:name, :email)
       # 全ユーザーリスト（購入者用）
       @buyers = User.all.order(:name, :email)
-      @products = Product.all.order(:name)
+      @products = Product.active.order(:name)
       
       # 数を計算
       @sellers_count = @sellers.count
@@ -99,17 +123,40 @@ class Admin::PurchasesController < Admin::BaseController
     if @purchase.built?
       @purchase.update!(status: 'paid')
       
+      # 購入月を取得してリダイレクト先に含める
+      purchase_month = @purchase.purchased_at.strftime('%Y-%m')
+      
       # 入金確認メールを送信
       begin
         OrderMailer.payment_confirmed(@purchase).deliver_now
-        redirect_to admin_purchases_path, notice: '入金確認が完了しました。ステータスを「支払い完了」に変更し、お客様にメールを送信しました。'
+        redirect_to admin_purchases_path(month: purchase_month), notice: '入金確認が完了しました。ステータスを「支払済み」に変更し、お客様にメールを送信しました。'
       rescue => e
         Rails.logger.error "メール送信エラー: #{e.message}"
-        redirect_to admin_purchases_path, notice: '入金確認が完了しました。ステータスを「支払い完了」に変更しましたが、メール送信に失敗しました。'
+        redirect_to admin_purchases_path(month: purchase_month), notice: '入金確認が完了しました。ステータスを「支払済み」に変更しましたが、メール送信に失敗しました。'
       end
     else
       redirect_to edit_admin_purchase_path(@purchase), alert: 'この注文は既に入金確認済みです。'
     end
+  end
+
+  # 購入者とレベルに応じた商品価格を取得するAPI
+  def get_user_level_price
+    user = User.find(params[:user_id])
+    product = Product.find(params[:product_id])
+    
+    price = if user.level
+      product.price_for(user.level.symbol) || 0
+    else
+      0
+    end
+    
+    render json: { 
+      price: price,
+      level_name: user.level&.name || '未設定',
+      user_name: user.display_name
+    }
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private
@@ -129,7 +176,7 @@ class Admin::PurchasesController < Admin::BaseController
   end
 
   def create_purchase_params
-    params.require(:purchase).permit(:user_id, :purchased_at, :product_id, :quantity, :unit_price)
+    params.require(:purchase).permit(:user_id, :purchased_at, :product_id, :quantity, :unit_price, :seller_price)
   end
 
   def generate_month_options

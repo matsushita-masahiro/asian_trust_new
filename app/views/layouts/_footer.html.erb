@@ -1,4 +1,4 @@
-<footer class="bg-dark text-light py-4 mt-5">
+<footer class="bg-dark text-light py-4">
   <div class="container text-center">
     <ul class="list-inline mb-2">
       <li class="list-inline-item">
@@ -12,10 +12,12 @@
       <li class="list-inline-item">
         <%= link_to "特定商取引法に基づく表記", law_path, class: "text-light text-decoration-none" %>
       </li>
-      <li class="list-inline-item">|</li>
-      <li class="list-inline-item">
-        <%= link_to "お問い合わせ", new_inquiry_path, class: "text-light text-decoration-none" %>
-      </li>
+      <% unless current_user&.admin? %>
+        <li class="list-inline-item">|</li>
+        <li class="list-inline-item">
+          <%= link_to "お問い合わせ", new_inquiry_path, class: "text-light text-decoration-none" %>
+        </li>
+      <% end %>
     </ul>
     <p class="mb-0 small">© <%= Time.current.year %> <%= ENV['COMPANY_NAME'] %>. All rights reserved.</p>
   </div>

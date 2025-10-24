@@ -19,7 +19,7 @@
 
   <!-- 統計情報 -->
   <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-md-4">
       <div class="card bg-primary text-white">
         <div class="card-body text-center">
           <h6 class="card-title"><%= @selected_month_name %></h6>
@@ -28,7 +28,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
       <div class="card bg-success text-white">
         <div class="card-body text-center">
           <h6 class="card-title"><%= @selected_month_name %></h6>
@@ -37,28 +37,24 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
       <div class="card bg-info text-white">
         <div class="card-body text-center">
-          <h6 class="card-title">平均購入金額</h6>
-          <h3 class="mb-0">
-            <% if @total_count > 0 %>
-              ¥<%= number_with_delimiter(@total_amount / @total_count) %>
-            <% else %>
-              ¥0
-            <% end %>
-          </h3>
+          <h6 class="card-title mb-3">購入分合計</h6>
+          <div class="row">
+            <div class="col-6">
+              <small class="d-block mb-1">未入金購入分</small>
+              <h5 class="mb-0">¥<%= number_with_delimiter(@pending_amount) %></h5>
+            </div>
+            <div class="col-6">
+              <small class="d-block mb-1">入金済購入分</small>
+              <h5 class="mb-0">¥<%= number_with_delimiter(@paid_amount) %></h5>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card bg-warning text-white">
-        <div class="card-body text-center">
-          <h6 class="card-title">購入ユーザー数</h6>
-          <h3 class="mb-0"><%= @purchases.map(&:user_id).uniq.count %>人</h3>
-        </div>
-      </div>
-    </div>
+
   </div>
 
   <!-- 購入履歴テーブル -->

@@ -14,8 +14,27 @@ class Admin::BaseController < ApplicationController
     end
     
     def require_admin
-      unless current_user&.admin? || current_user&.level&.value == 0
+      unless is_admin_user?(current_user)
+        Rails.logger.warn "Unauthorized admin access attempt by user: #{current_user&.email} (ID: #{current_user&.id})"
         redirect_to root_path, alert: "管理者専用です"
       end
+    end
+
+    # ApplicationControllerと同じ管理者判定ロジック
+    def is_admin_user?(user)
+      return false unless user&.admin?
+      
+      # 追加のセキュリティチェック
+      # 1. 特定のメールドメインチェック
+      allowed_admin_domains = ['abt-saisei.com']
+      return false unless allowed_admin_domains.any? { |domain| user.email.end_with?("@#{domain}") }
+      
+      # 2. アカウント状態チェック
+      return false unless user.active?
+      
+      # 3. レベルチェック（最上位レベルのみ）
+      return false unless user.level&.name == 'アジアビジネストラスト'
+      
+      true
     end
 end

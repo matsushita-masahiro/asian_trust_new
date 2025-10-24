@@ -172,7 +172,8 @@ company = User.create!(
   password: "111111",
   level_id: levels["アジアビジネストラスト"].id,
   lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
-  confirmed_at: Time.current
+  confirmed_at: Time.current,
+  admin: true  # 管理者フラグを設定
 )
 user_id_seq += 1
 lstep_id_seq += 1

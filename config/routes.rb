@@ -57,6 +57,9 @@ Rails.application.routes.draw do
       member do
         patch :confirm_payment
       end
+      collection do
+        get :get_user_level_price
+      end
       resources :purchase_invoices, only: [:new, :create]
     end
     

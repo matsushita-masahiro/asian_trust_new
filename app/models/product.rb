@@ -4,7 +4,7 @@ class Product < ApplicationRecord
     accepts_nested_attributes_for :product_prices, allow_destroy: true, reject_if: proc { |attr| attr['price'].blank? }
     
     # 論理削除のスコープ
-    scope :active, -> { where(deleted_at: nil) }
+    scope :active, -> { where(deleted_at: nil, is_active: true) }
     scope :deleted, -> { where.not(deleted_at: nil) }
     
     def display_unit
@@ -43,6 +43,6 @@ class Product < ApplicationRecord
     
     # アクティブかどうかの判定
     def active?
-      deleted_at.nil?
+      deleted_at.nil? && is_active?
     end
 end

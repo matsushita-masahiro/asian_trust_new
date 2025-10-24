@@ -34,10 +34,23 @@
               <div class="col-md-12">
                 <div class="mb-3">
                   <%= form.label :user_id, "購入者（#{@buyers_count}）", class: "form-label" %>
+                  
+                  <!-- 購入者検索欄 -->
+                  <div class="mb-2">
+                    <input type="text" 
+                           id="user_search" 
+                           class="form-control" 
+                           placeholder="購入者名で検索..." 
+                           autocomplete="off">
+                    <div class="form-text">
+                      <small class="text-muted">名前またはメールアドレスで検索できます</small>
+                    </div>
+                  </div>
+                  
                   <%= form.select :user_id, 
                       options_from_collection_for_select(@buyers, :id, :display_name, @purchase.user_id),
                       { prompt: "購入者を選択してください" },
-                      { class: "form-select", required: true } %>
+                      { class: "form-select", required: true, id: "user_select" } %>
                   <div class="invalid-feedback">
                     購入者を選択してください。
                   </div>
@@ -147,8 +160,41 @@
       '¥' + total.toLocaleString();
   }
 
-  // 商品選択時に単価を自動入力
+  // 購入者のレベルに応じた商品価格を取得
+  function loadUserLevelPrice() {
+    const userSelect = document.getElementById('user_select');
+    const productSelect = document.getElementById('product_select');
+    const unitPriceInput = document.getElementById('unit_price_input');
+    
+    if (!userSelect.value || !productSelect.value) {
+      unitPriceInput.value = '';
+      updateTotal();
+      return;
+    }
+    
+    // 購入者のレベルに応じた価格情報を取得
+    fetch(`/admin/purchases/get_user_level_price?user_id=${userSelect.value}&product_id=${productSelect.value}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          console.error('価格情報の取得エラー:', data.error);
+          unitPriceInput.value = 0;
+        } else {
+          unitPriceInput.value = data.price || 0;
+          console.log(`${data.user_name}（${data.level_name}）の価格: ¥${data.price}`);
+        }
+        updateTotal();
+      })
+      .catch(error => {
+        console.error('価格情報の取得に失敗しました:', error);
+        unitPriceInput.value = 0;
+        updateTotal();
+      });
+  }
+
+  // 商品選択時に単価を自動入力（購入者も選択されている場合はレベル価格を取得）
   function loadProductPrice() {
+    const userSelect = document.getElementById('user_select');
     const productSelect = document.getElementById('product_select');
     const unitPriceInput = document.getElementById('unit_price_input');
     
@@ -158,16 +204,73 @@
       return;
     }
     
-    // 商品価格情報を取得
-    fetch(`/admin/products/${productSelect.value}/price_info`)
-      .then(response => response.json())
-      .then(data => {
-        unitPriceInput.value = data.base_price || 0;
-        updateTotal();
-      })
-      .catch(error => {
-        console.error('価格情報の取得に失敗しました:', error);
-      });
+    // 購入者が選択されている場合はレベル価格を取得
+    if (userSelect.value) {
+      loadUserLevelPrice();
+    } else {
+      // 購入者が未選択の場合は基本価格を取得
+      fetch(`/admin/products/${productSelect.value}/price_info`)
+        .then(response => response.json())
+        .then(data => {
+          unitPriceInput.value = data.base_price || 0;
+          updateTotal();
+        })
+        .catch(error => {
+          console.error('価格情報の取得に失敗しました:', error);
+        });
+    }
+  }
+
+  // 購入者検索機能
+  let allUsers = [];
+  
+  function initializeUserSearch() {
+    const userSelect = document.getElementById('user_select');
+    const userSearch = document.getElementById('user_search');
+    
+    if (!userSelect || !userSearch) return;
+    
+    // 全ユーザーのオプションを保存
+    allUsers = Array.from(userSelect.options).slice(1); // 最初のpromptオプションを除く
+    
+    // 検索機能
+    userSearch.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase().trim();
+      
+      // selectをクリア（promptオプションは残す）
+      userSelect.innerHTML = '<option value="">購入者を選択してください</option>';
+      
+      if (searchTerm === '') {
+        // 検索欄が空の場合は全ユーザーを表示
+        allUsers.forEach(option => {
+          userSelect.appendChild(option.cloneNode(true));
+        });
+      } else {
+        // 検索条件に一致するユーザーのみ表示
+        const filteredUsers = allUsers.filter(option => {
+          const text = option.textContent.toLowerCase();
+          return text.includes(searchTerm);
+        });
+        
+        filteredUsers.forEach(option => {
+          userSelect.appendChild(option.cloneNode(true));
+        });
+        
+        // 検索結果が1件の場合は自動選択
+        if (filteredUsers.length === 1) {
+          userSelect.value = filteredUsers[0].value;
+          // 価格を更新
+          loadUserLevelPrice();
+        }
+      }
+    });
+    
+    // Enterキーでの送信を防ぐ
+    userSearch.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+      }
+    });
   }
 
   // 入力フィールドにイベントリスナーを追加
@@ -185,6 +288,15 @@
     if (productSelect) {
       productSelect.addEventListener('change', loadProductPrice);
     }
+    
+    // 購入者選択時に価格を更新
+    const userSelect = document.getElementById('user_select');
+    if (userSelect) {
+      userSelect.addEventListener('change', loadUserLevelPrice);
+    }
+    
+    // 購入者検索機能を初期化
+    initializeUserSearch();
     
     // Bootstrap validation
     const forms = document.querySelectorAll('.needs-validation');
@@ -227,6 +339,22 @@
   
   .form-select {
     font-size: 1rem;
+  }
+  
+  /* 検索欄のスタイル */
+  #user_search {
+    border: 2px solid #e9ecef;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+  
+  #user_search:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  }
+  
+  #user_search::placeholder {
+    color: #6c757d;
+    font-style: italic;
   }
   
   /* レスポンシブ対応 */

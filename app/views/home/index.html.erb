@@ -1,9 +1,97 @@
-<%# render 'top' %>
-<%# render 'features' %>
-<%# render 'concept' %>
-<%# render 'works' %>
-
-<div class="d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 200px);">
-  <h4 id="main-title" class="text-center">Asia business Trust プロトタイプ</h4>
+<div class="top-page-container">
+  <img src="/top.png" alt="Asia business Trust" class="top-page-image">
 </div>
+
+<style>
+  /* トップページ専用のスタイル */
+  body {
+    padding-top: 0 !important; /* ナビゲーションバーのパディングを無効化 */
+  }
+  
+  .container-fluid {
+    padding: 0 !important; /* コンテナのパディングも無効化 */
+    margin: 0 !important; /* マージンも無効化 */
+  }
+  
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .top-page-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .top-page-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+  
+  /* ナビゲーションバーを透明にする */
+  .navbar {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px);
+    position: fixed !important;
+    top: 0 !important;
+    width: 100% !important;
+    z-index: 1000 !important;
+  }
+  
+  /* ナビゲーションバーのテキスト色を調整 */
+  .navbar .navbar-nav .nav-link {
+    color: #333 !important;
+    font-weight: 500;
+  }
+  
+  .navbar .navbar-nav .nav-link:hover {
+    color: #007bff !important;
+  }
+  
+  .navbar .navbar-brand {
+    color: #333 !important;
+  }
+  
+  /* ログインボタンなどのボタンスタイル */
+  .navbar .btn {
+    border: 1px solid #333 !important;
+    color: #333 !important;
+  }
+  
+  .navbar .btn:hover {
+    background-color: #333 !important;
+    color: white !important;
+  }
+  
+  /* フッターを表示し、画像の直下に配置 */
+  footer {
+    position: relative !important;
+    z-index: 10 !important;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 768px) {
+    .top-page-container {
+      height: 100vh;
+    }
+    
+    .top-page-image {
+      object-fit: cover;
+    }
+  }
+</style>
 

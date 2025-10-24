@@ -21,8 +21,35 @@ class ApplicationController < ActionController::Base
     # ログイン成功時にアクセスログを記録
     log_successful_login(resource)
     
-    # 元のリダイレクト先を返す
-    stored_location_for(resource) || root_path
+    # adminユーザーの場合はadmin/dashboardにリダイレクト
+    if is_admin_user?(resource)
+      Rails.logger.info "Admin user #{resource.email} redirected to admin dashboard"
+      admin_root_path
+    else
+      # 一般ユーザーは元のリダイレクト先を返す
+      stored_location_for(resource) || root_path
+    end
+  end
+
+  # 管理者権限の判定（複合的なチェック）
+  def is_admin_user?(user)
+    return false unless user&.admin?
+    
+    # 追加のセキュリティチェック
+    # 1. 特定のメールドメインチェック
+    allowed_admin_domains = ['abt-saisei.com']
+    return false unless allowed_admin_domains.any? { |domain| user.email.end_with?("@#{domain}") }
+    
+    # 2. アカウント状態チェック
+    return false unless user.active?
+    
+    # 3. レベルチェック（最上位レベルのみ）
+    return false unless user.level&.name == 'アジアビジネストラスト'
+    
+    # 4. 最後のログイン時間チェック（オプション）
+    # return false if user.last_sign_in_at && user.last_sign_in_at < 90.days.ago
+    
+    true
   end
 
   # ログイン成功時のログ記録

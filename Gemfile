@@ -28,6 +28,9 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
+
+# SMS認証用
+gem 'twilio-ruby'
 gem "solid_queue"
 gem "solid_cable"
 

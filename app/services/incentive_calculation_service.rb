@@ -136,11 +136,28 @@ class IncentiveCalculationService
 
     my_purchase_items.each do |item|
       product = item.product
-      base_price = product.base_price
-      my_actual_price = item.seller_price || 0  # 実際の購入価格を使用
       
-      incentive_unit = base_price - my_actual_price
-      item_incentive = incentive_unit * item.quantity
+      if product.category == 'wott'
+        # WOTT商品の場合：自己購入でのみインセンティブ発生
+        if user.has_wott_level?
+          wott_level = user.wott_level
+          incentive_record = product.product_prices.find_by(wott_level: wott_level)
+          if incentive_record&.price
+            incentive_unit = (product.base_price || 0) - incentive_record.price
+            item_incentive = incentive_unit > 0 ? incentive_unit * item.quantity : 0
+          else
+            incentive_unit = 0
+            item_incentive = 0
+          end
+        else
+          incentive_unit = 0
+          item_incentive = 0
+        end
+      else
+        # 通常商品の場合：従来の計算方式（自己購入インセンティブは廃止されているため0）
+        incentive_unit = 0
+        item_incentive = 0
+      end
 
       if item_incentive > 0
         total_incentive += item_incentive
@@ -171,44 +188,52 @@ class IncentiveCalculationService
       purchase = item.purchase
       purchase_date = purchase.purchased_at
       purchase_user = purchase.user
-      my_level_at_purchase = user.level_at(purchase_date)
+      product = item.product
       
-      # 購入者から自分までの経路を確認
-      path_to_me = purchase_user.path_to_ancestor(user)
-      next unless path_to_me # 経路が見つからない場合はスキップ
-      
-      # 直下位ユーザーかどうかを確認（経路の長さが2の場合：自分 -> 購入者）
-      if path_to_me.length == 2
-        # 直下位ユーザーの場合は購入者の実際の購入価格を使用
-        eligible_user_price = item.seller_price || 0
+      if product.category == 'wott'
+        # WOTT商品の場合：他人の購入ではインセンティブなし（自己購入のみ）
+        next
       else
-        # 間接的な子孫の場合は、購入者と自分の間の経路でインセンティブ受領資格者を探す
-        # 自分と購入者を除いた中間の経路のみを対象とする
-        intermediate_path = path_to_me[1..-2]  # 最初（自分）と最後（購入者）を除く
-        # 自分に最も近い受給資格者を探す（逆順ではなく順序通り）
-        eligible_user_in_path = intermediate_path.find(&:bonus_eligible?)
+        # 通常商品の場合：従来の階層差額計算
+        my_level_at_purchase = user.level_at(purchase_date)
         
-        if eligible_user_in_path
-          # 中間にインセンティブ受領資格者がいる場合、そのユーザーのレベル価格を使用
-          eligible_user_level = eligible_user_in_path.level_at(purchase_date)
-          eligible_user_price = item.product.product_prices.find_by(level_id: eligible_user_level.id)&.price || 0
-        else
-          # 中間にインセンティブ受領資格者がいない場合（購入者の実際の購入価格を使用）
+        # 購入者から自分までの経路を確認
+        path_to_me = purchase_user.path_to_ancestor(user)
+        next unless path_to_me # 経路が見つからない場合はスキップ
+        
+        # 直下位ユーザーかどうかを確認（経路の長さが2の場合：自分 -> 購入者）
+        if path_to_me.length == 2
+          # 直下位ユーザーの場合は購入者の実際の購入価格を使用
           eligible_user_price = item.seller_price || 0
+        else
+          # 間接的な子孫の場合は、購入者と自分の間の経路でインセンティブ受領資格者を探す
+          # 自分と購入者を除いた中間の経路のみを対象とする
+          intermediate_path = path_to_me[1..-2]  # 最初（自分）と最後（購入者）を除く
+          # 自分に最も近い受給資格者を探す（逆順ではなく順序通り）
+          eligible_user_in_path = intermediate_path.find(&:bonus_eligible?)
+          
+          if eligible_user_in_path
+            # 中間にインセンティブ受領資格者がいる場合、そのユーザーのレベル価格を使用
+            eligible_user_level = eligible_user_in_path.level_at(purchase_date)
+            eligible_user_price = product.product_prices.find_by(level_id: eligible_user_level.id)&.price || 0
+          else
+            # 中間にインセンティブ受領資格者がいない場合（購入者の実際の購入価格を使用）
+            eligible_user_price = item.seller_price || 0
+          end
         end
-      end
-      
-      # 自分のレベル価格を取得
-      my_price = item.product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
-      
-      if eligible_user_price > my_price
-        incentive_unit = eligible_user_price - my_price
-        item_incentive = incentive_unit * item.quantity
-        total_incentive += item_incentive
-        details[:purchase_count] += 1
         
-        # 詳細情報を追加（実際に使用された価格を渡す）
-        details[:purchase_details] << create_purchase_detail(item, 'descendant_sales', incentive_unit, item_incentive, eligible_user_price)
+        # 自分のレベル価格を取得
+        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+        
+        if eligible_user_price > my_price
+          incentive_unit = eligible_user_price - my_price
+          item_incentive = incentive_unit * item.quantity
+          total_incentive += item_incentive
+          details[:purchase_count] += 1
+          
+          # 詳細情報を追加（実際に使用された価格を渡す）
+          details[:purchase_details] << create_purchase_detail(item, 'descendant_sales', incentive_unit, item_incentive, eligible_user_price)
+        end
       end
     end
 
@@ -301,19 +326,40 @@ class IncentiveCalculationService
     base_price = product.base_price
     # 実際の購入価格（seller_price）を使用
     actual_purchaser_price = item.seller_price || 0
-    my_price = product.product_prices.find_by(level_id: my_level.id)&.price || 0
     
-    # 実際に使用された価格がある場合はそれを使用、なければ実際の購入価格を使用
-    effective_price = actual_price || actual_purchaser_price
-    
-    {
-      base_price: base_price,
-      purchaser_price: actual_purchaser_price,  # 実際の購入価格を返す
-      my_price: my_price,
-      purchaser_level: purchaser_level&.name,
-      my_level: my_level&.name,
-      calculation_formula: "#{effective_price} - #{my_price} = #{incentive_unit}"
-    }
+    # WOTT商品の場合は特別処理
+    if product.category == 'wott'
+      # WOTT商品の場合：購入者のWOTTレベルを表示し、WOTT価格を使用
+      purchaser_wott_level = purchase.user.wott_level
+      my_wott_level = user.wott_level
+      
+      # WOTT価格を取得
+      my_wott_price = product.product_prices.find_by(wott_level: my_wott_level)&.price || 0
+      
+      {
+        base_price: base_price,
+        purchaser_price: actual_purchaser_price,
+        my_price: my_wott_price,
+        purchaser_level: purchaser_wott_level&.name || '未設定',
+        my_level: my_wott_level&.name || '未設定',
+        calculation_formula: "#{base_price} - #{my_wott_price} = #{incentive_unit}"
+      }
+    else
+      # 通常商品の場合：従来通りの処理
+      my_price = product.product_prices.find_by(level_id: my_level.id)&.price || 0
+      
+      # 実際に使用された価格がある場合はそれを使用、なければ実際の購入価格を使用
+      effective_price = actual_price || actual_purchaser_price
+      
+      {
+        base_price: base_price,
+        purchaser_price: actual_purchaser_price,
+        my_price: my_price,
+        purchaser_level: purchaser_level&.name,
+        my_level: my_level&.name,
+        calculation_formula: "#{effective_price} - #{my_price} = #{incentive_unit}"
+      }
+    end
   end
 
   # 日付範囲の妥当性チェック

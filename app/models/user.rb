@@ -26,6 +26,7 @@ class User < ApplicationRecord
 
   # 会員レベル
   belongs_to :level
+  belongs_to :wott_level, optional: true
   
   # 購入関連のリレーション
   has_many :purchases, class_name: 'Purchase', foreign_key: 'user_id'  # 自分の購入
@@ -202,8 +203,30 @@ class User < ApplicationRecord
     end
 
     # --- (1) 自分の販売に対するインセンティブ ---
-    # 仕様変更により自己購入インセンティブは廃止
-    # own_salesは常に0のまま
+    # 通常商品の自己購入インセンティブは廃止
+    # ただし、WOTT商品の自己購入インセンティブは有効
+    my_purchase_items = PurchaseItem.joins(:purchase)
+                                   .where(purchases: { user_id: id, purchased_at: from_date..to_date })
+                                   .includes(:product, purchase: :user)
+
+    my_purchase_items.each do |item|
+      product = item.product
+      
+      if product.category == 'wott'
+        # WOTT商品の場合：自己購入でのみインセンティブ発生
+        if has_wott_level?
+          wott_level_obj = wott_level
+          incentive_record = product.product_prices.find_by(wott_level: wott_level_obj)
+          if incentive_record&.price
+            incentive_unit = (product.base_price || 0) - incentive_record.price
+            item_incentive = incentive_unit > 0 ? incentive_unit * item.quantity : 0
+            details[:own_sales] += item_incentive
+            details[:purchase_count] += 1 if item_incentive > 0
+          end
+        end
+      end
+      # 通常商品の自己購入インセンティブは廃止されているため処理しない
+    end
 
     # --- (2) 子孫の販売に対するインセンティブ（階層差額） ---
     # すべての子孫を対象とする（お客様の購入も含む）
@@ -218,6 +241,11 @@ class User < ApplicationRecord
         purchase = item.purchase
         purchase_date = purchase.purchased_at
         purchase_user = purchase.user
+        product = item.product
+        
+        # WOTT商品の場合：他人の購入ではインセンティブなし（自己購入のみ）
+        next if product.category == 'wott'
+        
         my_level_at_purchase = level_at(purchase_date)
         
         # 購入者から自分までの経路を確認
@@ -238,7 +266,7 @@ class User < ApplicationRecord
           if eligible_user_in_path
             # 中間にインセンティブ受領資格者がいる場合、そのユーザーのレベル価格を使用
             eligible_user_level = eligible_user_in_path.level_at(purchase_date)
-            eligible_user_price = item.product.product_prices.find_by(level_id: eligible_user_level.id)&.price || 0
+            eligible_user_price = product.product_prices.find_by(level_id: eligible_user_level.id)&.price || 0
           else
             # 中間にインセンティブ受領資格者がいない場合（購入者の実際の購入価格を使用）
             eligible_user_price = item.seller_price || 0
@@ -246,7 +274,7 @@ class User < ApplicationRecord
         end
         
         # 自分のレベル価格を取得
-        my_price = item.product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
+        my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
         
         if eligible_user_price > my_price
           diff = eligible_user_price - my_price
@@ -352,6 +380,28 @@ class User < ApplicationRecord
     product = purchase_item.product
     purchase_date = purchase.purchased_at
 
+    # WOTT商品の場合は特別処理
+    if product.category == 'wott'
+      # WOTT商品は自己購入でのみインセンティブが発生
+      return 0 if purchase_user != self
+      
+      # 自己購入の場合：base_price - product_pricesのpriceでインセンティブ単価を計算
+      if has_wott_level?
+        wott_level_at_purchase = wott_level  # 現在のWOTTレベルを使用（履歴対応は後で実装可能）
+        incentive_record = product.product_prices.find_by(wott_level: wott_level_at_purchase)
+        if incentive_record&.price
+          # base_price - product_pricesのprice = インセンティブ単価
+          incentive_unit = (product.base_price || 0) - incentive_record.price
+          return incentive_unit > 0 ? incentive_unit : 0
+        else
+          return 0
+        end
+      else
+        return 0
+      end
+    end
+
+    # 通常商品の場合は従来の階層差額計算
     # 購入時点での自分のレベルを取得
     my_level_at_purchase = level_at(purchase_date)
     my_price = product.product_prices.find_by(level_id: my_level_at_purchase.id)&.price || 0
@@ -399,6 +449,8 @@ class User < ApplicationRecord
     return 0 unless bonus_eligible?
 
     # インセンティブ単価 × 数量 = インセンティブ
+    # WOTT商品の場合：自己購入のみインセンティブ発生、単価は(base_price - product_prices.price)
+    # 通常商品の場合：階層差額によるインセンティブ計算
     incentive_unit = incentive_unit_price_for_item(purchase_item)
     return incentive_unit * purchase_item.quantity
   end
@@ -604,6 +656,31 @@ class User < ApplicationRecord
     end
   end
 
+# WOTT level helper methods
+
+  
+  def has_wott_level?
+    wott_level.present?
+  end
+  
+
+  def wott_level_value
+    wott_level&.value
+  end
+  
+  def display_wott_level
+    has_wott_level? ? wott_level_name : '未設定'
+  end 
+
+  def wott_level_name
+    wott_level&.name || '未設定'
+  end
+
+  def wott_level_symbol
+    wott_level&.symbol
+  end 
+
+
   private
 
   def check_level_hierarchy
@@ -613,7 +690,6 @@ class User < ApplicationRecord
     end
   end
 
-  private
 
   def generate_referral_token
     self.referral_token = generate_unique_token
@@ -625,4 +701,10 @@ class User < ApplicationRecord
       break token unless User.exists?(referral_token: token)
     end
   end
+
+
+  
+
+
+
 end

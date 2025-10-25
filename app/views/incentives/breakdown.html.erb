@@ -72,15 +72,68 @@
 
       <!-- 購入明細 -->
       <% 
-        # 自己購入を除外した購入明細を取得し、購入日で昇順ソート（古いものから）
-        descendant_details = @detailed_incentives.dig(:details, :purchase_details)&.select { |d| d[:category] == 'descendant_sales' }&.sort_by { |d| d[:purchase_date] } || []
-        total_incentive = descendant_details.sum { |d| d[:total_incentive] || 0 }
+        # 全ての購入明細を取得し、購入日で昇順ソート（古いものから）
+        all_details = @detailed_incentives.dig(:details, :purchase_details) || []
+        own_sales_details = all_details.select { |d| d[:category] == 'own_sales' }.sort_by { |d| d[:purchase_date] }
+        descendant_details = all_details.select { |d| d[:category] == 'descendant_sales' }.sort_by { |d| d[:purchase_date] }
+        total_incentive = all_details.sum { |d| d[:total_incentive] || 0 }
       %>
-      <% if descendant_details.any? %>
-        <div class="card">
+
+      <!-- 自己購入インセンティブ（WOTT商品） -->
+      <% if own_sales_details.any? %>
+        <div class="card mb-4">
           <div class="card-header">
             <h6 class="mb-0">
-              <i class="fas fa-shopping-cart me-2"></i>購入明細
+              <i class="fas fa-user me-2"></i>自己購入インセンティブ（WOTT商品）
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>購入日</th>
+                    <th>WOTTレベル</th>
+                    <th>商品名</th>
+                    <th class="text-end">基本価格</th>
+                    <th class="text-end">WOTT価格</th>
+                    <th class="text-end">数量</th>
+                    <th class="text-end">インセンティブ単価</th>
+                    <th class="text-end">インセンティブ合計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% own_sales_details.each do |detail| %>
+                    <tr>
+                      <td><%= detail[:purchase_date]&.strftime("%Y/%m/%d") %></td>
+                      <td><span class="badge bg-info"><%= detail[:calculation_details][:purchaser_level] %></span></td>
+                      <td><%= detail[:product_name] %></td>
+                      <td class="text-end">¥<%= number_with_delimiter(detail[:calculation_details][:base_price] || 0) %></td>
+                      <td class="text-end">¥<%= number_with_delimiter(detail[:calculation_details][:my_price] || 0) %></td>
+                      <td class="text-end"><%= detail[:quantity] %></td>
+                      <td class="text-end">¥<%= number_with_delimiter(detail[:incentive_unit_price]) %></td>
+                      <td class="text-end text-success">¥<%= number_with_delimiter(detail[:total_incentive]) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+                <tfoot>
+                  <tr class="table-info fw-bold">
+                    <td colspan="7" class="text-end">自己購入インセンティブ小計</td>
+                    <td class="text-end text-success">¥<%= number_with_delimiter(own_sales_details.sum { |d| d[:total_incentive] || 0 }) %></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- 階層差額インセンティブ -->
+      <% if descendant_details.any? %>
+        <div class="card mb-4">
+          <div class="card-header">
+            <h6 class="mb-0">
+              <i class="fas fa-sitemap me-2"></i>階層差額インセンティブ
             </h6>
           </div>
           <div class="card-body">
@@ -115,12 +168,28 @@
                   <% end %>
                 </tbody>
                 <tfoot>
-                  <tr class="table-primary fw-bold">
-                    <td colspan="8" class="text-end">合計</td>
-                    <td class="text-end text-success">¥<%= number_with_delimiter(total_incentive) %></td>
+                  <tr class="table-info fw-bold">
+                    <td colspan="8" class="text-end">階層差額インセンティブ小計</td>
+                    <td class="text-end text-success">¥<%= number_with_delimiter(descendant_details.sum { |d| d[:total_incentive] || 0 }) %></td>
                   </tr>
                 </tfoot>
               </table>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- 合計 -->
+      <% if own_sales_details.any? || descendant_details.any? %>
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-8">
+                <h5 class="mb-0">インセンティブ総合計</h5>
+              </div>
+              <div class="col-md-4 text-end">
+                <h4 class="mb-0 text-success">¥<%= number_with_delimiter(total_incentive) %></h4>
+              </div>
             </div>
           </div>
         </div>
@@ -129,7 +198,7 @@
           <div class="card-body text-center py-5">
             <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
             <h5 class="text-muted">購入明細がありません</h5>
-            <p class="text-muted">この期間中の下位ユーザーの購入実績はありません。</p>
+            <p class="text-muted">この期間中のインセンティブ対象となる購入実績はありません。</p>
           </div>
         </div>
       <% end %>

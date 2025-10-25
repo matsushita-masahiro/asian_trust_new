@@ -383,7 +383,7 @@ class User < ApplicationRecord
     purchase_date = purchase.purchased_at
 
     # WOTT商品の場合は特別処理
-    if product.category == 'wott'
+    if product.respond_to?(:category) && product.category == 'wott'
       # WOTT商品は自己購入でのみインセンティブが発生
       return 0 if purchase_user != self
       

@@ -13,8 +13,7 @@ puts "  5. Purchase data creation (based on CSV users)"
 
 puts "\n🔄 Starting data creation process..."
 
-# クリニックデータを作成
-load Rails.root.join('db', 'fixtures', 'clinics.rb')
+# クリニックデータはseeds.rbで作成されます
 
 # 統計情報を表示
 puts "\n📊 Database Statistics:"

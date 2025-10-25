@@ -1,0 +1,109 @@
+<% 
+  # 住所情報を取得
+  address_info = user_address_info(current_user)
+  default_type = default_address_type(address_info)
+  can_select = can_select_address?(address_info)
+%>
+
+<div class="address-selection">
+  <% if can_select %>
+    <div class="row g-3">
+      <!-- 登録住所オプション -->
+      <% if address_info[:registration][:exists] %>
+        <div class="col-12">
+          <div class="card address-option h-100">
+            <div class="card-body">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" 
+                       name="address_type" 
+                       id="<%= radio_id_prefix %>registration_address" 
+                       value="registration" 
+                       <%= 'checked' if address_radio_checked?('registration', default_type) %>
+                       aria-describedby="<%= radio_id_prefix %>registration_desc">
+                <label class="form-check-label w-100" for="<%= radio_id_prefix %>registration_address">
+                  <div class="d-flex align-items-start">
+                    <div class="flex-grow-1">
+                      <h6 class="mb-2 text-primary">
+                        <i class="fas fa-home me-2"></i>
+                        登録住所
+                      </h6>
+                      <div class="text-muted small" id="<%= radio_id_prefix %>registration_desc">
+                        <%= format_address_display(address_info[:registration][:address]) %>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+      
+      <!-- 配送先住所オプション -->
+      <% if address_info[:shipping][:exists] %>
+        <div class="col-12">
+          <div class="card address-option h-100">
+            <div class="card-body">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" 
+                       name="address_type" 
+                       id="<%= radio_id_prefix %>shipping_address" 
+                       value="shipping" 
+                       <%= 'checked' if address_radio_checked?('shipping', default_type) %>
+                       aria-describedby="<%= radio_id_prefix %>shipping_desc">
+                <label class="form-check-label w-100" for="<%= radio_id_prefix %>shipping_address">
+                  <div class="d-flex align-items-start">
+                    <div class="flex-grow-1">
+                      <h6 class="mb-2 text-success">
+                        <i class="fas fa-shipping-fast me-2"></i>
+                        配送先住所
+                      </h6>
+                      <div class="text-muted small" id="<%= radio_id_prefix %>shipping_desc">
+                        <%= format_address_display(address_info[:shipping][:address]) %>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    
+    <!-- 選択された住所の確認表示エリア -->
+    <div class="alert alert-info mt-4" id="<%= display_id_prefix %>selected-address-display" role="status" aria-live="polite">
+      <div class="d-flex align-items-center">
+        <i class="fas fa-check-circle me-2 text-success"></i>
+        <div class="flex-grow-1">
+          <strong>選択された配送先:</strong>
+          <div class="mt-2" id="<%= display_id_prefix %>selected-address-content">
+            <% if default_type %>
+              <%= format_address_display(address_info[default_type.to_sym][:address]) %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <!-- 住所未登録時のメッセージ -->
+    <div class="alert alert-danger">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      <strong>配送先住所が未登録です</strong>
+      <div class="mt-3">
+        <p class="mb-2">商品をお届けするために配送先住所の登録が必要です。</p>
+        <div class="d-grid gap-2">
+          <%= link_to user_path(current_user, from: 'cart'), 
+                      class: "btn btn-primary" do %>
+            <i class="fas fa-user-cog me-2"></i>
+            マイアカウントで住所を登録する
+          <% end %>
+        </div>
+        <div class="mt-2 text-muted small">
+          <i class="fas fa-info-circle me-1"></i>
+          住所登録後、こちらのページに戻って注文を続けることができます。
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

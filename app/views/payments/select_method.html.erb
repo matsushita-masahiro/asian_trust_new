@@ -39,10 +39,17 @@
                           <span class="badge bg-secondary"><%= item.quantity %></span>
                         </td>
                         <td class="text-end">
-                          ¥<%= number_with_delimiter(item.product.price_for(current_user.level_symbol) || 0) %>
+                          <% 
+                            if item.product.respond_to?(:category) && item.product.category == 'wott' && current_user.has_wott_level?
+                              unit_price = item.product.wott_price_for(current_user.wott_level_symbol) || 0
+                            else
+                              unit_price = item.product.price_for(current_user.level_symbol) || 0
+                            end
+                          %>
+                          ¥<%= number_with_delimiter(unit_price) %>
                         </td>
                         <td class="text-end fw-bold">
-                          ¥<%= number_with_delimiter(item.subtotal(current_user.level_symbol)) %>
+                          ¥<%= number_with_delimiter(item.subtotal(current_user.level_symbol, current_user)) %>
                         </td>
                       </tr>
                     <% end %>
@@ -50,7 +57,7 @@
                   <tfoot class="table-light">
                     <% 
                       # 料金計算
-                      subtotal = @cart.total_amount(current_user.level_symbol)
+                      subtotal = @cart.total_amount_for_user(current_user)
                       
                       # 商品別配送先判定
                       stem_cell_items = @cart.cart_items.select { |item| item.product.name.include?('骨髄幹細胞培培養上清液') }
@@ -74,7 +81,7 @@
                     %>
                     
                     <tr>
-                      <th colspan="3" class="text-end">商品代金:</th>
+                      <th colspan="3" class="text-end">商品代金計:</th>
                       <th class="text-end">¥<%= number_with_delimiter(subtotal) %></th>
                     </tr>
                     <tr>

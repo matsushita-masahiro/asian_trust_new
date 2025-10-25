@@ -1,7 +1,17 @@
 class Admin::ProductsController < Admin::BaseController
   def index
     @show_deleted = params[:show_deleted] == 'true'
-    @products = @show_deleted ? Product.deleted.order(:id) : Product.active.order(:id)
+    @category = params[:category]
+    
+    if @category.present?
+      # 特定のカテゴリの商品を表示
+      @products = @show_deleted ? 
+        Product.deleted.where(category: @category).order(:id) : 
+        Product.active.where(category: @category).order(:id)
+    else
+      # カテゴリ選択画面を表示
+      @products = nil
+    end
   end
 
   def edit
@@ -58,7 +68,7 @@ class Admin::ProductsController < Admin::BaseController
     def product_params
       params.require(:product).permit(
         :name, :short_name, :base_price, :unit_quantity, :unit_label,
-        product_prices_attributes: [:id, :level_id, :price, :_destroy]
+        product_prices_attributes: [:id, :level_id, :wott_level_id, :price, :_destroy]
       )
     end
     

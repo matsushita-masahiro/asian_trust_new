@@ -5,7 +5,7 @@ class PaymentsController < ApplicationController
 
   def select_method
     @cart = current_user.cart
-    @total_amount = @cart.total_amount(current_user.level_symbol)
+    @total_amount = @cart.total_amount_for_user(current_user)
   end
 
   def bank_transfer
@@ -147,7 +147,14 @@ class PaymentsController < ApplicationController
 
         # PurchaseItemsを作成
         @cart.cart_items.each do |cart_item|
-          user_price = cart_item.product.price_for(current_user.level_symbol) || 0
+          # 商品カテゴリに応じて適切な価格を取得
+          if cart_item.product.category == 'wott'
+            # WOTT商品は全員一律でbase_price（1,100,000円）
+            user_price = cart_item.product.base_price || 0
+          else
+            user_price = cart_item.product.price_for(current_user.level_symbol) || 0
+          end
+          
           purchase.purchase_items.create!(
             product: cart_item.product,
             quantity: cart_item.quantity,

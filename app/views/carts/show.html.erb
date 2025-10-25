@@ -23,10 +23,17 @@
                   <% end %>
                 </div>
                 <div class="col-md-2 text-end">
-                  ¥<%= number_with_delimiter(item.product.price_for(current_user.level_symbol) || 0) %>
+                  <% 
+                    if item.product.respond_to?(:category) && item.product.category == 'wott'
+                      unit_price = item.product.wott_price_for(current_user.wott_level_symbol) || 0
+                    else
+                      unit_price = item.product.price_for(current_user.level_symbol) || 0
+                    end
+                  %>
+                  ¥<%= number_with_delimiter(unit_price) %>
                 </div>
                 <div class="col-md-2 text-end">
-                  <strong>¥<%= number_with_delimiter(item.subtotal(current_user.level_symbol)) %></strong>
+                  <strong>¥<%= number_with_delimiter(unit_price * item.quantity) %></strong>
                 </div>
                 <div class="col-md-2 text-end">
                   <%= form_with url: remove_item_cart_path, method: :delete, local: true do |f| %>
@@ -122,46 +129,29 @@
                   <div class="delivery-option mb-3">
                     <label class="form-label fw-bold">
                       <i class="fas fa-home me-2"></i>
-                      その他商品の配送先
+                      その他商品の配送先住所を選択してください
                     </label>
-                    <div class="alert alert-success">
-                      <i class="fas fa-check-circle me-2"></i>
-                      <strong>配送先:</strong> ご登録の住所へ配送いたします
-                      <% if current_user.invoice_base&.postal_code.present? && current_user.invoice_base&.address.present? %>
-                        <div class="mt-2 small">
-                          〒<%= current_user.invoice_base.postal_code %><br>
-                          <%= current_user.invoice_base.address %>
-                        </div>
-                      <% else %>
-                        <div class="mt-2 text-danger">
-                          <i class="fas fa-exclamation-triangle me-1"></i>
-                          住所が登録されていません。<%= link_to "請求書管理", "/invoices/settings", class: "text-decoration-underline" %>から住所を登録してください。
-                        </div>
-                      <% end %>
-                    </div>
+                    
+                    <%= render 'address_selection', 
+                        radio_id_prefix: 'multi_', 
+                        display_id_prefix: 'multi-' %>
+                    
                     <input type="hidden" name="has_other_products" value="true">
                   </div>
                 <% elsif has_other_products %>
-                  <!-- その他商品のみの場合：水色背景の住所表示のみ -->
-                  <% if current_user.invoice_base&.postal_code.present? && current_user.invoice_base&.address.present? %>
-                    <div class="alert alert-info">
-                      <i class="fas fa-map-marker-alt me-2"></i>
-                      <strong>配送先住所:</strong>
-                      <div class="mt-2">
-                        〒<%= current_user.invoice_base.postal_code %><br>
-                        <%= current_user.invoice_base.address %>
-                      </div>
-                    </div>
-                  <% else %>
-                    <div class="alert alert-danger">
-                      <i class="fas fa-exclamation-triangle me-2"></i>
-                      <strong>住所未登録:</strong>
-                      <div class="mt-2">
-                        住所が登録されていません。<%= link_to "請求書管理", "/invoices/settings", class: "text-decoration-underline" %>から住所を登録してください。
-                      </div>
-                    </div>
-                  <% end %>
-                  <input type="hidden" name="delivery_type" value="home">
+                  <!-- その他商品のみの場合：住所選択ラジオボタン -->
+                  <div class="delivery-option mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="fas fa-home me-2"></i>
+                      配送先住所を選択してください
+                    </label>
+                    
+                    <%= render 'address_selection', 
+                        radio_id_prefix: '', 
+                        display_id_prefix: '' %>
+                    
+                    <input type="hidden" name="delivery_type" value="home">
+                  </div>
                 <% end %>
               </div>
 
@@ -169,7 +159,7 @@
                 <div class="delivery-address mt-3" id="delivery-address" style="display: none;">
                   <div class="alert alert-info">
                     <i class="fas fa-map-marker-alt me-2"></i>
-                    <strong>配送先住所:</strong>
+                    <strong>今回の配送先:</strong>
                     <div id="selected-address" class="mt-2"></div>
                   </div>
                 </div>
@@ -185,8 +175,8 @@
           </div>
           <div class="card-body">
             <% 
-              # 基本料金計算
-              subtotal = @cart.total_amount(current_user.level_symbol)
+              # 基本料金計算（商品カテゴリに応じた価格を使用）
+              subtotal = @cart.total_amount_for_user(current_user)
               
               # 配送先数を計算
               delivery_destinations = 0
@@ -290,8 +280,29 @@ function initializeCartDelivery() {
   const hasStemCellProduct = <%= @cart_items.any? { |item| item.product.name.include?('骨髄幹細胞培培養上清液') } %>;
   const hasOtherProducts = <%= @cart_items.any? { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') } %>;
   
-  // 登録住所の情報
-  const hasAddress = '<%= current_user.invoice_base&.postal_code.present? && current_user.invoice_base&.address.present? %>' === 'true';
+  // 住所情報（ヘルパーメソッドを使用）
+  <% address_info = user_address_info(current_user) %>
+  const registrationAddress = {
+    <% if address_info[:registration][:exists] %>
+      postal_code: '<%= address_info[:registration][:address].postal_code %>',
+      address: '<%= address_info[:registration][:address].address %>',
+      exists: true
+    <% else %>
+      exists: false
+    <% end %>
+  };
+  
+  const shippingAddress = {
+    <% if address_info[:shipping][:exists] %>
+      postal_code: '<%= address_info[:shipping][:address].postal_code %>',
+      address: '<%= address_info[:shipping][:address].address %>',
+      exists: true
+    <% else %>
+      exists: false
+    <% end %>
+  };
+  
+  const hasAddress = <%= can_select_address?(address_info) %>;
 
   // 初期状態の設定
   function updateCheckoutButton() {
@@ -389,7 +400,84 @@ function initializeCartDelivery() {
   // 初期状態の設定
   updateCheckoutButtonWithCurrentState();
   
-  // 自宅配送のみの場合は住所表示処理をスキップ（HTMLで既に表示済み）
+  // 住所選択ラジオボタンのイベントリスナー
+  function setupAddressSelection() {
+    // 住所選択ラジオボタンのイベントリスナー
+    const addressRadios = document.querySelectorAll('input[name="address_type"]');
+    
+    addressRadios.forEach(radio => {
+      // カードのクリックでもラジオボタンを選択
+      const card = radio.closest('.address-option');
+      if (card) {
+        card.addEventListener('click', function(e) {
+          if (e.target !== radio) {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change'));
+          }
+        });
+      }
+      
+      radio.addEventListener('change', function() {
+        // 視覚的フィードバックの更新
+        updateAddressSelection(this.value);
+        
+        // 選択された住所の表示を更新
+        updateSelectedAddressDisplay(this.value);
+      });
+    });
+  }
+  
+  // 住所選択の視覚的フィードバックを更新
+  function updateAddressSelection(selectedType) {
+    const allCards = document.querySelectorAll('.address-option');
+    allCards.forEach(card => {
+      const radio = card.querySelector('input[name="address_type"]');
+      if (radio) {
+        if (radio.value === selectedType && radio.checked) {
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+      }
+    });
+  }
+  
+  // 選択された住所の表示を更新
+  function updateSelectedAddressDisplay(addressType) {
+    // 単一商品の場合
+    const selectedAddressContent = document.getElementById('selected-address-content');
+    if (selectedAddressContent) {
+      updateAddressContent(selectedAddressContent, addressType);
+    }
+    
+    // 複数商品の場合
+    const multiAddressContent = document.getElementById('multi-selected-address-content');
+    if (multiAddressContent) {
+      updateAddressContent(multiAddressContent, addressType);
+      
+      // 複数商品の場合のラジオボタンも同期
+      const multiRadio = document.querySelector(`input[name="address_type"][id*="multi"][value="${addressType}"]`);
+      if (multiRadio) {
+        multiRadio.checked = true;
+      }
+    }
+  }
+  
+  // 住所コンテンツを更新
+  function updateAddressContent(contentElement, addressType) {
+    let addressHtml = '';
+    
+    if (addressType === 'registration' && registrationAddress.exists) {
+      addressHtml = `〒${registrationAddress.postal_code}<br>${registrationAddress.address}`;
+    } else if (addressType === 'shipping' && shippingAddress.exists) {
+      addressHtml = `〒${shippingAddress.postal_code}<br>${shippingAddress.address}`;
+    }
+    
+    contentElement.innerHTML = addressHtml;
+  }
+  
+  // 住所選択の初期化
+  setupAddressSelection();
 
   // チェックアウトボタンのクリックイベント
   if (checkoutBtn) {
@@ -401,9 +489,13 @@ function initializeCartDelivery() {
       const currentClinicSelect = document.getElementById('clinic-select');
       const url = new URL('<%= orders_checkout_path %>', window.location.origin);
       
+      // 選択された住所タイプを取得
+      const selectedAddressType = document.querySelector('input[name="address_type"]:checked')?.value || 'registration';
+      
       // 複数配送先の場合
       if (hasStemCellProduct && hasOtherProducts) {
         url.searchParams.set('delivery_type', 'multiple');
+        url.searchParams.set('address_type', selectedAddressType);
         if (currentClinicSelect && currentClinicSelect.value) {
           url.searchParams.set('clinic_id', currentClinicSelect.value);
         }
@@ -416,6 +508,7 @@ function initializeCartDelivery() {
       } else {
         // 自宅配送のみ
         url.searchParams.set('delivery_type', 'home');
+        url.searchParams.set('address_type', selectedAddressType);
       }
       
       window.location.href = url.toString();
@@ -433,6 +526,83 @@ document.addEventListener('turbo:render', initializeCartDelivery);
 </script>
 
 <style>
+/* 住所選択カードのスタイル */
+.address-option {
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.address-option:hover {
+  border-color: #0d6efd;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.address-option .form-check-input:checked ~ .form-check-label .card-body,
+.address-option:has(.form-check-input:checked) {
+  border-color: #0d6efd;
+  background-color: #f8f9ff;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+}
+
+.address-option .form-check-input:checked ~ .form-check-label h6 {
+  color: #0d6efd !important;
+}
+
+.address-option .form-check-label {
+  cursor: pointer;
+  padding: 0;
+}
+
+.address-option .form-check {
+  margin-bottom: 0;
+}
+
+.address-option .form-check-input {
+  margin-top: 0.5rem;
+  transform: scale(1.2);
+}
+
+/* 選択された住所の表示エリア */
+#selected-address-display,
+#multi-selected-address-display {
+  border-left: 4px solid #198754;
+  background-color: #f8fff9;
+}
+
+/* 住所未登録時のメッセージ */
+.alert-danger {
+  border-left: 4px solid #dc3545;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .address-option .form-check-input {
+    transform: scale(1.4);
+    margin-top: 0.75rem;
+  }
+  
+  .address-option h6 {
+    font-size: 1rem;
+  }
+  
+  .address-option .small {
+    font-size: 0.875rem;
+  }
+}
+
+/* アクセシビリティ改善 */
+.address-option:focus-within {
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* 既存のdelivery-optionスタイルも保持 */
 .delivery-option .btn-check:checked + .btn-outline-primary {
   background-color: #0d6efd;
   border-color: #0d6efd;

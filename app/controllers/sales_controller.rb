@@ -33,10 +33,27 @@ class SalesController < ApplicationController
     @total_bonus = 0
     @purchases.each do |purchase|
       purchase.purchase_items.each do |item|
-        if purchase.user == @user
-          item_bonus = 0  # 自己購入インセンティブは廃止
+        if item.product.category == 'wott'
+          # WOTT商品の場合：購入者自身のインセンティブを計算
+          if purchase.user.has_wott_level?
+            wott_level = purchase.user.wott_level
+            incentive_record = item.product.product_prices.find_by(wott_level: wott_level)
+            if incentive_record&.price
+              incentive_unit = (item.product.base_price || 0) - incentive_record.price
+              item_bonus = incentive_unit > 0 ? incentive_unit * item.quantity : 0
+            else
+              item_bonus = 0
+            end
+          else
+            item_bonus = 0
+          end
         else
-          item_bonus = @user.bonus_for_purchase_item(item)
+          # 通常商品の場合
+          if purchase.user == @user
+            item_bonus = 0  # 自己購入インセンティブは廃止
+          else
+            item_bonus = @user.bonus_for_purchase_item(item)
+          end
         end
         @total_bonus += item_bonus
       end
@@ -79,10 +96,27 @@ class SalesController < ApplicationController
     @total_bonus = 0
     @purchases.each do |purchase|
       purchase.purchase_items.each do |item|
-        if purchase.user == @user
-          item_bonus = 0  # 自己購入インセンティブは廃止
+        if item.product.category == 'wott'
+          # WOTT商品の場合：購入者自身のインセンティブを計算
+          if purchase.user.has_wott_level?
+            wott_level = purchase.user.wott_level
+            incentive_record = item.product.product_prices.find_by(wott_level: wott_level)
+            if incentive_record&.price
+              incentive_unit = (item.product.base_price || 0) - incentive_record.price
+              item_bonus = incentive_unit > 0 ? incentive_unit * item.quantity : 0
+            else
+              item_bonus = 0
+            end
+          else
+            item_bonus = 0
+          end
         else
-          item_bonus = @user.bonus_for_purchase_item(item)
+          # 通常商品の場合
+          if purchase.user == @user
+            item_bonus = 0  # 自己購入インセンティブは廃止
+          else
+            item_bonus = @user.bonus_for_purchase_item(item)
+          end
         end
         @total_bonus += item_bonus
       end

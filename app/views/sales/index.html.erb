@@ -43,11 +43,27 @@
               <% purchase.purchase_items.each_with_index do |item, index| %>
                 <% 
                   # 各アイテムに対するボーナスを個別計算
-                  # 自己購入の場合は0、それ以外は計算結果を使用
-                  if purchase.user == @user
-                    item_bonus = 0  # 自己購入インセンティブは廃止
+                  if item.product.category == 'wott'
+                    # WOTT商品の場合：購入者自身のインセンティブを表示
+                    if purchase.user.has_wott_level?
+                      wott_level = purchase.user.wott_level
+                      incentive_record = item.product.product_prices.find_by(wott_level: wott_level)
+                      if incentive_record&.price
+                        incentive_unit = (item.product.base_price || 0) - incentive_record.price
+                        item_bonus = incentive_unit > 0 ? incentive_unit * item.quantity : 0
+                      else
+                        item_bonus = 0
+                      end
+                    else
+                      item_bonus = 0
+                    end
                   else
-                    item_bonus = @user.bonus_for_purchase_item(item)
+                    # 通常商品の場合
+                    if purchase.user == @user
+                      item_bonus = 0  # 自己購入インセンティブは廃止
+                    else
+                      item_bonus = @user.bonus_for_purchase_item(item)
+                    end
                   end
                 %>
                 <tr>
@@ -62,7 +78,15 @@
                       <% end %>
                     </td>
                     <td rowspan="<%= purchase.purchase_items.count %>">
-                      <%= purchase.user.display_name %>
+                      <% 
+                        # WOTT商品が含まれているかチェック
+                        has_wott_product = purchase.purchase_items.any? { |pi| pi.product.category == 'wott' }
+                      %>
+                      <% if has_wott_product && purchase.user.has_wott_level? %>
+                        <%= purchase.user.name %>（<span class="text-info fw-bold"><%= purchase.user.wott_level_name %></span>）
+                      <% else %>
+                        <%= purchase.user.display_name %>
+                      <% end %>
                     </td>
                   <% end %>
                   <td><%= item.product.display_name %></td>

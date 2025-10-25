@@ -5,6 +5,22 @@ class Admin::BaseController < ApplicationController
   before_action :authenticate_user!            # Deviseでログインしてるか
   before_action :require_admin                 # adminかどうか
   
+  # ヘルパーメソッドをビューで使用可能にする
+  helper_method :category_display_name
+
+  def category_display_name(category)
+    case category
+    when 'sl'
+      '幹細胞培養上清液'
+    when 'wott'
+      'WOTT'
+    when 'ms'
+      'MANNERSOUND'
+    else
+      'その他'
+    end
+  end
+
   private
 
     def authenticate

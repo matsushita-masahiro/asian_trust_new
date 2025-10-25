@@ -1,6 +1,6 @@
 class AddressesController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_address, only: [:show, :update, :destroy]
+  before_action :set_address, only: [:update, :destroy]
   before_action :set_user, only: [:create, :update, :destroy]
   before_action :check_access_permission, only: [:create, :update, :destroy]
 
@@ -9,48 +9,30 @@ class AddressesController < ApplicationController
     @address = @user.addresses.find_or_initialize_by(address_type: address_params[:address_type])
     
     if @address.update(address_params)
-      render json: {
-        success: true,
-        message: '住所を保存しました',
-        address: {
-          id: @address.id,
-          address_type: @address.address_type,
-          address_type_label: @address.address_type_label,
-          postal_code: @address.postal_code,
-          address: @address.address,
-          formatted_address: format_address(@address)
-        }
-      }
+      # カートから来た場合はfromパラメータ付きでユーザーページにリダイレクト
+      if params[:from] == 'cart'
+        redirect_to user_path(@user, from: 'cart'), notice: '住所を保存しました'
+      else
+        redirect_to user_path(@user), notice: '住所を保存しました'
+      end
     else
-      render json: {
-        success: false,
-        message: '住所の保存に失敗しました',
-        errors: @address.errors.full_messages
-      }, status: :unprocessable_entity
+      redirect_to_path = params[:from] == 'cart' ? user_path(@user, from: 'cart') : user_path(@user)
+      redirect_to redirect_to_path, alert: "住所の保存に失敗しました: #{@address.errors.full_messages.join(', ')}"
     end
   end
 
   # PATCH/PUT /addresses/:id
   def update
     if @address.update(address_params)
-      render json: {
-        success: true,
-        message: '住所を更新しました',
-        address: {
-          id: @address.id,
-          address_type: @address.address_type,
-          address_type_label: @address.address_type_label,
-          postal_code: @address.postal_code,
-          address: @address.address,
-          formatted_address: format_address(@address)
-        }
-      }
+      # カートから来た場合はfromパラメータ付きでユーザーページにリダイレクト
+      if params[:from] == 'cart'
+        redirect_to user_path(@user, from: 'cart'), notice: '住所を更新しました'
+      else
+        redirect_to user_path(@user), notice: '住所を更新しました'
+      end
     else
-      render json: {
-        success: false,
-        message: '住所の更新に失敗しました',
-        errors: @address.errors.full_messages
-      }, status: :unprocessable_entity
+      redirect_to_path = params[:from] == 'cart' ? user_path(@user, from: 'cart') : user_path(@user)
+      redirect_to redirect_to_path, alert: "住所の更新に失敗しました: #{@address.errors.full_messages.join(', ')}"
     end
   end
 

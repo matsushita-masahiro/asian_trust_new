@@ -506,6 +506,7 @@
         <div class="modal-body">
           <form id="addressEditForm">
             <input type="hidden" id="addressType" name="address[address_type]">
+            <input type="hidden" id="methodField" name="_method" value="post">
             <div class="mb-3">
               <label for="postalCode" class="form-label">郵便番号</label>
               <input type="text" class="form-control" id="postalCode" name="address[postal_code]" placeholder="123-4567">
@@ -532,8 +533,14 @@
     let currentAddressId = null;
 
     function editAddress(addressType) {
+      console.log('editAddress called with type:', addressType);
       currentAddressType = addressType;
-      const modal = new bootstrap.Modal(document.getElementById('addressEditModal'));
+      currentAddressId = null; // リセット
+      
+      const modalElement = document.getElementById('addressEditModal');
+      console.log('Modal element found:', modalElement);
+      
+      const modal = new bootstrap.Modal(modalElement);
       
       // モーダルタイトルを設定
       const addressTypeLabels = {
@@ -545,6 +552,7 @@
       // フォームをリセット
       document.getElementById('addressEditForm').reset();
       document.getElementById('addressType').value = addressType;
+      document.getElementById('methodField').value = 'post';
       document.getElementById('addressEditErrors').classList.add('d-none');
       
       // 既存の住所データを取得してフォームに設定
@@ -553,6 +561,7 @@
           currentAddressId = <%= @user.registration_address.id %>;
           document.getElementById('postalCode').value = '<%= @user.registration_address.postal_code %>';
           document.getElementById('addressText').value = '<%= j(@user.registration_address.address) %>';
+          document.getElementById('methodField').value = 'patch';
           document.getElementById('deleteAddressBtn').style.display = 'inline-block';
         }
       <% end %>
@@ -562,6 +571,7 @@
           currentAddressId = <%= @user.shipping_address.id %>;
           document.getElementById('postalCode').value = '<%= @user.shipping_address.postal_code %>';
           document.getElementById('addressText').value = '<%= j(@user.shipping_address.address) %>';
+          document.getElementById('methodField').value = 'patch';
           document.getElementById('deleteAddressBtn').style.display = 'inline-block';
         }
       <% end %>
@@ -570,10 +580,14 @@
         document.getElementById('deleteAddressBtn').style.display = 'none';
       }
       
+      console.log('Current address ID:', currentAddressId);
+      console.log('Method field value:', document.getElementById('methodField').value);
+      
       modal.show();
     }
 
     function saveAddress() {
+      console.log('saveAddress called');
       const form = document.getElementById('addressEditForm');
       const formData = new FormData(form);
       
@@ -583,16 +597,30 @@
       
       const method = currentAddressId ? 'PATCH' : 'POST';
       
+      console.log('Request URL:', url);
+      console.log('Request method:', method);
+      console.log('Form data:', Object.fromEntries(formData));
+      
+      // CSRFトークンの確認
+      const csrfToken = document.querySelector('meta[name="csrf-token"]');
+      console.log('CSRF token element:', csrfToken);
+      console.log('CSRF token value:', csrfToken ? csrfToken.getAttribute('content') : 'NOT FOUND');
+      
       fetch(url, {
         method: method,
         body: formData,
         headers: {
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : '',
           'Accept': 'application/json'
         }
       })
-      .then(response => response.json())
+      .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        return response.json();
+      })
       .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
           // 成功時の処理
           updateAddressDisplay(currentAddressType, data.address);
@@ -604,8 +632,8 @@
         }
       })
       .catch(error => {
-        console.error('Error:', error);
-        showAlert('danger', '住所の保存中にエラーが発生しました');
+        console.error('Fetch error:', error);
+        showAlert('danger', '住所の保存中にエラーが発生しました: ' + error.message);
       });
     }
 

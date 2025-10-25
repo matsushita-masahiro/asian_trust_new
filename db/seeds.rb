@@ -1,9 +1,17 @@
 puts "🔄 Seeding started......"
 
+# Load fixtures
+require 'seed-fu'
+
 adapter = ActiveRecord::Base.connection.adapter_name
 
 # データを適切な順序で削除（外部キー制約を考慮）
 puts "🗑️ Cleaning existing data..."
+
+# 外部キー制約を一時的に無効化（SQLiteの場合）
+if adapter == "SQLite"
+  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = OFF")
+end
 
 # 1. 購入請求書関連データを削除
 PurchaseInvoice.delete_all
@@ -37,19 +45,29 @@ InvoiceRecipient.delete_all
 # 10. 請求基本情報を削除
 InvoiceBase.delete_all
 
-# 11. 商品価格データを削除
+# 11. ユーザーを削除（外部キー参照があるため最初に削除）
+User.delete_all
+
+# 12. 商品価格データを削除
 ProductPrice.delete_all
 
-# 12. ユーザーを削除
-User.delete_all
+# 13. WOTTレベルデータを削除
+WottLevel.delete_all
 
 # SQLite環境のみ、シーケンスをリセット
 if adapter == "SQLite"
   ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='users'")
+  ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='wott_levels'")
 end
 
 puts "✅ Data cleanup completed"
 
+# 外部キー制約を再有効化（SQLiteの場合）
+if adapter == "SQLite"
+  ActiveRecord::Base.connection.execute("PRAGMA foreign_keys = ON")
+end
+
+# ユーザーIDを1番から開始（アジアビジネストラストがID: 1）
 user_id_seq = 1
 lstep_id_seq = 1
 
@@ -94,6 +112,39 @@ if levels["アジアビジネストラスト"].nil?
   puts "❌ Error: 'アジアビジネストラスト' level not found!"
   exit 1
 end
+
+# WottLevelデータを作成
+wott_level_data = [
+  { id: 1, name: "アジアビジネストラスト", value: 0 },
+  { id: 2, name: "総代理店", value: 1 },
+  { id: 3, name: "代理店", value: 2 },
+  { id: 4, name: "サポーター", value: 3 },
+  { id: 5, name: "サロン", value: 4 },
+  { id: 6, name: "クリニック", value: 5 },
+  { id: 7, name: "お客様", value: 6 }
+]
+
+wott_level_data.each do |data|
+  WottLevel.create!(
+    id: data[:id],
+    name: data[:name],
+    value: data[:value]
+  )
+end
+
+# WottLevelデータを取得（nameで検索）
+wott_levels = WottLevel.all.index_by(&:name)
+
+# デバッグ用：作成されたWottLevelを確認
+puts "Created WOTT levels:"
+wott_levels.each do |name, wott_level|
+  puts "  #{name}: #{wott_level.id} (value: #{wott_level.value})"
+end
+
+# Product fixturesを読み込み
+puts "📦 Loading product fixtures..."
+SeedFu.fixture_paths = [Rails.root.join('db', 'fixtures')]
+SeedFu.seed
 
 # Productデータを取得（ID 2,3,4の商品を使用）
 product1 = Product.find_by(id: 1) # 骨髄幹細胞培培養上清液
@@ -164,6 +215,84 @@ price_data_4 = [
   end
 end
 
+# 骨髄幹細胞（高額商品）の価格データを作成
+bone_marrow_stem_cell = Product.find_by(id: 5) # 骨髄幹細胞
+if bone_marrow_stem_cell
+  bone_marrow_price_data = [
+    { level_name: "アジアビジネストラスト", price: 1900000 },
+    { level_name: "総代理店", price: 3040000 },
+    { level_name: "代理店", price: 3230000 },
+    { level_name: "アドバイザー", price: 3420000 },
+    { level_name: "サロン", price: 3800000 },
+    { level_name: "クリニック", price: 3800000 },
+    { level_name: "サポーター", price: 3610000 },
+    { level_name: "お客様", price: 3800000 }
+  ]
+  
+  bone_marrow_price_data.each do |data|
+    level = levels[data[:level_name]]
+    if level
+      ProductPrice.find_or_create_by(product: bone_marrow_stem_cell, level: level) do |pp|
+        pp.price = data[:price]
+      end
+    end
+  end
+  
+  puts "✅ Created bone marrow stem cell pricing structure"
+end
+
+# WOTT商品の価格データを作成
+wott_product = Product.find_by(id: 6) # WOTT Device
+if wott_product
+  wott_price_data = [
+    { wott_level_name: "アジアビジネストラスト", price: 500000 },
+    { wott_level_name: "総代理店", price: 880000 },
+    { wott_level_name: "代理店", price: 990000 },
+    { wott_level_name: "サポーター", price: 1045000 },
+    { wott_level_name: "サロン", price: 1100000 },
+    { wott_level_name: "クリニック", price: 1100000 },
+    { wott_level_name: "お客様", price: 1100000 }
+  ]
+  
+  wott_price_data.each do |data|
+    wott_level = wott_levels[data[:wott_level_name]]
+    if wott_level
+      ProductPrice.find_or_create_by(product: wott_product, wott_level: wott_level) do |pp|
+        pp.price = data[:price]
+      end
+    end
+  end
+  
+  puts "✅ Created WOTT product pricing structure"
+end
+
+# MANNERSOUND商品の価格データを作成（税込価格、全レベル同一価格）
+mannersound_products = Product.where(id: 7..14) # MANNERSOUND商品（ID: 7-14）
+mannersound_products.each do |ms_product|
+  # MANNERSOUNDは全レベル同一価格（base_priceを使用）
+  price_data_ms = [
+    { level_name: "アジアビジネストラスト", price: ms_product.base_price },
+    { level_name: "総代理店", price: ms_product.base_price },
+    { level_name: "代理店", price: ms_product.base_price },
+    { level_name: "アドバイザー", price: ms_product.base_price },
+    { level_name: "サロン", price: ms_product.base_price },
+    { level_name: "クリニック", price: ms_product.base_price },
+    { level_name: "サポーター", price: ms_product.base_price },
+    { level_name: "お客様", price: ms_product.base_price }
+  ]
+  
+  price_data_ms.each do |data|
+    level = levels[data[:level_name]]
+    if level
+      ProductPrice.find_or_create_by(product: ms_product, level: level) do |pp|
+        pp.price = data[:price]
+      end
+    end
+  end
+end
+
+puts "✅ Created MANNERSOUND products pricing structure"
+
 # 最上位
 company = User.create!(
   id: user_id_seq,
@@ -171,6 +300,7 @@ company = User.create!(
   email: "info@abt-saisei.com",
   password: "111111",
   level_id: levels["アジアビジネストラスト"].id,
+  wott_level_id: wott_levels["アジアビジネストラスト"].id,
   lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
   confirmed_at: Time.current,
   admin: true  # 管理者フラグを設定
@@ -178,15 +308,84 @@ company = User.create!(
 user_id_seq += 1
 lstep_id_seq += 1
 
+# クリニック情報を作成（アジアビジネストラストの直下、ID: 2-5）
+puts "🏥 Creating clinic users..."
+clinic_level = levels["クリニック"]
+wott_clinic_level = wott_levels["クリニック"]
+
+clinics_data = [
+  {
+    name: "銀座中央クリニック",
+    postal_code: "104-0061",
+    address: "東京都中央区銀座７丁目８−８ Isgビル 7F",
+    phone: "03-6280-6901",
+    email: "ginze-central-clinic@example.com"
+  },
+  {
+    name: "ティファクリニック大宮院",
+    postal_code: "330-0844",
+    address: "埼玉県さいたま市大宮区下町１丁目４５ 松亀センタービル 1F",
+    phone: "048-788-5926",
+    email: "tifa-omiya@example.com"
+  },
+  {
+    name: "ティファクリニック横浜院",
+    postal_code: "220-0004",
+    address: "神奈川県横浜市西区北幸1-1-8 エキニア横浜 7F 705",
+    phone: "045-509-1932",
+    email: "tifa-yokohama@example.com"
+  },
+  {
+    name: "ティファクリニック新宿東口院",
+    postal_code: "160-0022",
+    address: "東京都新宿区新宿3-21-6 龍生堂ビル 7F",
+    phone: "03-6416-0193",
+    email: "tifa-shinjuku-east@example.com"
+  }
+]
+
+clinics_data.each_with_index do |clinic_data, index|
+  user = User.create!(
+    id: user_id_seq,
+    name: clinic_data[:name],
+    phone: clinic_data[:phone],
+    email: clinic_data[:email],
+    level_id: clinic_level.id,
+    wott_level_id: wott_clinic_level.id,
+    referred_by_id: company.id,  # アジアビジネストラストの直下に配置
+    password: "clinic_password_#{index + 1}",
+    lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+    confirmed_at: Time.current
+  )
+  
+  # invoice_baseを作成
+  InvoiceBase.create!(
+    user_id: user.id,
+    company_name: clinic_data[:name],
+    postal_code: clinic_data[:postal_code],
+    address: clinic_data[:address],
+    email: clinic_data[:email]
+  )
+  
+  user_id_seq += 1
+  lstep_id_seq += 1
+end
+
+puts "✅ Created #{clinics_data.length} clinic users under アジアビジネストラスト (ID: 2-5)"
+
 # 総代理店（level: 総代理店）
 special_agent_names = ["田中美咲", "佐藤花音", "山田優香"]
 special_agents = special_agent_names.map.with_index do |name, i|
+  # 田中美咲だけWOTTレベルを代理店にする（違いを作るため）
+  wott_level = (name == "田中美咲") ? wott_levels["代理店"] : wott_levels["総代理店"]
+  
   user = User.create!(
     id: user_id_seq,
     name: name,
     email: "special_agent#{i + 1}@example.com",
     password: "111111",
     level_id: levels["総代理店"].id,
+    wott_level_id: wott_level.id,
     referred_by_id: company.id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
@@ -205,12 +404,16 @@ agent_names = [
 agents = []
 special_agents.each_with_index do |parent, i|
   agent_names[i].each_with_index do |name, j|
+    # 鈴木愛美と伊藤真由をWOTTレベルでサポーターにする（違いを作るため）
+    wott_level = (name == "鈴木愛美" || name == "伊藤真由") ? wott_levels["サポーター"] : wott_levels["代理店"]
+    
     user = User.create!(
       id: user_id_seq,
       name: name,
       email: "agent#{i + 1}-#{j + 1}@example.com",
       password: "111111",
       level_id: levels["代理店"].id,
+      wott_level_id: wott_level.id,
       referred_by_id: parent.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
@@ -233,12 +436,17 @@ advisor_names = [
 advisors = []
 agents.each_with_index do |parent, i|
   advisor_names[i].each_with_index do |name, j|
+    # アドバイザーはWOTTレベルにないので、基本的にサポーターにマッピング
+    # 中村結衣と森川桃子をお客様レベルにする（違いを作るため）
+    wott_level = (name == "中村結衣" || name == "森川桃子") ? wott_levels["お客様"] : wott_levels["サポーター"]
+    
     user = User.create!(
       id: user_id_seq,
       name: name,
       email: "advisor#{i + 1}-#{j + 1}@example.com",
       password: "111111",
       level_id: levels["アドバイザー"].id,
+      wott_level_id: wott_level.id,
       referred_by_id: parent.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
@@ -269,12 +477,17 @@ advisors.each_with_index do |parent, i|
     { type: "サロン", name: salon_clinic_names[i][0], email_prefix: "salon" },
     { type: "クリニック", name: salon_clinic_names[i][1], email_prefix: "clinic" }
   ].each do |type_data|
+    # 一部のサロン・クリニックをお客様レベルにする（違いを作るため）
+    wott_level = (type_data[:name].include?("美容サロン花音") || type_data[:name].include?("田中クリニック")) ? 
+                 wott_levels["お客様"] : wott_levels[type_data[:type]]
+    
     User.create!(
       id: user_id_seq,
       name: type_data[:name],
       email: "#{type_data[:email_prefix]}#{i + 1}@example.com",
       password: "111111",
       level_id: levels[type_data[:type]].id,
+      wott_level_id: wott_level.id,
       referred_by_id: parent.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
@@ -289,12 +502,16 @@ supporter_names = ["青木美香", "西田真理"]
 supporter_customer_names = ["美香さんのお客様", "真理さんのお客様"]
 
 2.times do |i|
+  # 青木美香をWOTTレベルでお客様にする（違いを作るため）
+  wott_level = (supporter_names[i] == "青木美香") ? wott_levels["お客様"] : wott_levels["サポーター"]
+  
   supporter = User.create!(
     id: user_id_seq,
     name: supporter_names[i],
     email: "supporter#{i + 1}@example.com",
     password: "111111",
     level_id: levels["サポーター"].id,
+    wott_level_id: wott_level.id,
     referred_by_id: special_agents[0].id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
@@ -309,6 +526,7 @@ supporter_customer_names = ["美香さんのお客様", "真理さんのお客�
     email: "supporter_customer#{i + 1}@example.com",
     password: "111111",
     level_id: levels["お客様"].id,
+    wott_level_id: wott_levels["お客様"].id,
     referred_by_id: supporter.id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
@@ -325,6 +543,7 @@ supporter_customer_names = ["美香さんのお客様", "真理さんのお客�
       email: "aoki_salon@example.com",
       password: "111111",
       level_id: levels["サロン"].id,
+      wott_level_id: wott_levels["サロン"].id,
       referred_by_id: supporter.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
@@ -339,6 +558,7 @@ supporter_customer_names = ["美香さんのお客様", "真理さんのお客�
       email: "aoki_clinic@example.com",
       password: "111111",
       level_id: levels["クリニック"].id,
+      wott_level_id: wott_levels["クリニック"].id,
       referred_by_id: supporter.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
@@ -358,6 +578,7 @@ additional_salon_names_2 = ["花音サロン", "美容室彩花"]
     email: "special2_salon#{i + 1}@example.com",
     password: "111111",
     level_id: levels["サロン"].id,
+    wott_level_id: wott_levels["サロン"].id,
     referred_by_id: special_agents[1].id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
@@ -380,6 +601,7 @@ additional_salon_names_3 = ["優花サロン", "彩乃エステ"]
     email: "special3_advisor#{i + 1}_1@example.com",
     password: "111111",
     level_id: levels["アドバイザー"].id,
+    wott_level_id: wott_levels["サポーター"].id,
     referred_by_id: special_agents[2].id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
@@ -393,6 +615,7 @@ additional_salon_names_3 = ["優花サロン", "彩乃エステ"]
     email: "special3_advisor#{i + 1}_2@example.com",
     password: "111111",
     level_id: levels["アドバイザー"].id,
+    wott_level_id: wott_levels["サポーター"].id,
     referred_by_id: advisor1.id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
@@ -406,6 +629,7 @@ additional_salon_names_3 = ["優花サロン", "彩乃エステ"]
     email: "special3_salon#{i + 1}@example.com",
     password: "111111",
     level_id: levels["サロン"].id,
+    wott_level_id: wott_levels["サロン"].id,
     referred_by_id: advisor2.id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
@@ -600,6 +824,7 @@ special_agents.each_with_index do |special_agent, i|
       email: "special_customer#{i + 1}-#{j + 1}@example.com",
       password: "111111",
       level_id: levels["お客様"].id,
+      wott_level_id: wott_levels["お客様"].id,
       referred_by_id: special_agent.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
@@ -621,6 +846,7 @@ agents.each_with_index do |agent, i|
       email: "agent_customer#{i + 1}-#{j + 1}@example.com",
       password: "111111",
       level_id: levels["お客様"].id,
+      wott_level_id: wott_levels["お客様"].id,
       referred_by_id: agent.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
@@ -642,6 +868,7 @@ advisors.each_with_index do |advisor, i|
       email: "advisor_customer#{i + 1}-#{j + 1}@example.com",
       password: "111111",
       level_id: levels["お客様"].id,
+      wott_level_id: wott_levels["お客様"].id,
       referred_by_id: advisor.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
@@ -663,6 +890,7 @@ salons_and_clinics.first(20).each_with_index do |salon_clinic, i|
     email: "salon_customer#{i + 1}@example.com",
     password: "111111",
     level_id: levels["お客様"].id,
+    wott_level_id: wott_levels["お客様"].id,
     referred_by_id: salon_clinic.id,
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current

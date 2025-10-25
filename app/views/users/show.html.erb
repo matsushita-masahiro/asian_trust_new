@@ -6,6 +6,13 @@
           <h4 class="text-primary me-3 user-name-horizontal"><%= @user.name.present? ? @user.display_name : @user.email %></h4>
         </div>
         <div class="mobile-nav-buttons">
+          <% # カートから遷移した場合のカートに戻るボタン %>
+          <% if request.referer&.include?('/cart') || params[:from] == 'cart' %>
+            <%= link_to cart_path, class: "btn btn-info me-2" do %>
+              <i class="fas fa-shopping-cart me-1"></i>カートに戻る
+            <% end %>
+          <% end %>
+          
           <% if @user == current_user && current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
             <%= link_to referrals_path, class: "btn btn-primary me-2" do %>
               <i class="fas fa-qrcode me-1"></i>紹介機能
@@ -38,6 +45,12 @@
               <th>レベル:</th>
               <td>
                 <span class="badge bg-secondary"><%= @user.level_label %></span>
+              </td>
+            </tr>
+            <tr>
+              <th>WOTT購入レベル:</th>
+              <td>
+                <span class="badge bg-info"><%= @user.wott_level_name %></span>
               </td>
             </tr>
             <tr>
@@ -156,8 +169,7 @@
                 <h6 class="text-primary mb-2">
                   <i class="fas fa-home me-2"></i>登録住所
                 </h6>
-                <div id="registration-address-display" class="address-display" 
-                     <% if @user.registration_address.present? %>data-address-id="<%= @user.registration_address.id %>"<% end %>>
+                <div id="registration-address-display">
                   <% if @user.registration_address.present? %>
                     <div class="address-content">
                       <% if @user.registration_address.postal_code.present? %>
@@ -168,13 +180,48 @@
                   <% else %>
                     <div class="text-muted">未登録</div>
                   <% end %>
+                  <% if @user == current_user %>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="toggleAddressEdit('registration')">
+                      <i class="fas fa-edit me-1"></i>
+                      <%= @user.registration_address.present? ? '編集' : '登録' %>
+                    </button>
+                  <% end %>
                 </div>
                 <% if @user == current_user %>
-                  <button class="btn btn-sm btn-outline-primary mt-2 edit-address-btn" 
-                          data-address-type="registration">
-                    <i class="fas fa-edit me-1"></i>
-                    <%= @user.registration_address.present? ? '編集' : '登録' %>
-                  </button>
+                  <div id="registration-address-edit" class="address-edit-form" style="display: none;">
+                    <%= form_with model: [@user, @user.registration_address || @user.addresses.build], 
+                        url: @user.registration_address ? user_address_path(@user, @user.registration_address) : user_addresses_path(@user),
+                        method: @user.registration_address ? :patch : :post,
+                        local: true, class: "address-form" do |f| %>
+                      <%= f.hidden_field :address_type, value: 'registration' %>
+                      <% if request.referer&.include?('/cart') || params[:from] == 'cart' %>
+                        <input type="hidden" name="from" value="cart">
+                      <% end %>
+                      
+                      <div class="mb-2">
+                        <label class="form-label small">郵便番号</label>
+                        <%= f.text_field :postal_code, 
+                            value: @user.registration_address&.postal_code,
+                            class: "form-control form-control-sm", 
+                            placeholder: "例: 123-4567" %>
+                      </div>
+                      
+                      <div class="mb-2">
+                        <label class="form-label small">住所 <span class="text-danger">*</span></label>
+                        <%= f.text_area :address, 
+                            value: @user.registration_address&.address,
+                            class: "form-control form-control-sm", 
+                            rows: 2, 
+                            placeholder: "全住所を入力してください", 
+                            required: true %>
+                      </div>
+                      
+                      <div class="d-flex gap-2">
+                        <%= f.submit "保存", class: "btn btn-sm btn-success" %>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleAddressEdit('registration')">キャンセル</button>
+                      </div>
+                    <% end %>
+                  </div>
                 <% end %>
               </div>
             </div>
@@ -185,8 +232,7 @@
                 <h6 class="text-success mb-2">
                   <i class="fas fa-shipping-fast me-2"></i>配送先住所
                 </h6>
-                <div id="shipping-address-display" class="address-display"
-                     <% if @user.shipping_address.present? %>data-address-id="<%= @user.shipping_address.id %>"<% end %>>
+                <div id="shipping-address-display">
                   <% if @user.shipping_address.present? %>
                     <div class="address-content">
                       <% if @user.shipping_address.postal_code.present? %>
@@ -197,13 +243,48 @@
                   <% else %>
                     <div class="text-muted">未登録</div>
                   <% end %>
+                  <% if @user == current_user %>
+                    <button class="btn btn-sm btn-outline-success mt-2" onclick="toggleAddressEdit('shipping')">
+                      <i class="fas fa-edit me-1"></i>
+                      <%= @user.shipping_address.present? ? '編集' : '登録' %>
+                    </button>
+                  <% end %>
                 </div>
                 <% if @user == current_user %>
-                  <button class="btn btn-sm btn-outline-success mt-2 edit-address-btn" 
-                          data-address-type="shipping">
-                    <i class="fas fa-edit me-1"></i>
-                    <%= @user.shipping_address.present? ? '編集' : '登録' %>
-                  </button>
+                  <div id="shipping-address-edit" class="address-edit-form" style="display: none;">
+                    <%= form_with model: [@user, @user.shipping_address || @user.addresses.build], 
+                        url: @user.shipping_address ? user_address_path(@user, @user.shipping_address) : user_addresses_path(@user),
+                        method: @user.shipping_address ? :patch : :post,
+                        local: true, class: "address-form" do |f| %>
+                      <%= f.hidden_field :address_type, value: 'shipping' %>
+                      <% if request.referer&.include?('/cart') || params[:from] == 'cart' %>
+                        <input type="hidden" name="from" value="cart">
+                      <% end %>
+                      
+                      <div class="mb-2">
+                        <label class="form-label small">郵便番号</label>
+                        <%= f.text_field :postal_code, 
+                            value: @user.shipping_address&.postal_code,
+                            class: "form-control form-control-sm", 
+                            placeholder: "例: 123-4567" %>
+                      </div>
+                      
+                      <div class="mb-2">
+                        <label class="form-label small">住所 <span class="text-danger">*</span></label>
+                        <%= f.text_area :address, 
+                            value: @user.shipping_address&.address,
+                            class: "form-control form-control-sm", 
+                            rows: 2, 
+                            placeholder: "全住所を入力してください", 
+                            required: true %>
+                      </div>
+                      
+                      <div class="d-flex gap-2">
+                        <%= f.submit "保存", class: "btn btn-sm btn-success" %>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleAddressEdit('shipping')">キャンセル</button>
+                      </div>
+                    <% end %>
+                  </div>
                 <% end %>
               </div>
             </div>
@@ -233,7 +314,6 @@
                 <thead class="table-light">
                   <tr>
                     <th>購入日</th>
-                    <th>仲介者</th>
                     <th>商品名</th>
                     <th>数量</th>
                     <th>単価</th>
@@ -246,7 +326,6 @@
                       <tr>
                         <% if index == 0 %>
                           <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at.strftime("%Y/%m/%d") %></td>
-                          <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %></td>
                         <% end %>
                         <td><%= item.product.name %></td>
                         <td><%= item.quantity %></td>
@@ -269,255 +348,47 @@
   </div>
 </div>
 
-<!-- 住所編集モーダル -->
-<div class="modal fade" id="addressModal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="addressModalLabel">住所編集</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <%= form_with url: user_addresses_path(@user), method: :post, local: false, id: "address-form", class: "address-form" do |f| %>
-          <input type="hidden" id="address-type-input" name="address[address_type]" value="">
-          <input type="hidden" id="address-method" name="_method" value="post">
-          
-          <div class="mb-3">
-            <label for="address-postal-code" class="form-label">郵便番号</label>
-            <input type="text" class="form-control" id="address-postal-code" name="address[postal_code]" 
-                   placeholder="例: 123-4567" maxlength="8">
-            <div class="form-text">ハイフンありなしどちらでも入力可能です</div>
-          </div>
-          
-          <div class="mb-3">
-            <label for="address-address" class="form-label">住所 <span class="text-danger">*</span></label>
-            <textarea class="form-control" id="address-address" name="address[address]" 
-                      rows="3" placeholder="全住所を入力して下さい" required></textarea>
-          </div>
-          
-          <div id="address-errors" class="alert alert-danger" style="display: none;"></div>
-        <% end %>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-        <button type="button" class="btn btn-primary" id="save-address-btn">保存</button>
-      </div>
-    </div>
-  </div>
-</div>
+
 <script>
+function toggleAddressEdit(addressType) {
+  const displayDiv = document.getElementById(addressType + '-address-display');
+  const editDiv = document.getElementById(addressType + '-address-edit');
+  
+  if (editDiv.style.display === 'none') {
+    // 編集モードに切り替え
+    displayDiv.style.display = 'none';
+    editDiv.style.display = 'block';
+  } else {
+    // 表示モードに切り替え
+    displayDiv.style.display = 'block';
+    editDiv.style.display = 'none';
+  }
+}
+
+function toggleEmailEdit() {
+  const displayDiv = document.getElementById('email-display');
+  const editDiv = document.getElementById('email-edit');
+  
+  if (editDiv.style.display === 'none' || !editDiv.style.display) {
+    displayDiv.style.display = 'none';
+    editDiv.style.display = 'block';
+    editDiv.querySelector('input').focus();
+  } else {
+    displayDiv.style.display = 'block';
+    editDiv.style.display = 'none';
+  }
+}
+
+// 郵便番号の自動フォーマット
 document.addEventListener('DOMContentLoaded', function() {
-  let currentAddressType = '';
-  let currentAddress = null;
-  
-  // 住所編集ボタンのクリックイベント
-  document.querySelectorAll('.edit-address-btn').forEach(button => {
-    button.addEventListener('click', function() {
-      console.log('Address edit button clicked:', this.dataset.addressType);
-      currentAddressType = this.dataset.addressType;
-      openAddressModal(currentAddressType);
-    });
-  });
-  
-  // 住所編集モーダルを開く
-  function openAddressModal(addressType) {
-    console.log('Opening address modal for type:', addressType);
-    
-    const modalElement = document.getElementById('addressModal');
-    console.log('Modal element found:', modalElement);
-    
-    if (!modalElement) {
-      console.error('Modal element not found!');
-      return;
-    }
-    
-    // Bootstrapが利用可能かチェック
-    if (typeof bootstrap === 'undefined') {
-      console.error('Bootstrap is not loaded!');
-      return;
-    }
-    
-    console.log('Creating Bootstrap modal...');
-    const modal = new bootstrap.Modal(modalElement);
-    
-    const form = document.getElementById('address-form');
-    const modalTitle = document.getElementById('addressModalLabel');
-    const addressTypeInput = document.getElementById('address-type-input');
-    const methodInput = document.getElementById('address-method');
-    const postalCodeInput = document.getElementById('address-postal-code');
-    const addressInput = document.getElementById('address-address');
-    const errorsDiv = document.getElementById('address-errors');
-    
-    console.log('Form elements found:', {
-      form: !!form,
-      modalTitle: !!modalTitle,
-      addressTypeInput: !!addressTypeInput,
-      methodInput: !!methodInput,
-      postalCodeInput: !!postalCodeInput,
-      addressInput: !!addressInput,
-      errorsDiv: !!errorsDiv
-    });
-    
-    // エラー表示をクリア
-    errorsDiv.style.display = 'none';
-    errorsDiv.innerHTML = '';
-    
-    // 住所タイプに応じてタイトルを設定
-    const addressTypeLabel = addressType === 'registration' ? '登録住所' : '配送先住所';
-    modalTitle.textContent = addressTypeLabel + 'の編集';
-    
-    // フォームの設定
-    addressTypeInput.value = addressType;
-    
-    // 既存の住所データを取得して設定
-    const addressDisplay = document.getElementById(addressType + '-address-display');
-    const existingAddress = getExistingAddressData(addressType);
-    
-    if (existingAddress) {
-      // 更新の場合
-      methodInput.value = 'patch';
-      form.action = `/users/<%= @user.id %>/addresses/${existingAddress.id}`;
-      postalCodeInput.value = existingAddress.postal_code || '';
-      addressInput.value = existingAddress.address || '';
-      currentAddress = existingAddress;
-    } else {
-      // 新規作成の場合
-      methodInput.value = 'post';
-      form.action = `/users/<%= @user.id %>/addresses`;
-      postalCodeInput.value = '';
-      addressInput.value = '';
-      currentAddress = null;
-    }
-    
-    console.log('Showing modal...');
-    modal.show();
-  }
-  
-  // 既存住所データを取得
-  function getExistingAddressData(addressType) {
-    const displayElement = document.getElementById(addressType + '-address-display');
-    const addressContent = displayElement.querySelector('.address-content');
-    
-    if (!addressContent) return null;
-    
-    const postalCodeElement = addressContent.querySelector('.postal-code');
-    const addressElement = addressContent.querySelector('.address-text');
-    
-    return {
-      id: displayElement.dataset.addressId,
-      postal_code: postalCodeElement ? postalCodeElement.textContent.replace('〒', '') : '',
-      address: addressElement ? addressElement.textContent : ''
-    };
-  }
-  
-  // 保存ボタンのクリックイベント
-  document.getElementById('save-address-btn').addEventListener('click', function() {
-    const form = document.getElementById('address-form');
-    const formData = new FormData(form);
-    const errorsDiv = document.getElementById('address-errors');
-    
-    // エラー表示をクリア
-    errorsDiv.style.display = 'none';
-    errorsDiv.innerHTML = '';
-    
-    // 保存ボタンを無効化
-    this.disabled = true;
-    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>保存中...';
-    
-    fetch(form.action, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+  document.querySelectorAll('input[name*="postal_code"]').forEach(function(input) {
+    input.addEventListener('input', function() {
+      let value = this.value.replace(/\D/g, ''); // 数字以外を除去
+      if (value.length >= 3) {
+        value = value.substring(0, 3) + '-' + value.substring(3, 7);
       }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // 成功時の処理
-        updateAddressDisplay(currentAddressType, data.address);
-        bootstrap.Modal.getInstance(document.getElementById('addressModal')).hide();
-        showSuccessMessage('住所を保存しました');
-      } else {
-        // エラー時の処理
-        showErrors(data.errors);
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showErrors(['保存中にエラーが発生しました']);
-    })
-    .finally(() => {
-      // 保存ボタンを有効化
-      const saveBtn = document.getElementById('save-address-btn');
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = '保存';
+      this.value = value;
     });
-  });
-  
-  // 住所表示を更新
-  function updateAddressDisplay(addressType, addressData) {
-    const displayElement = document.getElementById(addressType + '-address-display');
-    const editButton = document.querySelector(`[data-address-type="${addressType}"]`);
-    
-    if (addressData) {
-      displayElement.innerHTML = `
-        <div class="address-content">
-          ${addressData.postal_code ? `<div class="postal-code text-muted small">〒${addressData.postal_code}</div>` : ''}
-          <div class="address-text">${addressData.address}</div>
-        </div>
-      `;
-      displayElement.dataset.addressId = addressData.id;
-      editButton.innerHTML = '<i class="fas fa-edit me-1"></i>編集';
-    } else {
-      displayElement.innerHTML = '<div class="text-muted">未登録</div>';
-      delete displayElement.dataset.addressId;
-      editButton.innerHTML = '<i class="fas fa-edit me-1"></i>登録';
-    }
-  }
-  
-  // エラー表示
-  function showErrors(errors) {
-    const errorsDiv = document.getElementById('address-errors');
-    errorsDiv.innerHTML = errors.map(error => `<div>${error}</div>`).join('');
-    errorsDiv.style.display = 'block';
-  }
-  
-  // 成功メッセージ表示
-  function showSuccessMessage(message) {
-    // 既存のフラッシュメッセージ領域があれば使用、なければ作成
-    let flashContainer = document.querySelector('.flash-messages');
-    if (!flashContainer) {
-      flashContainer = document.createElement('div');
-      flashContainer.className = 'flash-messages';
-      document.querySelector('.container-fluid').prepend(flashContainer);
-    }
-    
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-success alert-dismissible fade show';
-    alertDiv.innerHTML = `
-      ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    flashContainer.appendChild(alertDiv);
-    
-    // 3秒後に自動で消す
-    setTimeout(() => {
-      if (alertDiv.parentNode) {
-        alertDiv.remove();
-      }
-    }, 3000);
-  }
-  
-  // 郵便番号の自動フォーマット
-  document.getElementById('address-postal-code').addEventListener('input', function() {
-    let value = this.value.replace(/\D/g, ''); // 数字以外を除去
-    if (value.length >= 3) {
-      value = value.substring(0, 3) + '-' + value.substring(3, 7);
-    }
-    this.value = value;
   });
 });
 </script>

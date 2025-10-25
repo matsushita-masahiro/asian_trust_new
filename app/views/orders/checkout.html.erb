@@ -81,11 +81,20 @@
               
               # 自宅配送先
               if has_other_products
+                # 選択された住所タイプに基づいて住所を取得
+                selected_address = @selected_address
+                address_type_label = case @address_type
+                                   when 'shipping'
+                                     '配送先住所'
+                                   else
+                                     '登録住所'
+                                   end
+                
                 delivery_destinations << {
-                  title: 'ご登録住所（自宅配送）',
+                  title: "#{address_type_label}（自宅配送）",
                   icon: 'fas fa-home',
-                  address: (current_user.invoice_base&.postal_code.present? && current_user.invoice_base&.address.present?) ? 
-                           "〒#{current_user.invoice_base.postal_code}<br>#{current_user.invoice_base.address.gsub("\n", "<br>")}".html_safe : 
+                  address: (selected_address&.postal_code.present? && selected_address&.address.present?) ? 
+                           "〒#{selected_address.postal_code}<br>#{selected_address.address}".html_safe : 
                            '<span class="text-danger">住所が登録されていません</span>'.html_safe,
                   note: 'その他の商品',
                   type: 'home'
@@ -205,6 +214,7 @@
             <% if params[:delivery_type].present? %>
               <% 
                 payment_params = { delivery_type: params[:delivery_type] }
+                payment_params[:address_type] = params[:address_type] if params[:address_type].present?
                 payment_params[:clinic_id] = params[:clinic_id] if params[:clinic_id].present?
               %>
               <%= link_to "お支払い方法を選択する", select_method_payments_path(payment_params), 

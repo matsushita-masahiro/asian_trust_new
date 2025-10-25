@@ -6,11 +6,30 @@ class OrdersController < ApplicationController
   end
 
   def products
-    # 幹細胞培養上精液の商品一覧（価格情報があるもののみ）
-    @products = Product.joins(:product_prices)
-                      .where(product_prices: { level_id: current_user.level_id })
-                      .distinct
+    @category = params[:category] || 'sl' # デフォルトは上清液
     @cart = current_user.ensure_cart
+    
+    case @category
+    when 'wott'
+      # WOTT商品の場合
+      if current_user.wott_level.present?
+        @products = Product.active.where(category: 'wott')
+        Rails.logger.info "DEBUG: WOTT products count: #{@products.count}"
+        Rails.logger.info "DEBUG: User WOTT level: #{current_user.wott_level_name}"
+        @products.each do |product|
+          price = product.wott_price_for(current_user.wott_level_symbol)
+          Rails.logger.info "DEBUG: Product #{product.name} price for #{current_user.wott_level_name}: #{price}"
+        end
+      else
+        @products = Product.none
+        flash.now[:alert] = 'WOTT商品を購入するにはWOTTレベルが必要です。'
+      end
+    else
+      # 上清液商品の場合は従来のレベルで価格チェック
+      @products = Product.joins(:product_prices)
+                        .where(category: 'sl', product_prices: { level_id: current_user.level_id })
+                        .distinct
+    end
   end
 
   def checkout
@@ -31,7 +50,38 @@ class OrdersController < ApplicationController
       @cart = current_user.cart
     end
     
-    redirect_to orders_path, alert: 'カートが空です' if @cart.nil? || @cart.cart_items.empty?
+    if @cart.nil? || @cart.cart_items.empty?
+      redirect_to orders_path, alert: 'カートが空です'
+      return
+    end
+    
+    # 配送情報を設定
+    @delivery_type = params[:delivery_type] || 'home'
+    @address_type = params[:address_type] || 'registration'
+    @clinic_id = params[:clinic_id]
+    
+    # 選択された住所を取得
+    case @address_type
+    when 'shipping'
+      @selected_address = current_user.shipping_address
+    else
+      @selected_address = current_user.registration_address
+    end
+    
+    # 住所が選択されていない場合はカートに戻す
+    if @delivery_type.in?(['home', 'multiple']) && @selected_address.blank?
+      redirect_to cart_path, alert: '配送先住所を選択してください'
+      return
+    end
+    
+    # クリニック配送の場合はクリニック情報を取得
+    if @delivery_type.in?(['clinic', 'multiple']) && @clinic_id.present?
+      @selected_clinic = User.joins(:invoice_base).find_by(id: @clinic_id)
+      if @selected_clinic.blank?
+        redirect_to cart_path, alert: '配送先クリニックを選択してください'
+        return
+      end
+    end
   end
   
   def purchase
@@ -54,7 +104,8 @@ class OrdersController < ApplicationController
       
       # 購入アイテムを作成
       @cart.cart_items.each do |cart_item|
-        user_price = cart_item.product.price_for(current_user.level_symbol) || 0
+        # 商品カテゴリーに応じて適切な価格を取得
+        user_price = cart_item.product.price_for_user(current_user) || 0
         
         PurchaseItem.create!(
           purchase: purchase,

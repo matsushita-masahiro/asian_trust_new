@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_23_001648) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_25_182229) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -192,12 +192,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_001648) do
 
   create_table "product_prices", force: :cascade do |t|
     t.integer "product_id", null: false
-    t.integer "level_id", null: false
+    t.integer "level_id"
     t.integer "price"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "wott_level_id"
     t.index ["level_id"], name: "index_product_prices_on_level_id"
     t.index ["product_id"], name: "index_product_prices_on_product_id"
+    t.index ["wott_level_id"], name: "index_product_prices_on_wott_level_id"
   end
 
   create_table "products", force: :cascade do |t|
@@ -211,6 +213,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_001648) do
     t.text "description"
     t.string "short_name"
     t.datetime "deleted_at"
+    t.string "category"
+    t.boolean "tax_included", default: false, null: false
   end
 
   create_table "purchase_invoices", force: :cascade do |t|
@@ -327,6 +331,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_001648) do
     t.string "status", default: "active", null: false
     t.string "referral_token"
     t.string "phone"
+    t.integer "wott_level_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["level_id"], name: "index_users_on_level_id"
@@ -336,6 +341,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_001648) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["status"], name: "index_users_on_status"
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
+    t.index ["wott_level_id"], name: "index_users_on_wott_level_id"
+  end
+
+  create_table "wott_levels", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "value", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_wott_levels_on_name", unique: true
+    t.index ["value"], name: "index_wott_levels_on_value", unique: true
   end
 
   add_foreign_key "access_logs", "users"
@@ -356,6 +371,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_001648) do
   add_foreign_key "level_change_applications", "users", column: "applicant_id"
   add_foreign_key "product_prices", "levels"
   add_foreign_key "product_prices", "products"
+  add_foreign_key "product_prices", "wott_levels"
   add_foreign_key "purchase_invoices", "purchases"
   add_foreign_key "purchase_items", "products"
   add_foreign_key "purchase_items", "purchases"
@@ -368,4 +384,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_001648) do
   add_foreign_key "user_level_histories", "users"
   add_foreign_key "user_level_histories", "users", column: "changed_by_id"
   add_foreign_key "users", "levels"
+  add_foreign_key "users", "wott_levels"
 end

@@ -1,25 +1,89 @@
-<h5 class="mt-5 mb-3">💰 <strong>代理店レベル別価格</strong></h5>
-<div class="table-responsive">
-  <table class="table table-bordered table-hover table-striped align-middle">
-    <thead class="table-light">
-      <tr>
-        <th style="width: 30%">レベル名</th>
-        <th>購入価格（円）</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% Level.all.each do |level| %>
-        <% price_record = product.product_prices.find { |pp| pp.level_id == level.id } || product.product_prices.build(level: level) %>
+<% if product.category == 'wott' %>
+  <!-- WOTT商品の場合はWOTTレベル別価格設定 -->
+  <h5 class="mt-5 mb-3">💰 <strong>WOTTレベル別価格設定</strong></h5>
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>WOTT商品の価格設定:</strong> 購入価格は全レベル共通で基本価格（¥<%= number_with_delimiter(product.base_price || 1100000) %>）が使用されます。
+    インセンティブ額は各レベルごとに設定できます。
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover table-striped align-middle">
+      <thead class="table-light">
         <tr>
-          <td class="fw-semibold"><%= level.name %></td>
-          <td>
-            <%= form.fields_for :product_prices, price_record do |pp_form| %>
-              <%= pp_form.hidden_field :level_id %>
-              <%= pp_form.number_field :price, class: "form-control", placeholder: "例: 45000", style: "min-width: 120px;" %>
-            <% end %>
-          </td>
+          <th style="width: 30%">WOTTレベル名</th>
+          <th style="width: 35%">購入価格（円）</th>
+          <th style="width: 35%">インセンティブ額（円）</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+      </thead>
+      <tbody>
+        <% WottLevel.ordered.each do |wott_level| %>
+          <% price_record = product.product_prices.find { |pp| pp.wott_level_id == wott_level.id } || product.product_prices.build(wott_level: wott_level) %>
+          <tr>
+            <td class="fw-semibold"><%= wott_level.name %></td>
+            <td>
+              <div class="form-control bg-light text-muted" style="min-width: 120px;">
+                ¥<%= number_with_delimiter(product.base_price || 1100000) %>
+              </div>
+              <small class="text-muted">（全レベル共通・編集不可）</small>
+            </td>
+            <td>
+              <%= form.fields_for :product_prices, price_record do |pp_form| %>
+                <%= pp_form.hidden_field :wott_level_id %>
+                <% 
+                  default_incentive = case wott_level.symbol
+                  when :special_agent
+                    220000
+                  when :agent
+                    110000
+                  when :supporter
+                    55000
+                  else
+                    0
+                  end
+                %>
+                <%= pp_form.number_field :price, 
+                    class: "form-control", 
+                    placeholder: number_with_delimiter(default_incentive),
+                    value: price_record.price || default_incentive,
+                    style: "min-width: 120px;" %>
+                <% if default_incentive > 0 %>
+                  <small class="text-muted">
+                    デフォルト: ¥<%= number_with_delimiter(default_incentive) %>
+                    (<%= (default_incentive.to_f / (product.base_price || 1100000) * 100).round(1) %>%)
+                  </small>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <!-- 通常商品の場合は通常レベル別価格設定 -->
+  <h5 class="mt-5 mb-3">💰 <strong>代理店レベル別価格</strong></h5>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 30%">レベル名</th>
+          <th>購入価格（円）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% Level.all.each do |level| %>
+          <% price_record = product.product_prices.find { |pp| pp.level_id == level.id } || product.product_prices.build(level: level) %>
+          <tr>
+            <td class="fw-semibold"><%= level.name %></td>
+            <td>
+              <%= form.fields_for :product_prices, price_record do |pp_form| %>
+                <%= pp_form.hidden_field :level_id %>
+                <%= pp_form.number_field :price, class: "form-control", placeholder: "例: 45000", style: "min-width: 120px;" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

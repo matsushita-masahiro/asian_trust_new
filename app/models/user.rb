@@ -212,7 +212,8 @@ class User < ApplicationRecord
     my_purchase_items.each do |item|
       product = item.product
       
-      if product.category == 'wott'
+      # categoryカラムが存在する場合のみWOTT商品チェックを行う
+      if product.respond_to?(:category) && product.category == 'wott'
         # WOTT商品の場合：自己購入でのみインセンティブ発生
         if has_wott_level?
           wott_level_obj = wott_level
@@ -244,7 +245,8 @@ class User < ApplicationRecord
         product = item.product
         
         # WOTT商品の場合：他人の購入ではインセンティブなし（自己購入のみ）
-        next if product.category == 'wott'
+        # categoryカラムが存在する場合のみチェック
+        next if product.respond_to?(:category) && product.category == 'wott'
         
         my_level_at_purchase = level_at(purchase_date)
         

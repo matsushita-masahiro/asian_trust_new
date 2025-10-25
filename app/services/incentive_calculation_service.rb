@@ -137,7 +137,7 @@ class IncentiveCalculationService
     my_purchase_items.each do |item|
       product = item.product
       
-      if product.category == 'wott'
+      if product.respond_to?(:category) && product.category == 'wott'
         # WOTT商品の場合：自己購入でのみインセンティブ発生
         if user.has_wott_level?
           wott_level = user.wott_level
@@ -190,7 +190,7 @@ class IncentiveCalculationService
       purchase_user = purchase.user
       product = item.product
       
-      if product.category == 'wott'
+      if product.respond_to?(:category) && product.category == 'wott'
         # WOTT商品の場合：他人の購入ではインセンティブなし（自己購入のみ）
         next
       else
@@ -328,7 +328,7 @@ class IncentiveCalculationService
     actual_purchaser_price = item.seller_price || 0
     
     # WOTT商品の場合は特別処理
-    if product.category == 'wott'
+    if product.respond_to?(:category) && product.category == 'wott'
       # WOTT商品の場合：購入者のWOTTレベルを表示し、WOTT価格を使用
       purchaser_wott_level = purchase.user.wott_level
       my_wott_level = user.wott_level

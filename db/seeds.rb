@@ -39,19 +39,22 @@ Cart.delete_all
 # 8. アクセスログを削除
 AccessLog.delete_all
 
-# 9. 請求先情報を削除
+# 9. 住所データを削除（usersを参照しているため先に削除）
+Address.delete_all
+
+# 10. 請求先情報を削除
 InvoiceRecipient.delete_all
 
-# 10. 請求基本情報を削除
+# 11. 請求基本情報を削除
 InvoiceBase.delete_all
 
-# 11. ユーザーを削除（外部キー参照があるため最初に削除）
+# 12. ユーザーを削除（外部キー参照があるため最後に削除）
 User.delete_all
 
-# 12. 商品価格データを削除
+# 13. 商品価格データを削除
 ProductPrice.delete_all
 
-# 13. WOTTレベルデータを削除
+# 14. WOTTレベルデータを削除
 WottLevel.delete_all
 
 # SQLite環境のみ、シーケンスをリセット

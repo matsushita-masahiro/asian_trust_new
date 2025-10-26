@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" data-turbo-permanent>
   <div class="container-fluid">
     <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
       <%= image_tag "abt_logo.png", alt: "ABT Logo", class: "navbar-logo me-3" %>
@@ -34,21 +34,21 @@
             </li>
           <% end %>
 
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="mypageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              マイページ
+          <li class="nav-item custom-dropdown">
+            <a class="nav-link custom-dropdown-toggle" href="#" id="mypageDropdown" role="button">
+              マイページ <i class="fas fa-chevron-down ms-1"></i>
             </a>
-            <ul class="dropdown-menu dropdown-menu-custom" aria-labelledby="mypageDropdown">
-              <li><%= link_to "マイアカウント", user_path(current_user), class: "dropdown-item" %></li>
+            <ul class="custom-dropdown-menu" id="mypageDropdownMenu">
+              <li><%= link_to "マイアカウント", user_path(current_user), class: "custom-dropdown-item" %></li>
               <li>
                 <% if current_user.level.value == 7 %>
-                  <%= link_to "購入情報", mysales_path, class: "dropdown-item" %>
+                  <%= link_to "購入情報", mysales_path, class: "custom-dropdown-item" %>
                 <% else %>
-                  <%= link_to "売上情報", mysales_path, class: "dropdown-item" %>
+                  <%= link_to "売上情報", mysales_path, class: "custom-dropdown-item" %>
                 <% end %>
               </li>
               <% if current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
-                <li><%= link_to "紹介機能", referrals_path, class: "dropdown-item" %></li>
+                <li><%= link_to "紹介機能", referrals_path, class: "custom-dropdown-item" %></li>
               <% end %>
             </ul>
           </li>
@@ -71,28 +71,66 @@
 </nav>
 
 <style>
-  /* ドロップダウンメニューのアニメーション */
-  .dropdown-menu {
+  /* カスタムドロップダウンメニュー */
+  .custom-dropdown {
+    position: relative;
+  }
+  
+  .custom-dropdown-toggle {
+    cursor: pointer;
+    text-decoration: none !important;
+  }
+  
+  .custom-dropdown-toggle:hover {
+    color: #ffffff !important;
+  }
+  
+  .custom-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    min-width: 160px;
+    padding: 0.5rem 0;
+    margin: 0;
+    list-style: none;
+    z-index: 1000;
+    
+    /* 初期状態（非表示） */
     opacity: 0;
     transform: translateY(-10px);
+    visibility: hidden;
     transition: all 0.3s ease-in-out;
-    pointer-events: none;
-    display: block !important;
   }
   
-  .dropdown-menu.show {
+  .custom-dropdown-menu.show {
     opacity: 1;
     transform: translateY(0);
-    pointer-events: auto;
+    visibility: visible;
   }
   
-  /* ドロップダウンアイテムのホバーエフェクト */
-  .dropdown-item {
+  .custom-dropdown-menu li {
+    margin: 0;
+  }
+  
+  .custom-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 1rem;
+    color: #212529;
+    text-decoration: none;
+    background-color: transparent;
+    border: 0;
     transition: all 0.2s ease-in-out;
   }
   
-  .dropdown-item:hover {
+  .custom-dropdown-item:hover {
     background-color: #f8f9fa;
+    color: #1e2125;
+    text-decoration: none;
     transform: translateX(5px);
   }
   
@@ -100,5 +138,26 @@
   .navbar-logo {
     height: 40px;
     width: auto;
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 991.98px) {
+    .custom-dropdown-menu {
+      position: static;
+      box-shadow: none;
+      border: none;
+      background-color: #495057;
+      border-radius: 0;
+    }
+    
+    .custom-dropdown-item {
+      color: #ffffff;
+    }
+    
+    .custom-dropdown-item:hover {
+      background-color: #6c757d;
+      color: #ffffff;
+      transform: none;
+    }
   }
 </style>

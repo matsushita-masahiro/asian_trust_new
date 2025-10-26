@@ -8,83 +8,53 @@ import "jquery"
 import * as bootstrap from "bootstrap"
 window.bootstrap = bootstrap
 
-// カスタムドロップダウンアニメーション関数
-function initCustomDropdowns() {
-  const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+// カスタムドロップダウン初期化
+function initCustomDropdown() {
+  const dropdownToggle = document.getElementById('mypageDropdown');
+  const dropdownMenu = document.getElementById('mypageDropdownMenu');
+  
+  if (!dropdownToggle || !dropdownMenu) {
+    console.log("Dropdown elements not found");
+    return;
+  }
 
-  dropdownToggles.forEach(toggle => {
-    const dropdownMenu = toggle.nextElementSibling;
-    let isOpen = false;
+  // 既存のイベントリスナーを削除
+  dropdownToggle.removeEventListener('click', handleDropdownToggle);
+  document.removeEventListener('click', handleDocumentClick);
 
-    // 既存のイベントリスナーを削除
-    toggle.removeEventListener('click', handleDropdownClick);
-
-    // クリックイベント
-    function handleDropdownClick(e) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // 他のドロップダウンを閉じる
-      closeAllDropdowns();
-
-      if (!isOpen) {
-        openDropdown(dropdownMenu);
-        isOpen = true;
-      } else {
-        closeDropdown(dropdownMenu);
-        isOpen = false;
-      }
+  // ドロップダウントグルクリック
+  function handleDropdownToggle(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const isOpen = dropdownMenu.classList.contains('show');
+    
+    if (isOpen) {
+      dropdownMenu.classList.remove('show');
+    } else {
+      dropdownMenu.classList.add('show');
     }
+  }
 
-    toggle.addEventListener('click', handleDropdownClick);
+  // ドキュメントクリック（外部クリックで閉じる）
+  function handleDocumentClick(e) {
+    if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
+      dropdownMenu.classList.remove('show');
+    }
+  }
 
-    // ドロップダウンメニュー外をクリックした時に閉じる
-    document.addEventListener('click', (e) => {
-      if (!toggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
-        if (isOpen) {
-          closeDropdown(dropdownMenu);
-          isOpen = false;
-        }
-      }
-    });
+  // イベントリスナーを追加
+  dropdownToggle.addEventListener('click', handleDropdownToggle);
+  document.addEventListener('click', handleDocumentClick);
 
-    // ESCキーで閉じる
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        closeDropdown(dropdownMenu);
-        isOpen = false;
-      }
-    });
+  // ESCキーで閉じる
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      dropdownMenu.classList.remove('show');
+    }
   });
-}
 
-// ドロップダウンを開く
-function openDropdown(menu) {
-  menu.classList.add('show');
-  // アニメーション用の小さな遅延
-  setTimeout(() => {
-    menu.style.opacity = '1';
-    menu.style.transform = 'translateY(0)';
-  }, 10);
-}
-
-// ドロップダウンを閉じる
-function closeDropdown(menu) {
-  menu.style.opacity = '0';
-  menu.style.transform = 'translateY(-10px)';
-
-  // アニメーション完了後にshowクラスを削除
-  setTimeout(() => {
-    menu.classList.remove('show');
-  }, 300);
-}
-
-// 全てのドロップダウンを閉じる
-function closeAllDropdowns() {
-  const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
-  openDropdowns.forEach(menu => {
-    closeDropdown(menu);
-  });
+  console.log("✅ Custom dropdown initialized");
 }
 
 import "slider"
@@ -95,10 +65,10 @@ import "users_show"
 import "incentive"
 import "order"
 
-// Bootstrapドロップダウンの初期化関数
-function initializeBootstrapComponents() {
-  // カスタムドロップダウンアニメーションを初期化
-  initCustomDropdowns();
+// 初期化関数
+function initializeComponents() {
+  // カスタムドロップダウンを初期化
+  initCustomDropdown();
 
   // ツールチップの初期化（必要に応じて）
   const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
@@ -108,8 +78,10 @@ function initializeBootstrapComponents() {
   const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
   popoverTriggerList.forEach(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
 
-  console.log("✅ Bootstrap components initialized");
+  console.log("✅ All components initialized");
 }
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
   // ✅ jQuery 確認
@@ -124,16 +96,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // ✅ Rails UJS 確認だけ（startしない）
   console.log("✅ Rails:", typeof Rails !== "undefined" ? "Loaded" : "Not Loaded");
 
-  // Bootstrapコンポーネントを初期化
-  initializeBootstrapComponents();
+  // コンポーネントを初期化
+  initializeComponents();
 });
 
-// Turboでページが変わった時にもBootstrapを再初期化
+// Turboでページが変わった時にも再初期化
 document.addEventListener("turbo:load", () => {
-  initializeBootstrapComponents();
-});
-
-// Turboでページが描画された後にもBootstrapを再初期化
-document.addEventListener("turbo:render", () => {
-  initializeBootstrapComponents();
+  console.log("🔄 Turbo:load - Reinitializing components");
+  initializeComponents();
 });

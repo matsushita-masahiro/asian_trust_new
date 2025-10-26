@@ -22,7 +22,7 @@
           <div class="d-flex justify-content-between">
             <div>
               <h6 class="card-title">支払い対象者数</h6>
-              <h3 class="mb-0"><%= @bonus_data.count %></h3>
+              <h3 class="mb-0"><%= @bonus_data.reject { |data| data[:user].level&.name == 'アジアビジネストラスト' }.count %></h3>
             </div>
             <div class="align-self-center">
               <i class="fas fa-users fa-2x opacity-75"></i>
@@ -38,7 +38,7 @@
           <div class="d-flex justify-content-between">
             <div>
               <h6 class="card-title">総支払いインセンティブ</h6>
-              <h3 class="mb-0">¥<%= number_with_delimiter(@bonus_data.sum { |data| data[:bonus_amount] }) %></h3>
+              <h3 class="mb-0">¥<%= number_with_delimiter(@bonus_data.reject { |data| data[:user].level&.name == 'アジアビジネストラスト' }.sum { |data| data[:bonus_amount] }) %></h3>
             </div>
             <div class="align-self-center">
               <i class="fas fa-yen-sign fa-2x opacity-75"></i>
@@ -57,7 +57,8 @@
           <h5 class="card-title mb-0">支払いインセンティブ詳細 (<%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y年%m月") %>)</h5>
         </div>
         <div class="card-body">
-          <% if @bonus_data.any? %>
+          <% filtered_bonus_data = @bonus_data.reject { |data| data[:user].level&.name == 'アジアビジネストラスト' } %>
+          <% if filtered_bonus_data.any? %>
             <div class="table-responsive">
               <table class="table table-hover">
                 <thead class="table-light">
@@ -71,12 +72,17 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <% @bonus_data.each do |data| %>
+                  <% filtered_bonus_data.each do |data| %>
                     <% user = data[:user] %>
                     <% bonus_amount = data[:bonus_amount] %>
                     <tr>
                       <td>
-                        <strong><%= user.name.present? ? user.name : user.email %></strong>
+                        <strong>
+                          <%= user.name.present? ? user.name : user.email %>
+                          <% if user.level %>
+                            <span class="text-muted">（<%= user.level.name %>）</span>
+                          <% end %>
+                        </strong>
                       </td>
                       <td>
                         <span class="text-success">¥<%= number_with_delimiter(bonus_amount) %></span>

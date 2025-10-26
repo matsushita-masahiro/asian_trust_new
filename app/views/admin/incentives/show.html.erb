@@ -14,7 +14,7 @@
                     <h4 class="mb-0 fw-bold text-dark"><%= @target_user.name.present? ? @target_user.name : @target_user.email %></h4>
                     <small class="text-muted text-nowrap">
                       <% if action_name == 'drill_down' %>
-                        階層表示（管理者用）
+                        <%= @target_user.level&.name || "レベル未設定" %>
                       <% else %>
                         インセンティブ詳細（管理者用）
                       <% end %>
@@ -44,20 +44,24 @@
                     <% end %>
                   </div>
                   
-                  <!-- drill_downの場合は戻るボタンを表示 -->
-                  <% if action_name == 'drill_down' %>
-                    <div class="flex-shrink-0">
-                      <% if @target_user.referrer %>
+                  <!-- 戻るボタンを表示 -->
+                  <div class="flex-shrink-0">
+                    <% if @target_user.referrer %>
+                      <% if action_name == 'drill_down' %>
                         <%= link_to drill_down_admin_incentive_path(@target_user.referrer, target_month: @target_month), class: "btn btn-outline-secondary btn-sm text-nowrap" do %>
-                          <i class="fas fa-arrow-left me-1"></i>上の階層
+                          <i class="fas fa-arrow-up me-1"></i>１つ上の階層へ
                         <% end %>
                       <% else %>
-                        <%= link_to admin_incentives_path(target_month: @target_month), class: "btn btn-outline-secondary btn-sm text-nowrap" do %>
-                          <i class="fas fa-arrow-left me-1"></i>一覧に戻る
+                        <%= link_to admin_incentive_path(@target_user.referrer, target_month: @target_month), class: "btn btn-outline-secondary btn-sm text-nowrap" do %>
+                          <i class="fas fa-arrow-up me-1"></i>１つ上の階層へ
                         <% end %>
                       <% end %>
-                    </div>
-                  <% end %>
+                    <% else %>
+                      <%= link_to admin_incentives_path(target_month: @target_month), class: "btn btn-outline-secondary btn-sm text-nowrap" do %>
+                        <i class="fas fa-arrow-left me-1"></i>一覧に戻る
+                      <% end %>
+                    <% end %>
+                  </div>
                 </div>
               </div>
             </div>
@@ -93,7 +97,7 @@
   <% else %>
     <!-- 統計情報 -->
     <div class="row mb-5">
-      <div class="col-md-4 mb-4">
+      <div class="col-md-3 mb-4">
         <div class="card bg-info text-white shadow-sm">
           <div class="card-body py-4">
             <div class="d-flex justify-content-between">
@@ -109,7 +113,23 @@
         </div>
       </div>
 
-      <div class="col-md-4 mb-4">
+      <div class="col-md-3 mb-4">
+        <div class="card bg-warning text-white shadow-sm">
+          <div class="card-body py-4">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title">総売上</h6>
+                <h4 class="mb-0">¥<%= number_with_delimiter(@target_user.total_sales_with_descendants(@target_month)) %></h4>
+              </div>
+              <div class="align-self-center">
+                <i class="fas fa-chart-line fa-2x opacity-75"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-4">
         <div class="card bg-success text-white shadow-sm">
           <div class="card-body py-4">
             <div class="d-flex justify-content-between">
@@ -125,7 +145,7 @@
         </div>
       </div>
 
-      <div class="col-md-4 mb-4">
+      <div class="col-md-3 mb-4">
         <div class="card bg-primary text-white shadow-sm">
           <div class="card-body py-4">
             <div class="d-flex justify-content-between">

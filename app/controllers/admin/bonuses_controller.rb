@@ -12,7 +12,10 @@ class Admin::BonusesController < Admin::BaseController
     @bonus_data = []
 
     bonus_eligible_users.each do |user|
-      bonus_amount = user.bonus_in_period(@selected_month_start, @selected_month_end)
+      # WOTTインセンティブを含む正しい計算を使用
+      month_string = @selected_month_start.strftime("%Y-%m")
+      incentive_data = user.monthly_incentive_with_details(month_string)
+      bonus_amount = incentive_data[:total] || 0
       
       if bonus_amount > 0
         @bonus_data << {

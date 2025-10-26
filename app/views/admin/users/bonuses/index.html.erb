@@ -178,7 +178,22 @@
                         <!-- 購入者名（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
                           <% if is_first_item %>
-                            <%= link_to (purchase.user&.display_name || "お客様"), admin_user_path(purchase.user, month: @selected_month), class: "text-decoration-none text-primary" %>
+                            <% 
+                              # WOTT商品の場合はWOTTレベル、それ以外は通常レベルを表示
+                              level_to_display = if item.product.respond_to?(:category) && item.product.category == 'wott' && purchase.user&.wott_level
+                                purchase.user.wott_level.name
+                              elsif purchase.user&.level
+                                purchase.user.level.name
+                              else
+                                nil
+                              end
+                            %>
+                            <%= link_to admin_user_path(purchase.user, month: @selected_month), class: "text-decoration-none text-primary" do %>
+                              <%= purchase.user&.name || purchase.user&.email || "お客様" %>
+                              <% if level_to_display %>
+                                <span class="text-muted">（<%= level_to_display %>）</span>
+                              <% end %>
+                            <% end %>
                           <% end %>
                         </td>
                         <!-- 商品名（常に表示） -->

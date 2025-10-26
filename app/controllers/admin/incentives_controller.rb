@@ -101,19 +101,20 @@ class Admin::IncentivesController < Admin::BaseController
   end
   
   def calculate_own_sales_amount(user)
-    # 指定期間内の自己購入金額を計算
+    # 指定期間内の自己購入金額を計算（seller_priceを使用）
     user.purchases
         .where(purchased_at: @start_date..@end_date)
         .joins(:purchase_items)
-        .sum('purchase_items.unit_price * purchase_items.quantity')
+        .sum('purchase_items.seller_price * purchase_items.quantity')
   end
   
   def calculate_hierarchy_sales(user)
     hierarchy_data = {}
     
     user.referrals.each do |referral|
-      # 各直下ユーザーのインセンティブ金額を計算
-      incentive_amount = referral.bonus_in_period(@start_date, @end_date)
+      # 各直下ユーザーのインセンティブ金額を計算（WOTTインセンティブを含む）
+      referral_incentive_data = referral.monthly_incentive_with_details(@month_str)
+      incentive_amount = referral_incentive_data[:total] || 0
       
       # 売上合計を計算
       sales_total = referral.total_sales_with_descendants(@month_str)

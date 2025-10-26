@@ -49,13 +49,13 @@
                 </div>
               </div>
               <div class="col-md-6 mb-3">
-                <%= f.label :unit_price, "単価", class: "form-label" %>
+                <%= f.label :seller_price, "購入価格", class: "form-label" %>
                 <div class="input-group">
                   <span class="input-group-text">¥</span>
-                  <%= f.number_field :unit_price, class: "form-control", min: 0, required: true %>
+                  <%= f.number_field :seller_price, value: (@purchase_item.seller_price || @purchase_item.unit_price), class: "form-control", min: 0, required: true %>
                 </div>
                 <div class="invalid-feedback">
-                  単価を入力してください。
+                  購入価格を入力してください。
                 </div>
               </div>
             </div>
@@ -63,8 +63,8 @@
             <!-- 計算結果表示 -->
             <div class="mb-4 p-3 bg-info bg-opacity-10 rounded">
               <h6 class="mb-2">計算結果</h6>
-              <p class="mb-1" id="subtotal-display">小計: ¥<%= number_with_delimiter(@purchase_item.total_price) %></p>
-              <p class="mb-0 text-muted">※ 数量または単価を変更すると自動で計算されます</p>
+              <p class="mb-1" id="subtotal-display">小計: ¥<%= number_with_delimiter(@purchase_item.quantity * (@purchase_item.seller_price || @purchase_item.unit_price)) %></p>
+              <p class="mb-0 text-muted">※ 数量または購入価格を変更すると自動で計算されます</p>
             </div>
 
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -99,18 +99,18 @@
 // 小計の自動計算
 document.addEventListener('DOMContentLoaded', function() {
   const quantityField = document.getElementById('purchase_item_quantity');
-  const unitPriceField = document.getElementById('purchase_item_unit_price');
+  const sellerPriceField = document.getElementById('purchase_item_seller_price');
   const subtotalDisplay = document.getElementById('subtotal-display');
 
   function updateSubtotal() {
     const quantity = parseInt(quantityField.value) || 0;
-    const unitPrice = parseInt(unitPriceField.value) || 0;
-    const subtotal = quantity * unitPrice;
+    const sellerPrice = parseInt(sellerPriceField.value) || 0;
+    const subtotal = quantity * sellerPrice;
     
     subtotalDisplay.textContent = `小計: ¥${subtotal.toLocaleString()}`;
   }
 
   quantityField.addEventListener('input', updateSubtotal);
-  unitPriceField.addEventListener('input', updateSubtotal);
+  sellerPriceField.addEventListener('input', updateSubtotal);
 });
 </script>

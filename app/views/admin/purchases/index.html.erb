@@ -130,15 +130,15 @@
                       </td>
                       <td class="text-end">
                         <% if purchase.purchase_items.count == 1 %>
-                          ¥<%= number_with_delimiter(purchase.purchase_items.first.unit_price) %>
+                          ¥<%= number_with_delimiter(purchase.purchase_items.first.seller_price || purchase.purchase_items.first.unit_price) %>
                         <% else %>
                           <small class="text-muted">複数単価</small>
                         <% end %>
                       </td>
                       <td class="text-end">
                         <div class="fw-bold text-success">
-                          <% unit_price_total = purchase.purchase_items.sum { |item| item.quantity * item.unit_price } %>
-                          ¥<%= number_with_delimiter(unit_price_total) %>
+                          <% seller_price_total = purchase.purchase_items.sum { |item| item.quantity * (item.seller_price || item.unit_price) } %>
+                          ¥<%= number_with_delimiter(seller_price_total) %>
                         </div>
                       </td>
                       <td class="text-center">

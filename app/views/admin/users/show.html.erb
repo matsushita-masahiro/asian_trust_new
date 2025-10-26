@@ -217,6 +217,10 @@
               </div>
               <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@total_sales_amount) %></div>
               <div class="stats-label small">売上</div>
+              <div class="stats-breakdown mt-2" style="font-size: 0.75rem; opacity: 0.9;">
+                <div>本人: ¥<%= number_with_delimiter(@own_sales_amount) %></div>
+                <div>下位: ¥<%= number_with_delimiter(@descendant_sales_amount) %></div>
+              </div>
             </div>
           </div>
           <div>
@@ -357,6 +361,15 @@
       white-space: normal !important;
     }
     
+    /* 下位ユーザーの購入履歴行のスタイル */
+    .descendant-purchase-row {
+      background-color: #f8f9fa !important;
+    }
+    
+    .descendant-purchase-row:hover {
+      background-color: #e9ecef !important;
+    }
+    
     /* レスポンシブ対応 */
     @media (max-width: 768px) {
       /* ヘッダーの上部余白を小さくする */
@@ -454,7 +467,7 @@
           <h5 class="card-title mb-0"><%= @selected_month_display %>の購入履歴</h5>
         </div>
         <div class="card-body">
-          <% if @purchases.any? %>
+          <% if @purchases.any? || @descendant_purchases.any? %>
             <div class="table-responsive">
               <table class="table table-hover">
                 <thead class="table-light">
@@ -468,12 +481,33 @@
                   </tr>
                 </thead>
                 <tbody>
+                  <!-- 本人の購入履歴 -->
                   <% @purchases.includes(purchase_items: :product, user: []).each do |purchase| %>
                     <% purchase.purchase_items.each_with_index do |item, index| %>
                       <tr>
                         <% if index == 0 %>
                           <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at.strftime("%Y/%m/%d") %></td>
                           <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %></td>
+                        <% end %>
+                        <td><%= item.product.name %></td>
+                        <td><%= item.quantity %></td>
+                        <td>¥<%= number_with_delimiter(item.seller_price) %></td>
+                        <td class="text-success">¥<%= number_with_delimiter(item.seller_price * item.quantity) %></td>
+                      </tr>
+                    <% end %>
+                  <% end %>
+                  
+                  <!-- 下位ユーザーの購入履歴（薄いグレー背景） -->
+                  <% @descendant_purchases.each do |purchase| %>
+                    <% purchase.purchase_items.each_with_index do |item, index| %>
+                      <tr class="descendant-purchase-row">
+                        <% if index == 0 %>
+                          <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at.strftime("%Y/%m/%d") %></td>
+                          <td rowspan="<%= purchase.purchase_items.count %>">
+                            <%= link_to admin_user_path(purchase.user, month: @selected_month), class: "text-decoration-none text-primary" do %>
+                              <%= purchase.user.name.present? ? purchase.user.name : purchase.user.email %>
+                            <% end %>
+                          </td>
                         <% end %>
                         <td><%= item.product.name %></td>
                         <td><%= item.quantity %></td>

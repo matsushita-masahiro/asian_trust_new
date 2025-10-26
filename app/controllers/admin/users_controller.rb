@@ -61,12 +61,26 @@ class Admin::UsersController < Admin::BaseController
     # ✅ 自身の購入履歴（選択月）
     @purchases = @user.purchases.in_period(@selected_month_start, @selected_month_end)
 
-    # ✅ 自身 + 下位の購入履歴（選択月）
+    # ✅ 下位ユーザーの購入履歴（選択月）
     descendant_ids = @user.descendants.pluck(:id)
+    @descendant_purchases = Purchase.where(user_id: descendant_ids)
+                                   .in_period(@selected_month_start, @selected_month_end)
+                                   .includes(purchase_items: :product, user: [])
+
+    # ✅ 自身 + 下位の購入履歴（選択月）
     @purchases_with_descendants = Purchase.where(user_id: [@user.id] + descendant_ids)
                                           .in_period(@selected_month_start, @selected_month_end)
 
-    @total_sales_amount = @purchases_with_descendants.joins(purchase_items: :product).sum('purchase_items.seller_price * purchase_items.quantity')
+    # 本人の売上を計算
+    @own_sales_amount = @purchases.joins(purchase_items: :product).sum('purchase_items.seller_price * purchase_items.quantity')
+    
+    # 下位ユーザーの売上を計算
+    descendant_purchases = Purchase.where(user_id: descendant_ids)
+                                  .in_period(@selected_month_start, @selected_month_end)
+    @descendant_sales_amount = descendant_purchases.joins(purchase_items: :product).sum('purchase_items.seller_price * purchase_items.quantity')
+    
+    # 総売上（本人 + 下位）
+    @total_sales_amount = @own_sales_amount + @descendant_sales_amount
     
     # drill_downと同じ方法でインセンティブを計算
     @incentive_summary = calculate_incentive_summary_for_user(@user)

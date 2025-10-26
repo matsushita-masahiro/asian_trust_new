@@ -5,17 +5,35 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
+/* トップページでも確実にスタイルを適用 */
+body .custom-navbar,
+html body .custom-navbar {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+}
+
 /* ナビゲーションブランド */
-.navbar-brand {
+.navbar-brand,
+body .navbar-brand,
+html body .navbar-brand {
     font-family: 'Poppins', sans-serif !important;
     font-weight: 700 !important;
     font-size: 1.5rem !important;
     letter-spacing: 0.5px !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    color: #ffffff !important;
+}
+
+.navbar-brand:hover,
+.navbar-brand:focus,
+body .navbar-brand:hover,
+body .navbar-brand:focus {
+    color: #ffffff !important;
 }
 
 /* ナビゲーションリンク */
-.navbar-nav .nav-link {
+.navbar-nav .nav-link,
+body .navbar-nav .nav-link,
+html body .navbar-nav .nav-link {
     font-family: 'Inter', 'メイリオ', 'Meiryo', sans-serif !important;
     font-weight: 500 !important;
     font-size: 0.95rem !important;
@@ -28,7 +46,9 @@
 }
 
 .navbar-nav .nav-link:hover,
-.navbar-nav .nav-link:focus {
+.navbar-nav .nav-link:focus,
+body .navbar-nav .nav-link:hover,
+body .navbar-nav .nav-link:focus {
     transform: translateY(-1px) !important;
     text-shadow: 0 2px 8px rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
@@ -46,7 +66,9 @@
     position: relative;
 }
 
-.custom-dropdown-toggle {
+.custom-dropdown-toggle,
+body .custom-dropdown-toggle,
+html body .custom-dropdown-toggle {
     cursor: pointer;
     text-decoration: none !important;
     font-family: 'Inter', 'メイリオ', 'Meiryo', sans-serif !important;
@@ -60,7 +82,9 @@
 }
 
 .custom-dropdown-toggle:hover,
-.custom-dropdown-toggle:focus {
+.custom-dropdown-toggle:focus,
+body .custom-dropdown-toggle:hover,
+body .custom-dropdown-toggle:focus {
     color: #ffffff !important;
     transform: translateY(-1px) !important;
     text-shadow: 0 2px 8px rgba(255, 255, 255, 0.3) !important;

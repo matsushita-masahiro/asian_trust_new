@@ -38,37 +38,36 @@
     object-position: center;
   }
   
-  /* ナビゲーションバーを透明にする */
-  .navbar {
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    backdrop-filter: blur(10px);
+  /* ナビゲーションバーをトップページ用に調整（カスタムナビゲーションを維持） */
+  .custom-navbar {
+    background: linear-gradient(135deg, rgba(44, 62, 80, 0.95) 0%, rgba(52, 73, 94, 0.95) 100%) !important;
+    backdrop-filter: blur(15px);
     position: fixed !important;
     top: 0 !important;
     width: 100% !important;
     z-index: 1000 !important;
   }
   
-  /* ナビゲーションバーのテキスト色を調整 */
-  .navbar .navbar-nav .nav-link {
-    color: #333 !important;
+  /* ナビゲーションバーのテキスト色を白に保持 */
+  .navbar .navbar-nav .nav-link,
+  .custom-dropdown-toggle {
+    color: #ffffff !important;
     font-weight: 500;
   }
   
-  .navbar .navbar-nav .nav-link:hover {
-    color: #007bff !important;
+  .navbar .navbar-nav .nav-link:hover,
+  .custom-dropdown-toggle:hover {
+    color: #ffffff !important;
+    text-shadow: 0 2px 8px rgba(255,255,255,0.3) !important;
   }
   
-
-  
-  /* ログインボタンなどのボタンスタイル */
-  .navbar .btn {
-    border: 1px solid #333 !important;
-    color: #333 !important;
+  /* ブランドロゴの色も白に保持 */
+  .navbar-brand {
+    color: #ffffff !important;
   }
   
-  .navbar .btn:hover {
-    background-color: #333 !important;
-    color: white !important;
+  .navbar-brand:hover {
+    color: #ffffff !important;
   }
   
   /* フッターを表示し、画像の直下に配置 */

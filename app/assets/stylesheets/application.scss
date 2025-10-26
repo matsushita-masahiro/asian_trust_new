@@ -12,6 +12,7 @@
 @use "admin";
 @use "admin/purchases";
 @use "admin/users";
+@use "header";
 
 body {
   font-family: "メイリオ", "Meiryo", sans-serif !important;

@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" data-turbo-permanent>
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" data-turbo-permanent style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.3);"
   <div class="container-fluid">
     <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
       <%= image_tag "abt_logo.png", alt: "ABT Logo", class: "navbar-logo me-3" %>
@@ -138,6 +138,42 @@
   .navbar-logo {
     height: 40px;
     width: auto;
+  }
+  
+  /* かっこいいフォント設定 */
+  .navbar-brand {
+    font-family: 'Poppins', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.5rem !important;
+    letter-spacing: 0.5px !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+  }
+  
+  .nav-link {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.3px !important;
+    transition: all 0.3s ease !important;
+  }
+  
+  .nav-link:hover {
+    transform: translateY(-1px) !important;
+    text-shadow: 0 2px 8px rgba(255,255,255,0.3) !important;
+  }
+  
+  .custom-dropdown-toggle {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.3px !important;
+  }
+  
+  .custom-dropdown-item {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 0.2px !important;
   }
   
   /* レスポンシブ対応 */

@@ -28,6 +28,11 @@
               <%= link_to "インセンティブ", incentives_path, class: "nav-link" %>
             </li>
           <% end %>
+          <% if user_signed_in? && !current_user.admin? && current_user.referrals.any? %>
+            <li class="nav-item">
+              <%= link_to "階層図", hierarchy_path, class: "nav-link" %>
+            </li>
+          <% end %>
 
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="mypageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -65,4 +70,35 @@
   </div>
 </nav>
 
-
+<style>
+  /* ドロップダウンメニューのアニメーション */
+  .dropdown-menu {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease-in-out;
+    pointer-events: none;
+    display: block !important;
+  }
+  
+  .dropdown-menu.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  
+  /* ドロップダウンアイテムのホバーエフェクト */
+  .dropdown-item {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+  }
+  
+  /* ナビゲーションロゴのスタイル */
+  .navbar-logo {
+    height: 40px;
+    width: auto;
+  }
+</style>

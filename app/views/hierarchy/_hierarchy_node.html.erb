@@ -1,0 +1,30 @@
+<div class="hierarchy-row level-<%= level %>">
+  <%= link_to user_path(hierarchy_data[:user]), class: "user-node-link" do %>
+    <div class="user-node">
+      <div class="user-name">
+        <%= hierarchy_data[:user].display_name %>
+        <% if hierarchy_data[:user].level %>
+          <span class="badge bg-secondary ms-2"><%= hierarchy_data[:user].level.name %></span>
+        <% end %>
+      </div>
+      
+      <div class="user-stats">
+        <small class="text-muted">
+          <i class="fas fa-users me-1"></i>
+          直下: <%= hierarchy_data[:children].count %>名
+          <% if hierarchy_data[:children].any? %>
+            | 全下位: <%= count_all_descendants(hierarchy_data[:user]) %>名
+          <% end %>
+        </small>
+      </div>
+    </div>
+  <% end %>
+  
+  <% if hierarchy_data[:children].any? %>
+    <div class="children-container">
+      <% hierarchy_data[:children].each do |child_data| %>
+        <%= render 'hierarchy_node', hierarchy_data: child_data, level: level + 1 %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -141,12 +141,12 @@
               <table class="table table-striped">
                 <thead>
                   <tr>
-                    <th>購入日</th>
+                    <th class="border-end">購入日</th>
                     <th>購入者</th>
                     <th>商品名</th>
-                    <th class="text-end">購入者単価</th>
+                    <th class="text-end border-end">購入者単価</th>
                     <th>直下ユーザー</th>
-                    <th class="text-end">直下ユーザー単価</th>
+                    <th class="text-end border-end">直下ユーザー単価</th>
                     <th class="text-end">数量</th>
                     <th class="text-end">インセンティブ単価</th>
                     <th class="text-end">インセンティブ合計</th>
@@ -155,12 +155,12 @@
                 <tbody>
                   <% descendant_details.each do |detail| %>
                     <tr>
-                      <td><%= detail[:purchase_date]&.strftime("%Y/%m/%d") %></td>
+                      <td class="border-end"><%= detail[:purchase_date]&.strftime("%Y/%m/%d") %></td>
                       <td><%= detail[:purchaser_display_name] %></td>
                       <td><%= detail[:product_name] %></td>
-                      <td class="text-end">¥<%= number_with_delimiter(detail[:calculation_details][:purchaser_price]) %></td>
+                      <td class="text-end border-end">¥<%= number_with_delimiter(detail[:calculation_details][:purchaser_price]) %></td>
                       <td><%= detail[:direct_referral_display_name] || '-' %></td>
-                      <td class="text-end">¥<%= number_with_delimiter(detail[:direct_referral_price]) %></td>
+                      <td class="text-end border-end">¥<%= number_with_delimiter(detail[:direct_referral_price]) %></td>
                       <td class="text-end"><%= detail[:quantity] %></td>
                       <td class="text-end">¥<%= number_with_delimiter(detail[:incentive_unit_price]) %></td>
                       <td class="text-end text-success">¥<%= number_with_delimiter(detail[:total_incentive]) %></td>

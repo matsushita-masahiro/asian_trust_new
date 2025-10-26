@@ -36,5 +36,24 @@ module ApplicationHelper
      def calculate_total_with_tax(amount)
        amount.to_i + calculate_tax(amount)
      end
+
+     # 階層図用: 全下位ユーザー数を再帰的に計算
+     def count_all_descendants(user)
+       count = user.referrals.count
+       user.referrals.each do |child|
+         count += count_all_descendants(child)
+       end
+       count
+     end
+
+     # 階層図用: 階層データを構築
+     def build_hierarchy_node(user)
+       {
+         user: user,
+         children: user.referrals.includes(:level, :wott_level, :referrals).map do |child|
+           build_hierarchy_node(child)
+         end
+       }
+     end
     
 end

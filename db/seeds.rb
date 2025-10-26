@@ -121,10 +121,11 @@ wott_level_data = [
   { id: 1, name: "アジアビジネストラスト", value: 0 },
   { id: 2, name: "総代理店", value: 1 },
   { id: 3, name: "代理店", value: 2 },
-  { id: 4, name: "サポーター", value: 3 },
-  { id: 5, name: "サロン", value: 4 },
-  { id: 6, name: "クリニック", value: 5 },
-  { id: 7, name: "お客様", value: 6 }
+  { id: 4, name: "アドバイザー", value: 3 },
+  { id: 5, name: "サポーター", value: 4 },
+  { id: 6, name: "サロン", value: 5 },
+  { id: 7, name: "クリニック", value: 6 },
+  { id: 8, name: "お客様", value: 7 }
 ]
 
 wott_level_data.each do |data|
@@ -250,7 +251,8 @@ if wott_product
   wott_price_data = [
     { wott_level_name: "アジアビジネストラスト", price: 500000 },
     { wott_level_name: "総代理店", price: 880000 },
-    { wott_level_name: "代理店", price: 990000 },
+    { wott_level_name: "代理店", price: 935000 },
+    { wott_level_name: "アドバイザー", price: 990000 },
     { wott_level_name: "サポーター", price: 1045000 },
     { wott_level_name: "サロン", price: 1100000 },
     { wott_level_name: "クリニック", price: 1100000 },

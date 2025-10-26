@@ -1,0 +1,247 @@
+<% content_for :title, "階層図 - #{current_user.display_name}" %>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 80px;">
+        <h4 class="text-primary">
+          <i class="fas fa-sitemap me-2"></i>
+          <%= current_user.display_name %>の階層図
+        </h4>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統計情報 -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title">直下ユーザー数</h6>
+          <h3 class="mb-0"><%= current_user.referrals.count %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title">全下位ユーザー数</h6>
+          <h3 class="mb-0"><%= count_all_descendants(current_user) %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h6 class="card-title">階層レベル</h6>
+          <h3 class="mb-0"><%= current_user.level&.name || "未設定" %></h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 階層図 -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-users me-2"></i>
+            あなたの下位ユーザー構造図
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if current_user.referrals.any? %>
+            <div class="hierarchy-container-vertical">
+              <!-- 自分のノード -->
+              <div class="hierarchy-row level-0">
+                <div class="user-node current-user">
+                  <div class="user-name">
+                    <%= current_user.display_name %>
+                    <span class="badge bg-primary ms-2">あなた</span>
+                    <% if current_user.level %>
+                      <span class="badge bg-secondary ms-2"><%= current_user.level.name %></span>
+                    <% end %>
+                  </div>
+                  <div class="user-stats">
+                    <small class="text-muted">
+                      <i class="fas fa-users me-1"></i>
+                      直下: <%= current_user.referrals.count %>名 | 
+                      全下位: <%= count_all_descendants(current_user) %>名
+                    </small>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 下位ユーザーの階層 -->
+              <div class="children-container">
+                <% current_user.referrals.order(:id).each do |child| %>
+                  <%= render 'hierarchy_node', hierarchy_data: build_hierarchy_node(child), level: 1 %>
+                <% end %>
+              </div>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="fas fa-users fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">下位ユーザーがいません</h5>
+              <p class="text-muted">まだ誰も紹介していないか、紹介したユーザーが登録を完了していません。</p>
+              <% if current_user.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
+                <%= link_to referrals_path, class: "btn btn-primary" do %>
+                  <i class="fas fa-user-plus me-2"></i>
+                  ユーザーを紹介する
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hierarchy-container-vertical {
+    font-family: 'Courier New', monospace;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    overflow: auto;
+    min-height: 400px;
+  }
+  
+  .hierarchy-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    position: relative;
+  }
+  
+  .hierarchy-row.level-0 {
+    margin-bottom: 30px;
+  }
+  
+  .user-node {
+    padding: 10px 15px;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    width: 280px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  
+  .user-node.current-user {
+    border-left-color: #28a745;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: bold;
+  }
+  
+  .children-container {
+    margin-left: 30px;
+    flex: 1;
+    position: relative;
+  }
+  
+  .children-container::before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+  }
+  
+  .children-container .hierarchy-row::before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: 50%;
+    width: 15px;
+    height: 2px;
+    background-color: #dee2e6;
+  }
+  
+  .user-name {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  
+  .user-stats {
+    font-size: 11px;
+    color: #6c757d;
+  }
+  
+  /* レベル別の色分け */
+  .level-0 .user-node { border-left-color: #28a745; }
+  .level-1 .user-node { border-left-color: #fd7e14; }
+  .level-2 .user-node { border-left-color: #ffc107; }
+  .level-3 .user-node { border-left-color: #17a2b8; }
+  .level-4 .user-node { border-left-color: #20c997; }
+  .level-5 .user-node { border-left-color: #6f42c1; }
+  .level-6 .user-node { border-left-color: #e83e8c; }
+  .level-7 .user-node { border-left-color: #dc3545; }
+  
+  /* リンクスタイル */
+  .user-node-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: all 0.2s ease;
+  }
+  
+  .user-node-link:hover {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .user-node-link:hover .user-node {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    cursor: pointer;
+  }
+  
+  .user-node-link .user-node {
+    transition: all 0.2s ease;
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 768px) {
+    .user-node {
+      width: 250px;
+    }
+    
+    .children-container {
+      margin-left: 20px;
+    }
+    
+    .hierarchy-row {
+      flex-direction: column;
+    }
+    
+    .children-container {
+      margin-left: 0;
+      margin-top: 15px;
+    }
+    
+    .children-container::before {
+      display: none;
+    }
+    
+    .children-container .hierarchy-row::before {
+      display: none;
+    }
+  }
+</style>
+
+<% content_for :javascript do %>
+<script>
+  // 階層図の展開/折りたたみ機能（将来的に追加可能）
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('階層図が読み込まれました');
+  });
+</script>
+<% end %>

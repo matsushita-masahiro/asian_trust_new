@@ -51,6 +51,7 @@ Rails.application.routes.draw do
     resources :incentives, only: [:index, :show] do
       member do
         get :drill_down
+        get :breakdown
       end
     end
     resources :purchases, only: [:index, :show, :edit, :update, :new, :create] do
@@ -140,6 +141,9 @@ Rails.application.routes.draw do
   
   # 紹介招待機能
   resources :referral_invitations, only: [:index, :new, :create, :show]
+
+  # 階層図機能
+  get 'hierarchy', to: 'hierarchy#index', as: :hierarchy
 
   # 一般ユーザー用マイページ
   get 'mysales', to: 'users#mysales', as: :mysales

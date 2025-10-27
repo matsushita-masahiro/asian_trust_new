@@ -43,7 +43,7 @@
 
               <div class="mb-3">
                 <%= f.label :invoice_date, "請求書発行日", class: "form-label" %>
-                <%= f.date_field :invoice_date, class: "form-control", value: Date.current.strftime("%Y-%m-%d"), required: true %>
+                <%= f.date_field :invoice_date, class: "form-control", required: true %>
                 <div class="invalid-feedback">
                   請求書発行日を入力してください。
                 </div>
@@ -60,7 +60,7 @@
 
               <div class="mb-3">
                 <%= f.label :due_date, "支払期限", class: "form-label" %>
-                <%= f.date_field :due_date, class: "form-control", value: 1.month.from_now.strftime("%Y-%m-%d") %>
+                <%= f.date_field :due_date, class: "form-control" %>
               </div>
 
               <div class="mb-3">

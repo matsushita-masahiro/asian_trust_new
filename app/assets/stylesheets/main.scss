@@ -4,162 +4,166 @@
     font-weight: 700 !important;
     font-size: 1.5rem !important;
     letter-spacing: 0.5px !important;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
   }
 
 
-.carousel-inner img {
-  height: 400px;
-  object-fit: cover;
-}
+  .carousel-inner img {
+    height: 400px;
+    object-fit: cover;
+  }
 
 
-footer a:hover {
-  text-decoration: underline;
-}
+  footer a:hover {
+    text-decoration: underline;
+  }
 
 
-// 利用規約等の左右余白
+  // 利用規約等の左右余白
 
-.extra-padding {
-  padding-left: 10rem !important;
-  padding-right: 10rem !important;
+  .extra-padding {
+    padding-left: 10rem !important;
+    padding-right: 10rem !important;
+
+    @media (max-width: 768px) {
+      padding-left: 3rem !important;
+      padding-right: 3rem !important;
+    }
+  }
+
 
   @media (max-width: 768px) {
-    padding-left: 3rem !important;
-    padding-right: 3rem !important;
+    #law .title {
+      font-size: 20px;
+    }
+
+    #terms .title {
+      font-size: 20px;
+    }
+
+    #privacy .title {
+      font-size: 20px;
+    }
+
   }
-}
 
 
-@media (max-width: 768px) {
-  #law .title {
-    font-size: 20px;
-  }
-  
-  #terms .title {
-    font-size: 20px;
-  }
-  
-  #privacy .title {
-    font-size: 20px;
-  }
-  
-}
+  // mypage user/showの上部分を固定
 
-
-// mypage user/showの上部分を固定
-
-#user-show {
-  .hover-pointer:hover {
+  #user-show {
+    .hover-pointer:hover {
       background-color: #f8f9fa;
       cursor: pointer;
     }
-  
+
     .text-purple {
       color: #8e44ad;
     }
-  
+
     .sticky-top {
       position: sticky;
-      top: 60px; /* ← ここを0から60pxなどに変更 */
+      top: 60px;
+      /* ← ここを0から60pxなどに変更 */
       z-index: 1030;
       background-color: white;
     }
-}
-
-
-#mypage {
-  .hover-pointer:hover {
-    background-color: #f8f9fa;
-    cursor: pointer;
   }
 
-  .text-purple {
-    color: #d63384;
+
+  #mypage {
+    .hover-pointer:hover {
+      background-color: #f8f9fa;
+      cursor: pointer;
+    }
+
+    .text-purple {
+      color: #d63384;
+    }
+
+    .month-selector-wrapper {
+      top: 56px;
+      /* navbar高さ */
+      z-index: 1020;
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+
+    .user-info-wrapper {
+      top: 110px;
+      /* selectorの下 */
+      z-index: 1010;
+    }
+
+    .sticky-top {
+      position: sticky;
+    }
+
+    .z-index-sticky {
+      z-index: 1030;
+    }
+
   }
 
-  .month-selector-wrapper {
-    top: 56px; /* navbar高さ */
-    z-index: 1020;
-    padding-top: 5px;
-    padding-bottom: 5px;
+  #sales-index {
+    .month-selector-wrapper {
+      position: sticky;
+      top: 56px;
+      /* ナビバーの高さ */
+      z-index: 1020;
+      padding-top: 8px;
+      padding-bottom: 8px;
+      background-color: white;
+    }
+
+    .z-index-sticky {
+      z-index: 1030;
+    }
   }
 
-  .user-info-wrapper {
-    top: 110px; /* selectorの下 */
-    z-index: 1010;
+
+
+
+  // Header Navigation Styles
+  .dropdown-menu-custom {
+    z-index: 99999 !important;
+    position: absolute !important;
   }
 
-  .sticky-top {
-    position: sticky;
+  .nav-item.dropdown {
+    position: relative !important;
   }
 
-  .z-index-sticky {
-    z-index: 1030;
-  }
-  
-}
-
-#sales-index {
-  .month-selector-wrapper {
-    position: sticky;
-    top: 56px; /* ナビバーの高さ */
-    z-index: 1020;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    background-color: white;
+  .navbar-nav .dropdown-menu {
+    z-index: 99999 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
   }
 
-  .z-index-sticky {
-    z-index: 1030;
-  }
-}
-
-
-
-
-// Header Navigation Styles
-.dropdown-menu-custom {
-  z-index: 99999 !important;
-  position: absolute !important;
-}
-
-.nav-item.dropdown {
-  position: relative !important;
-}
-
-.navbar-nav .dropdown-menu {
-  z-index: 99999 !important;
-  position: absolute !important;
-  top: 100% !important;
-  left: 0 !important;
-}
-
-// Navbar Logo Styles
-.navbar-logo {
-  height: 32px;
-  width: auto;
-  max-width: 40px;
-}
-
-.navbar-brand {
-  font-size: 1.25rem;
-  font-weight: 500;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-// Responsive styles for navbar
-@media (max-width: 768px) {
+  // Navbar Logo Styles
   .navbar-logo {
-    height: 28px;
-    max-width: 35px;
+    height: 32px;
+    width: auto;
+    max-width: 40px;
   }
-  
+
   .navbar-brand {
-    font-size: 1.1rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 500;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
-}
+
+  // Responsive styles for navbar
+  @media (max-width: 768px) {
+    .navbar-logo {
+      height: 28px;
+      max-width: 35px;
+    }
+
+    .navbar-brand {
+      font-size: 1.1rem;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }

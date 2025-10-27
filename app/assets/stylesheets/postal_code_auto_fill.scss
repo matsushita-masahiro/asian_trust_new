@@ -1,0 +1,116 @@
+// 郵便番号自動入力機能のスタイル
+
+// ローディングインジケーター
+.postal-code-loading {
+  .fa-spinner {
+    animation: spin 1s linear infinite;
+  }
+  
+  small {
+    font-size: 0.75rem;
+    color: #6c757d !important;
+  }
+}
+
+// エラーメッセージ
+.postal-code-error {
+  small {
+    font-size: 0.75rem;
+    color: #dc3545 !important;
+    
+    .fa-exclamation-triangle {
+      margin-right: 0.25rem;
+    }
+  }
+}
+
+// 郵便番号入力フィールドの状態表示
+.postal-code-input {
+  &.loading {
+    background-image: url("data:image/svg+xml,%3csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z' fill='%236c757d'/%3e%3cpath d='M8 4c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z' fill='%236c757d'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 16px;
+    padding-right: 2.5rem;
+  }
+  
+  &.success {
+    border-color: #198754;
+    background-image: url("data:image/svg+xml,%3csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm3.5 6.5L7 11 4.5 8.5l1-1L7 9l3.5-3.5 1 1z' fill='%23198754'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 16px;
+    padding-right: 2.5rem;
+  }
+  
+  &.error {
+    border-color: #dc3545;
+    background-image: url("data:image/svg+xml,%3csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm3.5 10.5L10.5 11.5 8 9l-2.5 2.5L4.5 10.5 7 8 4.5 5.5 5.5 4.5 8 7l2.5-2.5L11.5 5.5 9 8l2.5 2.5z' fill='%23dc3545'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 16px;
+    padding-right: 2.5rem;
+  }
+}
+
+// 住所フィールドの自動入力状態
+.address-input {
+  &.auto-filled {
+    background-color: #f8f9fa;
+    border-color: #198754;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+}
+
+// レスポンシブ対応
+@media (max-width: 576px) {
+  .postal-code-loading,
+  .postal-code-error {
+    small {
+      font-size: 0.7rem;
+    }
+  }
+  
+  .postal-code-input {
+    &.loading,
+    &.success,
+    &.error {
+      background-size: 14px 14px;
+      padding-right: 2.25rem;
+    }
+  }
+}
+
+// アニメーション
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// フェードイン効果
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.postal-code-loading,
+.postal-code-error {
+  animation: fadeIn 0.3s ease-out;
+}
+
+// Bootstrapとの調和
+.form-control.postal-code-input {
+  &:focus {
+    &.loading {
+      box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
+    }
+    
+    &.success {
+      box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    }
+    
+    &.error {
+      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+  }
+}

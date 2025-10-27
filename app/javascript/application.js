@@ -1,61 +1,10 @@
-import "rails-ujs"  // Rails.start() はこの中で一度だけ呼ばれる
-// importmap で pin "rails-ujs", to: "rails-ujs.js" と定義している
-
+import "rails-ujs"
 import "@hotwired/turbo-rails"
 import "controllers"
 import "jquery"
 
 import * as bootstrap from "bootstrap"
 window.bootstrap = bootstrap
-
-// カスタムドロップダウン初期化
-function initCustomDropdown() {
-  const dropdownToggle = document.getElementById('mypageDropdown');
-  const dropdownMenu = document.getElementById('mypageDropdownMenu');
-  
-  if (!dropdownToggle || !dropdownMenu) {
-    console.log("Dropdown elements not found");
-    return;
-  }
-
-  // 既存のイベントリスナーを削除
-  dropdownToggle.removeEventListener('click', handleDropdownToggle);
-  document.removeEventListener('click', handleDocumentClick);
-
-  // ドロップダウントグルクリック
-  function handleDropdownToggle(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const isOpen = dropdownMenu.classList.contains('show');
-    
-    if (isOpen) {
-      dropdownMenu.classList.remove('show');
-    } else {
-      dropdownMenu.classList.add('show');
-    }
-  }
-
-  // ドキュメントクリック（外部クリックで閉じる）
-  function handleDocumentClick(e) {
-    if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
-      dropdownMenu.classList.remove('show');
-    }
-  }
-
-  // イベントリスナーを追加
-  dropdownToggle.addEventListener('click', handleDropdownToggle);
-  document.addEventListener('click', handleDocumentClick);
-
-  // ESCキーで閉じる
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      dropdownMenu.classList.remove('show');
-    }
-  });
-
-  console.log("✅ Custom dropdown initialized");
-}
 
 import "slider"
 import "fadein"
@@ -65,35 +14,94 @@ import "users_show"
 import "incentive"
 import "order"
 
+// 機能別モジュールをインポート
+import CustomDropdown from "custom_dropdown"
+import PostalCodeManager from "postal_code_manager"
+
+// グローバルインスタンス
+let customDropdown = null;
+let postalCodeManager = null;
+
 // 初期化関数
 function initializeComponents() {
-  // カスタムドロップダウンを初期化
-  initCustomDropdown();
+  try {
+    // カスタムドロップダウンを初期化
+    if (!customDropdown) {
+      customDropdown = new CustomDropdown();
+    }
+    customDropdown.init();
 
-  // ツールチップの初期化（必要に応じて）
-  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-  tooltipTriggerList.forEach(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    // 郵便番号自動入力機能を初期化
+    if (!postalCodeManager) {
+      postalCodeManager = new PostalCodeManager();
+    }
+    postalCodeManager.init();
+    postalCodeManager.setupAddressEditListeners();
 
-  // ポップオーバーの初期化（必要に応じて）
-  const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
-  popoverTriggerList.forEach(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+    // Bootstrap コンポーネントの初期化
+    initBootstrapComponents();
 
-  console.log("✅ All components initialized");
+    console.log("✅ All components initialized");
+  } catch (error) {
+    console.error("❌ Component initialization error:", error);
+  }
 }
 
+// Bootstrap コンポーネントの初期化
+function initBootstrapComponents() {
+  // ツールチップの初期化
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  tooltipTriggerList.forEach(tooltipTriggerEl => {
+    if (!tooltipTriggerEl._tooltip) {
+      tooltipTriggerEl._tooltip = new bootstrap.Tooltip(tooltipTriggerEl);
+    }
+  });
 
+  // ポップオーバーの初期化
+  const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+  popoverTriggerList.forEach(popoverTriggerEl => {
+    if (!popoverTriggerEl._popover) {
+      popoverTriggerEl._popover = new bootstrap.Popover(popoverTriggerEl);
+    }
+  });
+}
 
+// コンポーネントのクリーンアップ関数
+function cleanupComponents() {
+  try {
+    if (customDropdown) {
+      customDropdown.cleanup();
+    }
+
+    if (postalCodeManager) {
+      postalCodeManager.cleanup();
+    }
+
+    console.log("✅ Components cleaned up successfully");
+  } catch (error) {
+    console.error("❌ Error during cleanup:", error);
+  }
+}
+
+// デバッグ用関数をグローバルに公開
+window.testPostalCodeAutoFill = () => {
+  if (postalCodeManager) {
+    postalCodeManager.test();
+  }
+};
+
+// イベントリスナーの設定
 document.addEventListener("DOMContentLoaded", () => {
-  // ✅ jQuery 確認
+  console.log("✅ JavaScript is loaded");
+
+  // jQuery 確認
   if (typeof $ !== "undefined") {
     $(function () {
       console.log("✅ jQuery is loaded");
     });
   }
 
-  console.log("✅ JavaScript is loaded");
-
-  // ✅ Rails UJS 確認だけ（startしない）
+  // Rails UJS 確認
   console.log("✅ Rails:", typeof Rails !== "undefined" ? "Loaded" : "Not Loaded");
 
   // コンポーネントを初期化
@@ -104,4 +112,16 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("turbo:load", () => {
   console.log("🔄 Turbo:load - Reinitializing components");
   initializeComponents();
+});
+
+// Turboでページを離れる前にクリーンアップ
+document.addEventListener("turbo:before-cache", () => {
+  console.log("🧹 Turbo:before-cache - Cleaning up components");
+  cleanupComponents();
+});
+
+// ページ離脱時のクリーンアップ
+window.addEventListener("beforeunload", () => {
+  console.log("🧹 Before unload - Final cleanup");
+  cleanupComponents();
 });

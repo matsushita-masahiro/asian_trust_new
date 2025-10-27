@@ -202,18 +202,33 @@
                         <label class="form-label small">郵便番号</label>
                         <%= f.text_field :postal_code, 
                             value: @user.registration_address&.postal_code,
-                            class: "form-control form-control-sm", 
-                            placeholder: "例: 123-4567" %>
+                            class: "form-control form-control-sm postal-code-input", 
+                            placeholder: "例: 123-4567",
+                            data: { address_type: "registration" } %>
+                        <!-- ローディングインジケーター -->
+                        <div class="postal-code-loading mt-1" style="display: none;">
+                          <small class="text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> 住所を取得中...
+                          </small>
+                        </div>
+                        <!-- エラーメッセージ -->
+                        <div class="postal-code-error mt-1" style="display: none;">
+                          <small class="text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <span class="error-message"></span>
+                          </small>
+                        </div>
                       </div>
                       
                       <div class="mb-2">
                         <label class="form-label small">住所 <span class="text-danger">*</span></label>
                         <%= f.text_area :address, 
                             value: @user.registration_address&.address,
-                            class: "form-control form-control-sm", 
+                            class: "form-control form-control-sm address-input", 
                             rows: 2, 
                             placeholder: "全住所を入力してください", 
-                            required: true %>
+                            required: true,
+                            data: { address_type: "registration" } %>
                       </div>
                       
                       <div class="d-flex gap-2">
@@ -265,18 +280,33 @@
                         <label class="form-label small">郵便番号</label>
                         <%= f.text_field :postal_code, 
                             value: @user.shipping_address&.postal_code,
-                            class: "form-control form-control-sm", 
-                            placeholder: "例: 123-4567" %>
+                            class: "form-control form-control-sm postal-code-input", 
+                            placeholder: "例: 123-4567",
+                            data: { address_type: "shipping" } %>
+                        <!-- ローディングインジケーター -->
+                        <div class="postal-code-loading mt-1" style="display: none;">
+                          <small class="text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> 住所を取得中...
+                          </small>
+                        </div>
+                        <!-- エラーメッセージ -->
+                        <div class="postal-code-error mt-1" style="display: none;">
+                          <small class="text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <span class="error-message"></span>
+                          </small>
+                        </div>
                       </div>
                       
                       <div class="mb-2">
                         <label class="form-label small">住所 <span class="text-danger">*</span></label>
                         <%= f.text_area :address, 
                             value: @user.shipping_address&.address,
-                            class: "form-control form-control-sm", 
+                            class: "form-control form-control-sm address-input", 
                             rows: 2, 
                             placeholder: "全住所を入力してください", 
-                            required: true %>
+                            required: true,
+                            data: { address_type: "shipping" } %>
                       </div>
                       
                       <div class="d-flex gap-2">

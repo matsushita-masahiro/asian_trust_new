@@ -13,6 +13,7 @@
 @use "admin/purchases";
 @use "admin/users";
 @use "header";
+@use "postal_code_auto_fill";
 
 body {
   font-family: "メイリオ", "Meiryo", sans-serif !important;

@@ -15,6 +15,10 @@ class InvoicesController < ApplicationController
     @invoice = current_user.invoices.build
     @invoice_recipients = InvoiceRecipient.all
     
+    # デフォルト値を設定
+    @invoice.invoice_date = Date.current
+    @invoice.due_date = 1.week.from_now
+    
     # 該当月の設定（パラメータから取得、なければ今月）
     @selected_month = params[:month].presence || Date.current.strftime("%Y-%m")
     @selected_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
@@ -112,6 +116,10 @@ class InvoicesController < ApplicationController
     @invoice = current_user.invoices.build(invoice_params)
     @invoice.status = Invoice::DRAFT  # 作成時は下書き状態
     
+    # デフォルト値を設定（フォームで設定されていない場合のフォールバック）
+    @invoice.invoice_date ||= Date.current
+    @invoice.due_date ||= 1.week.from_now
+    
     # デバッグ情報をログに出力
     Rails.logger.info "Invoice params: #{invoice_params.inspect}"
     Rails.logger.info "Invoice valid?: #{@invoice.valid?}"
@@ -190,7 +198,7 @@ class InvoicesController < ApplicationController
       
       Rails.logger.info "Invoice #{@invoice.id} sent successfully with PDF uploaded to S3"
       
-      message = is_resend ? '請求書を再送付しました。PDFは保存されました。' : '請求書を送付しました。PDFは保存されました。'
+      message = is_resend ? '請求書を再送付しました。' : '請求書を送付しました。'
       redirect_to invoice_path(@invoice), notice: message
       
     rescue => e
@@ -274,7 +282,7 @@ class InvoicesController < ApplicationController
       Rails.logger.info "Invoice #{@invoice.id} status updated to receipt_sent"
       
       Rails.logger.info "Receipt #{@invoice.id} generated successfully with PDF uploaded to S3"
-      redirect_to history_invoices_path, notice: '領収書を発行しました。PDFは保存されました。'
+      redirect_to history_invoices_path, notice: '領収書を発行しました。'
     rescue => e
       Rails.logger.error "Receipt generation error for Invoice #{@invoice.id}: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")

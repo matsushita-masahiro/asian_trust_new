@@ -155,6 +155,13 @@ Rails.application.routes.draw do
     resources :addresses, only: [:create, :update, :destroy]
   end
   
+  # 購入履歴機能
+  resources :purchases, only: [:index, :show] do
+    collection do
+      get :my_history  # /purchases/my_history → 自分の購入履歴一覧
+    end
+  end
+  
   # 購入関連
   resources :purchases, only: [] do
     member do

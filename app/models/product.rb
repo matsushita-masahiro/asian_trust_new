@@ -149,4 +149,28 @@ class Product < ApplicationRecord
         'その他'
       end
     end
+    
+    # 送料タイプを判定
+    def shipping_type
+      if id == 1
+        'bone_marrow'  # 骨髄別送
+      else
+        'standard'     # 通常配送
+      end
+    end
+    
+    # 送料タイプの日本語名
+    def shipping_type_name
+      case shipping_type
+      when 'bone_marrow'
+        '骨髄別送'
+      else
+        '通常配送'
+      end
+    end
+    
+    # 送料金額を取得（現在は両方とも6000円）
+    def shipping_fee_amount
+      6000  # 税抜き6000円
+    end
 end

@@ -1,0 +1,136 @@
+<div class="container-fluid mt-5">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary">🛒 購入履歴</h4>
+        <div class="d-flex align-items-center">
+          <!-- 月選択フォーム -->
+          <%= form_with url: my_history_purchases_path, method: :get, local: true, class: "d-flex align-items-center me-3" do |f| %>
+            <label class="form-label me-2 mb-0">対象月:</label>
+            <%= f.month_field :month, value: @selected_month, class: "form-control", style: "width: 180px;", onchange: "this.form.submit();" %>
+          <% end %>
+          
+          <%= link_to "マイページに戻る", mysales_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統計情報 -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h5 class="card-title">購入回数</h5>
+          <h2 class="mb-0"><%= @total_count %>回</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h5 class="card-title">購入商品数</h5>
+          <h2 class="mb-0"><%= @total_items %>個</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h5 class="card-title">合計金額</h5>
+          <h2 class="mb-0">¥<%= number_with_delimiter(@total_amount) %></h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 購入履歴一覧 -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><%= @selected_month_name %>の購入履歴</h5>
+        </div>
+        <div class="card-body">
+          <% if @purchases.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>購入日</th>
+                    <th>商品情報</th>
+                    <th>数量</th>
+                    <th>合計金額</th>
+                    <th>詳細</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @purchases.each do |purchase| %>
+                    <tr>
+                      <td>
+                        <div class="fw-bold"><%= purchase.purchased_at.strftime("%Y/%m/%d") %></div>
+                        <small class="text-muted"><%= purchase.purchased_at.strftime("%H:%M") %></small>
+                      </td>
+                      <td>
+                        <% if purchase.purchase_items.count == 1 %>
+                          <!-- 単一商品の場合 -->
+                          <% item = purchase.purchase_items.first %>
+                          <div class="fw-bold"><%= item.product.name %></div>
+                          <small class="text-muted">単価: ¥<%= number_with_delimiter(item.seller_price) %></small>
+                        <% else %>
+                          <!-- 複数商品の場合 -->
+                          <div class="fw-bold">複数商品 (<%= purchase.purchase_items.count %>種類)</div>
+                          <small class="text-muted">
+                            <% purchase.purchase_items.limit(2).each do |item| %>
+                              <%= item.product.name %><br>
+                            <% end %>
+                            <% if purchase.purchase_items.count > 2 %>
+                              他<%= purchase.purchase_items.count - 2 %>商品...
+                            <% end %>
+                          </small>
+                        <% end %>
+                      </td>
+                      <td>
+                        <span class="badge bg-secondary fs-6">
+                          <%= purchase.purchase_items.sum(:quantity) %>個
+                        </span>
+                      </td>
+                      <td>
+                        <% 
+                          total_with_fees = purchase.total_price + 
+                                          purchase.total_shipping_fees + 
+                                          (purchase.purchase_invoice&.admin_fee || 0)
+                        %>
+                        <div class="fw-bold text-success">¥<%= number_with_delimiter(total_with_fees) %></div>
+                        <% if purchase.shipping_fees.any? || (purchase.purchase_invoice&.admin_fee || 0) > 0 %>
+                          <small class="text-muted">
+                            商品: ¥<%= number_with_delimiter(purchase.total_price) %>
+                            <% if purchase.total_shipping_fees > 0 %>
+                              + 送料: ¥<%= number_with_delimiter(purchase.total_shipping_fees) %>
+                            <% end %>
+                            <% if (purchase.purchase_invoice&.admin_fee || 0) > 0 %>
+                              + 手数料: ¥<%= number_with_delimiter(purchase.purchase_invoice.admin_fee) %>
+                            <% end %>
+                          </small>
+                        <% end %>
+                      </td>
+                      <td>
+                        <%= link_to "詳細を見る", purchase_path(purchase), class: "btn btn-sm btn-outline-primary" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">購入履歴がありません</h5>
+              <p class="text-muted"><%= @selected_month_name %>には購入がありませんでした。</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

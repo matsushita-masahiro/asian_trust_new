@@ -162,27 +162,22 @@ class PaymentsController < ApplicationController
             seller_price: user_price  # 販売店の購入価格（同じ価格を設定）
           )
         end
+        
+        # 送料データを作成
+        purchase.create_shipping_fees!
 
         # 料金計算
         product_amount = purchase.total_price
         
-        # 商品別配送先判定
+        # 送料は自動的にShippingFeeレコードで管理されるため、合計を取得
+        shipping_fee = purchase.total_shipping_fees
+        
+        # 商品別配送先判定（事務手数料計算用）
         purchase_items = purchase.purchase_items.includes(:product)
-        stem_cell_items = purchase_items.select { |item| item.product.name.include?('骨髄幹細胞培培養上清液') }
-        other_items = purchase_items.select { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') }
+        has_bone_marrow_product = purchase_items.any? { |item| item.product.id == 1 }
         
-        has_stem_cell_product = stem_cell_items.any?
-        has_other_products = other_items.any?
-        
-        # 配送先数を計算
-        delivery_destinations = 0
-        delivery_destinations += 1 if has_stem_cell_product  # クリニック配送
-        delivery_destinations += 1 if has_other_products     # 自宅配送
-        
-        shipping_fee = delivery_destinations * 6000
-        
-        # 事務手数料（クリニック配送の場合）
-        admin_fee = has_stem_cell_product ? 10000 : 0
+        # 事務手数料（骨髄幹細胞培培養上清液の場合）
+        admin_fee = has_bone_marrow_product ? 10000 : 0
         
         # 税抜き合計（商品代金+送料+事務手数料）
         subtotal_before_tax = product_amount + shipping_fee + admin_fee

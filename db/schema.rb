@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_26_175619) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_27_042208) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -283,6 +283,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_26_175619) do
     t.index ["target_level_id"], name: "index_referral_invitations_on_target_level_id"
   end
 
+  create_table "shipping_fees", force: :cascade do |t|
+    t.integer "purchase_id", null: false
+    t.string "shipping_type"
+    t.integer "amount"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["purchase_id"], name: "index_shipping_fees_on_purchase_id"
+  end
+
   create_table "user_level_histories", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "level_id", null: false
@@ -379,6 +388,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_26_175619) do
   add_foreign_key "referral_invitations", "levels", column: "target_level_id"
   add_foreign_key "referral_invitations", "users", column: "invited_user_id"
   add_foreign_key "referral_invitations", "users", column: "referrer_id"
+  add_foreign_key "shipping_fees", "purchases"
   add_foreign_key "user_level_histories", "levels"
   add_foreign_key "user_level_histories", "levels", column: "previous_level_id"
   add_foreign_key "user_level_histories", "users"

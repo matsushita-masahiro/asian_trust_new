@@ -116,6 +116,9 @@ class OrdersController < ApplicationController
         )
       end
       
+      # 送料データを作成
+      purchase.create_shipping_fees!
+      
       # 購入請求書を自動生成
       purchase_invoice = purchase.create_purchase_invoice!(
         invoice_number: PurchaseInvoice.generate_invoice_number,

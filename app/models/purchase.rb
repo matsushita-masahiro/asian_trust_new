@@ -5,6 +5,7 @@ class Purchase < ApplicationRecord
   has_many :purchase_items, dependent: :destroy
   has_many :products, through: :purchase_items
   has_one :purchase_invoice, dependent: :destroy
+  has_many :shipping_fees, dependent: :destroy
 
   # ネストした属性を受け入れる
   accepts_nested_attributes_for :purchase_items, allow_destroy: true
@@ -24,6 +25,9 @@ class Purchase < ApplicationRecord
 
   # コールバック：支払い方法に応じて初期ステータスを設定
   before_validation :set_initial_status, on: :create
+  
+  # コールバック：購入後に送料を自動設定
+  after_save :set_shipping_fees, if: :should_set_shipping_fees?
 
   # 💰 合計金額（全アイテムの合計）- seller_priceベース
   def total_price
@@ -40,6 +44,48 @@ class Purchase < ApplicationRecord
     purchase_items.sum(:quantity)
   end
 
+  # 💰 送料の合計
+  def total_shipping_fees
+    shipping_fees.sum(:amount)
+  end
+
+  # 💰 商品代金 + 送料の合計
+  def total_with_shipping
+    total_price + total_shipping_fees
+  end
+
+  # 💰 消費税率（10%）
+  TAX_RATE = 0.10
+
+  # 💰 消費税額を計算（商品代金 + 送料 + 事務手数料の合計に10%）
+  def tax_amount
+    admin_fee = purchase_invoice&.admin_fee || 0
+    taxable_amount = total_price + total_shipping_fees + admin_fee
+    (taxable_amount * TAX_RATE).to_i
+  end
+
+  # 💰 税込み合計金額（商品代金 + 送料 + 事務手数料 + 消費税）
+  def grand_total
+    admin_fee = purchase_invoice&.admin_fee || 0
+    total_price + total_shipping_fees + admin_fee + tax_amount
+  end
+
+  # 送料の詳細を取得
+  def shipping_fee_details
+    shipping_fees.map do |fee|
+      {
+        type: fee.shipping_type,
+        type_name: fee.shipping_type_name,
+        amount: fee.amount
+      }
+    end
+  end
+
+  # 送料データを作成（publicメソッド）
+  def create_shipping_fees!
+    set_shipping_fees
+  end
+
   private
 
   def set_initial_status
@@ -48,6 +94,33 @@ class Purchase < ApplicationRecord
     else
       self.status = 'built'
     end
+  end
+
+  def set_shipping_fees
+    # 既に送料データが存在する場合は何もしない
+    return if shipping_fees.exists?
+    
+    # 購入商品に基づいて送料を自動設定
+    shipping_types_used = []
+    
+    purchase_items.includes(:product).each do |item|
+      product = item.product
+      shipping_type = product.shipping_type
+      
+      # 同じ送料タイプが既に追加されていない場合のみ追加
+      unless shipping_types_used.include?(shipping_type)
+        shipping_fees.create!(
+          shipping_type: shipping_type,
+          amount: product.shipping_fee_amount
+        )
+        shipping_types_used << shipping_type
+      end
+    end
+  end
+
+  def should_set_shipping_fees?
+    # 送料データが存在せず、購入アイテムが存在する場合のみ実行
+    shipping_fees.empty? && purchase_items.exists?
   end
 
   # 📅 今月の購入（東京時間基準）

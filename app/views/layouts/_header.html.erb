@@ -47,6 +47,9 @@
                   <%= link_to "売上情報", mysales_path, class: "custom-dropdown-item" %>
                 <% end %>
               </li>
+              <% unless current_user.admin? %>
+                <li><%= link_to "購入履歴", my_history_purchases_path, class: "custom-dropdown-item" %></li>
+              <% end %>
               <% if current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
                 <li><%= link_to "紹介機能", referrals_path, class: "custom-dropdown-item" %></li>
               <% end %>

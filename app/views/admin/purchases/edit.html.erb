@@ -80,7 +80,36 @@
                       <span class="text-muted">複数単価</span>
                     <% end %>
                   </p>
-                  <p class="mb-0"><strong>現在の合計:</strong> <span class="text-danger">¥<%= number_with_delimiter(@purchase.total_price) %></span></p>
+                  <hr class="my-2">
+                  <% 
+                    # 金額計算
+                    product_amount = @purchase.total_price
+                    shipping_fee = @purchase.purchase_invoice&.shipping_fee || @purchase.total_shipping_fees
+                    admin_fee = @purchase.purchase_invoice&.admin_fee || 0
+                    
+                    if @purchase.purchase_invoice&.total_with_tax.present? && @purchase.purchase_invoice.total_with_tax > 0
+                      # DBに保存された値を使用
+                      subtotal_before_tax = @purchase.purchase_invoice.subtotal_before_tax
+                      tax_amount = @purchase.purchase_invoice.tax_amount
+                      total_with_tax = @purchase.purchase_invoice.total_with_tax
+                    else
+                      # 計算
+                      subtotal_before_tax = product_amount + shipping_fee + admin_fee
+                      tax_amount = (subtotal_before_tax * 0.1).round
+                      total_with_tax = subtotal_before_tax + tax_amount
+                    end
+                  %>
+                  <p class="mb-1"><strong>商品代金:</strong> <span class="text-info">¥<%= number_with_delimiter(product_amount) %></span></p>
+                  <% if shipping_fee > 0 %>
+                    <p class="mb-1"><strong>送料:</strong> <span class="text-warning">¥<%= number_with_delimiter(shipping_fee) %></span></p>
+                  <% end %>
+                  <% if admin_fee > 0 %>
+                    <p class="mb-1"><strong>事務手数料:</strong> <span class="text-warning">¥<%= number_with_delimiter(admin_fee) %></span></p>
+                  <% end %>
+                  <p class="mb-1"><strong>小計（税抜）:</strong> <span class="text-secondary">¥<%= number_with_delimiter(subtotal_before_tax) %></span></p>
+                  <p class="mb-1"><strong>消費税（10%）:</strong> <span class="text-secondary">¥<%= number_with_delimiter(tax_amount) %></span></p>
+                  <hr class="my-2">
+                  <p class="mb-0"><strong>合計金額（税込）:</strong> <span class="text-danger fs-5">¥<%= number_with_delimiter(total_with_tax) %></span></p>
                 </div>
               </div>
             </div>
@@ -137,9 +166,29 @@
             <div class="row mb-4">
               <div class="col-12">
                 <div class="card border-primary">
-                  <div class="card-body text-center">
-                    <h6 class="card-title text-muted">合計金額</h6>
-                    <h3 class="text-primary mb-0" id="total_amount">¥<%= number_with_delimiter(@purchase.total_price) %></h3>
+                  <div class="card-body">
+                    <div class="row text-center">
+                      <div class="col-md-3">
+                        <h6 class="text-muted">商品代金</h6>
+                        <h5 class="text-info mb-0" id="product_amount">¥<%= number_with_delimiter(product_amount) %></h5>
+                      </div>
+                      <div class="col-md-2">
+                        <h6 class="text-muted">送料</h6>
+                        <h5 class="text-warning mb-0" id="shipping_fee">¥<%= number_with_delimiter(shipping_fee) %></h5>
+                      </div>
+                      <div class="col-md-2">
+                        <h6 class="text-muted">手数料</h6>
+                        <h5 class="text-warning mb-0" id="admin_fee">¥<%= number_with_delimiter(admin_fee) %></h5>
+                      </div>
+                      <div class="col-md-2">
+                        <h6 class="text-muted">消費税</h6>
+                        <h5 class="text-secondary mb-0" id="tax_amount">¥<%= number_with_delimiter(tax_amount) %></h5>
+                      </div>
+                      <div class="col-md-3">
+                        <h6 class="text-muted">合計金額（税込）</h6>
+                        <h4 class="text-primary mb-0" id="total_amount">¥<%= number_with_delimiter(total_with_tax) %></h4>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -191,10 +240,25 @@
   function updateTotal() {
     const quantity = document.getElementById('quantity_input').value || 0;
     const unitPrice = document.getElementById('unit_price_input').value || 0;
-    const total = quantity * unitPrice;
+    const productAmount = quantity * unitPrice;
     
-    document.getElementById('total_amount').textContent = 
-      '¥' + total.toLocaleString();
+    // 現在の送料と手数料を取得（固定値）
+    const currentShippingFee = <%= shipping_fee %>;
+    const currentAdminFee = <%= admin_fee %>;
+    
+    // 税抜き小計
+    const subtotalBeforeTax = productAmount + currentShippingFee + currentAdminFee;
+    
+    // 消費税（10%）
+    const taxAmount = Math.round(subtotalBeforeTax * 0.1);
+    
+    // 税込み合計
+    const totalWithTax = subtotalBeforeTax + taxAmount;
+    
+    // 表示を更新
+    document.getElementById('product_amount').textContent = '¥' + productAmount.toLocaleString();
+    document.getElementById('tax_amount').textContent = '¥' + taxAmount.toLocaleString();
+    document.getElementById('total_amount').textContent = '¥' + totalWithTax.toLocaleString();
   }
 
   // 入力フィールドにイベントリスナーを追加

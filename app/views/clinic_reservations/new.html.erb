@@ -1,0 +1,367 @@
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-calendar-alt me-2"></i>
+            クリニック予約
+          </h4>
+        </div>
+        <div class="card-body">
+          <%= form_with model: [@purchase, @clinic_reservation], local: true, class: "needs-validation", novalidate: true do |f| %>
+            <% if @clinic_reservation.errors.any? %>
+              <div class="alert alert-danger">
+                <h6>エラーが発生しました:</h6>
+                <ul class="mb-0">
+                  <% @clinic_reservation.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <%= f.hidden_field :clinic_id, value: @clinic_reservation.clinic_id %>
+
+            <!-- (1) 施術方法を選択してください -->
+            <div class="mb-4">
+              <div class="bg-info text-white p-3 mb-3">
+                <h5 class="mb-0">
+                  <span class="badge bg-danger me-2">必須</span>
+                  (1) 施術方法を選択してください
+                </h5>
+              </div>
+              
+              <div class="row">
+                <div class="col-12">
+                  <div class="form-check mb-2">
+                    <%= radio_button_tag "clinic_reservation[treatment_method]", "幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：静脈注射（腕）", false, 
+                        id: "treatment_arm", class: "form-check-input treatment-radio", required: true, 
+                        data: { "stem-cell": "false" } %>
+                    <label class="form-check-label" for="treatment_arm">
+                      <strong>幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：</strong><br>
+                      静脈注射（腕）
+                    </label>
+                  </div>
+                  
+                  <div class="form-check mb-2">
+                    <%= radio_button_tag "clinic_reservation[treatment_method]", "幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：静脈注射（腰）", false, 
+                        id: "treatment_waist", class: "form-check-input treatment-radio", 
+                        data: { "stem-cell": "false" } %>
+                    <label class="form-check-label" for="treatment_waist">
+                      <strong>幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：</strong><br>
+                      静脈注射（腰）
+                    </label>
+                  </div>
+                  
+                  <div class="form-check mb-2">
+                    <%= radio_button_tag "clinic_reservation[treatment_method]", "幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：静脈注射（膝）", false, 
+                        id: "treatment_knee", class: "form-check-input treatment-radio", 
+                        data: { "stem-cell": "false" } %>
+                    <label class="form-check-label" for="treatment_knee">
+                      <strong>幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：</strong><br>
+                      静脈注射（膝）
+                    </label>
+                  </div>
+                  
+                  <div class="form-check mb-2">
+                    <%= radio_button_tag "clinic_reservation[treatment_method]", "幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：点眼　※骨髄幹細胞は取扱なし", false, 
+                        id: "treatment_eye", class: "form-check-input treatment-radio", 
+                        data: { "stem-cell": "false" } %>
+                    <label class="form-check-label" for="treatment_eye">
+                      <strong>幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：</strong><br>
+                      点眼　※骨髄幹細胞は取扱なし
+                    </label>
+                  </div>
+                  
+                  <div class="form-check mb-2">
+                    <%= radio_button_tag "clinic_reservation[treatment_method]", "幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：点鼻　※骨髄幹細胞は取扱なし", false, 
+                        id: "treatment_nose", class: "form-check-input treatment-radio", 
+                        data: { "stem-cell": "false" } %>
+                    <label class="form-check-label" for="treatment_nose">
+                      <strong>幹細胞培養上清液「歯髄・脂肪・臍帯」お申込みの方：</strong><br>
+                      点鼻　※骨髄幹細胞は取扱なし
+                    </label>
+                  </div>
+                  
+                  <div class="form-check mb-2">
+                    <%= radio_button_tag "clinic_reservation[treatment_method]", "骨髄幹細胞培養上清液お申込みの方：点滴", false, 
+                        id: "treatment_drip", class: "form-check-input treatment-radio", 
+                        data: { "stem-cell": "true" } %>
+                    <label class="form-check-label" for="treatment_drip">
+                      <strong>骨髄幹細胞培養上清液お申込みの方：点滴</strong>
+                    </label>
+                  </div>
+                  
+                  <div class="form-check mb-2">
+                    <%= radio_button_tag "clinic_reservation[treatment_method]", "骨髄幹細胞培養上清液お申込みの方：静脈注射", false, 
+                        id: "treatment_iv", class: "form-check-input treatment-radio", 
+                        data: { "stem-cell": "true" } %>
+                    <label class="form-check-label" for="treatment_iv">
+                      <strong>骨髄幹細胞培養上清液お申込みの方：静脈注射</strong>
+                    </label>
+                  </div>
+                  
+                  <div class="form-check mb-2">
+                    <%= radio_button_tag "clinic_reservation[treatment_method]", "骨髄幹細胞培養上清液お申込みの方：皮下注射", false, 
+                        id: "treatment_subcutaneous", class: "form-check-input treatment-radio", 
+                        data: { "stem-cell": "true" } %>
+                    <label class="form-check-label" for="treatment_subcutaneous">
+                      <strong>骨髄幹細胞培養上清液お申込みの方：皮下注射</strong>
+                    </label>
+                  </div>
+                  
+                  <div class="form-check mb-2">
+                    <%= radio_button_tag "clinic_reservation[treatment_method]", "骨髄幹細胞培養上清液お申込みの方：骨髄幹細胞治療（1億個）", false, 
+                        id: "treatment_stem_cell", class: "form-check-input treatment-radio", 
+                        data: { "stem-cell": "true" } %>
+                    <label class="form-check-label" for="treatment_stem_cell">
+                      <strong>骨髄幹細胞培養上清液お申込みの方：骨髄幹細胞治療（1億個）</strong>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- (2) 施術希望日を教えてください -->
+            <div class="mb-4">
+              <div class="bg-info text-white p-3 mb-3">
+                <h5 class="mb-0">(2) 施術希望日を教えてください</h5>
+              </div>
+              
+              <% min_date = (Date.current + 1.week).strftime("%Y-%m-%d") %>
+              
+              <div class="alert alert-info">
+                <div class="mb-2">
+                  <i class="fas fa-diamond text-primary me-2"></i>
+                  <strong>ご予約日は、ご入金確認後1週間以降の日程でお願いいたします</strong>
+                </div>
+                <div class="mb-2">
+                  <i class="fas fa-diamond text-primary me-2"></i>
+                  <strong>所要時間は30～60分見ておいてください</strong>
+                </div>
+                <div class="mb-2">
+                  <i class="fas fa-calendar text-warning me-2"></i>
+                  <strong>選択可能日：<%= (Date.current + 1.week).strftime("%Y年%m月%d日") %>以降</strong>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <strong>《診療時間》</strong><br>
+                10:00～18:30　※昼休憩13:00～15:00<br>
+                休診日／日曜・祝日
+              </div>
+              
+              <!-- 第1希望 -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">
+                    <i class="fas fa-diamond text-danger me-1"></i>
+                    <strong>第1希望</strong>
+                    <span class="badge bg-danger ms-1">必須</span>
+                  </label>
+                  <%= f.date_field :preferred_date_1, class: "form-control", placeholder: "日付選択", required: true, min: min_date %>
+                  <small class="text-muted">↑ タップするとカレンダーが表示されます（<%= (Date.current + 1.week).strftime("%m/%d") %>以降選択可能）</small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">
+                    <strong>希望時間帯</strong>
+                    <span class="badge bg-danger ms-1">必須</span>
+                  </label>
+                  <%= f.select :preferred_time_1, 
+                      options_for_select([
+                        ['選択してください', ''],
+                        ['10:00-11:00', '10:00-11:00'],
+                        ['11:00-12:00', '11:00-12:00'],
+                        ['12:00-13:00', '12:00-13:00'],
+                        ['15:00-16:00', '15:00-16:00'],
+                        ['16:00-17:00', '16:00-17:00'],
+                        ['17:00-18:00', '17:00-18:00'],
+                        ['18:00-18:30', '18:00-18:30']
+                      ]), 
+                      {}, 
+                      { class: "form-select", required: true } %>
+                </div>
+              </div>
+              
+              <!-- 第2希望 -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">
+                    <i class="fas fa-diamond text-danger me-1"></i>
+                    <strong>第2希望</strong>
+                    <span class="badge bg-danger ms-1">必須</span>
+                  </label>
+                  <%= f.date_field :preferred_date_2, class: "form-control", placeholder: "日付選択", min: min_date %>
+                  <small class="text-muted">↑ タップするとカレンダーが表示されます（<%= (Date.current + 1.week).strftime("%m/%d") %>以降選択可能）</small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">
+                    <strong>希望時間帯</strong>
+                    <span class="badge bg-danger ms-1">必須</span>
+                  </label>
+                  <%= f.select :preferred_time_2, 
+                      options_for_select([
+                        ['選択してください', ''],
+                        ['10:00-11:00', '10:00-11:00'],
+                        ['11:00-12:00', '11:00-12:00'],
+                        ['12:00-13:00', '12:00-13:00'],
+                        ['15:00-16:00', '15:00-16:00'],
+                        ['16:00-17:00', '16:00-17:00'],
+                        ['17:00-18:00', '17:00-18:00'],
+                        ['18:00-18:30', '18:00-18:30']
+                      ]), 
+                      {}, 
+                      { class: "form-select" } %>
+                </div>
+              </div>
+              
+              <!-- 第3希望 -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">
+                    <i class="fas fa-diamond text-danger me-1"></i>
+                    <strong>第3希望</strong>
+                    <span class="badge bg-danger ms-1">必須</span>
+                  </label>
+                  <%= f.date_field :preferred_date_3, class: "form-control", placeholder: "日付選択", min: min_date %>
+                  <small class="text-muted">↑ タップするとカレンダーが表示されます（<%= (Date.current + 1.week).strftime("%m/%d") %>以降選択可能）</small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">
+                    <strong>希望時間帯</strong>
+                    <span class="badge bg-danger ms-1">必須</span>
+                  </label>
+                  <%= f.select :preferred_time_3, 
+                      options_for_select([
+                        ['選択してください', ''],
+                        ['10:00-11:00', '10:00-11:00'],
+                        ['11:00-12:00', '11:00-12:00'],
+                        ['12:00-13:00', '12:00-13:00'],
+                        ['15:00-16:00', '15:00-16:00'],
+                        ['16:00-17:00', '16:00-17:00'],
+                        ['17:00-18:00', '17:00-18:00'],
+                        ['18:00-18:30', '18:00-18:30']
+                      ]), 
+                      {}, 
+                      { class: "form-select" } %>
+                </div>
+              </div>
+            </div>
+
+            <!-- (3) 以下、骨髄幹細胞を選択した方のみ回答をお願いします -->
+            <div class="mb-4" id="stem-cell-section">
+              <div class="alert alert-primary">
+                <h5 class="text-primary mb-3">
+                  <i class="fas fa-info-circle me-2"></i>
+                  以下、骨髄幹細胞を選択した方のみ回答をお願いします ↓
+                </h5>
+              </div>
+              
+              <!-- 病気の名前や目的を教えてください -->
+              <div class="mb-4">
+                <div class="bg-info text-white p-3 mb-3">
+                  <h6 class="mb-0">病気の名前や目的を教えてください</h6>
+                </div>
+                <%= f.text_area :disease_name, class: "form-control", rows: 4, placeholder: "病気の名前や治療目的をご記入ください" %>
+              </div>
+              
+              <!-- 現在までにクリニックでされた治療を教えてください -->
+              <div class="mb-4">
+                <div class="bg-info text-white p-3 mb-3">
+                  <h6 class="mb-0">現在までにクリニックでされた治療を教えてください</h6>
+                </div>
+                <%= f.text_area :current_treatment, class: "form-control", rows: 4, placeholder: "これまでに受けた治療内容をご記入ください" %>
+                <small class="text-muted">※ない場合は「なし」と記載</small>
+              </div>
+              
+              <!-- 現在の身体の状況を教えてください -->
+              <div class="mb-4">
+                <div class="bg-info text-white p-3 mb-3">
+                  <h6 class="mb-0">現在の身体の状況を教えてください</h6>
+                </div>
+                <%= f.text_area :current_condition, class: "form-control", rows: 4, placeholder: "現在の症状や身体の状況をご記入ください" %>
+                <small class="text-muted">※本サービスにおける医師・医療従事者などによる情報の提供は診断・治療行為ではありません</small>
+              </div>
+              
+              <!-- 質問がございましたらご記入ください -->
+              <div class="mb-4">
+                <div class="bg-info text-white p-3 mb-3">
+                  <h6 class="mb-0">質問がございましたらご記入ください</h6>
+                </div>
+                <%= f.text_area :questions, class: "form-control", rows: 4, placeholder: "ご質問やご不明な点がございましたらご記入ください" %>
+              </div>
+            </div>
+
+            <!-- 送信ボタン -->
+            <div class="d-flex justify-content-between">
+              <%= link_to "戻る", :back, class: "btn btn-outline-secondary" %>
+              <%= f.submit "進む", class: "btn btn-primary btn-lg px-5" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Turbo対応のイベントリスナー
+function initializeTreatmentToggle() {
+  const stemCellSection = document.getElementById('stem-cell-section');
+  
+  if (!stemCellSection) return; // 要素が存在しない場合は何もしない
+  
+  function toggleStemCellSection() {
+    // data-stem-cell="true"の選択肢でテキスト入力欄を表示
+    const checkedRadio = document.querySelector('.treatment-radio:checked');
+    
+    if (checkedRadio && checkedRadio.dataset.stemCell === 'true') {
+      stemCellSection.style.display = 'block';
+    } else {
+      stemCellSection.style.display = 'none';
+    }
+  }
+  
+  // イベント委譲を使用してTurbo対応
+  document.removeEventListener('change', handleTreatmentChange);
+  document.addEventListener('change', handleTreatmentChange);
+  
+  function handleTreatmentChange(event) {
+    if (event.target.classList.contains('treatment-radio')) {
+      toggleStemCellSection();
+    }
+  }
+  
+  // 初期状態をチェック
+  toggleStemCellSection();
+}
+
+// 複数のイベントに対応
+document.addEventListener('DOMContentLoaded', initializeTreatmentToggle);
+document.addEventListener('turbo:load', initializeTreatmentToggle);
+document.addEventListener('turbo:frame-load', initializeTreatmentToggle);
+
+// ページが表示された時にも実行（Turboキャッシュ対応）
+document.addEventListener('turbo:render', initializeTreatmentToggle);
+</script>
+
+<style>
+.bg-info {
+  background-color: #a8d8ea !important;
+  color: #333 !important;
+}
+
+.form-check-label {
+  cursor: pointer;
+}
+
+.form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+#stem-cell-section {
+  display: none;
+}
+</style>

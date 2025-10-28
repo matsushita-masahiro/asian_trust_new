@@ -6,6 +6,8 @@ class Purchase < ApplicationRecord
   has_many :products, through: :purchase_items
   has_one :purchase_invoice, dependent: :destroy
   has_many :shipping_fees, dependent: :destroy
+  has_many :delivery_informations, dependent: :destroy
+  has_one :clinic_reservation, dependent: :destroy
 
   # ネストした属性を受け入れる
   accepts_nested_attributes_for :purchase_items, allow_destroy: true
@@ -28,6 +30,8 @@ class Purchase < ApplicationRecord
   
   # コールバック：購入後に送料を自動設定
   after_save :set_shipping_fees, if: :should_set_shipping_fees?
+  
+
 
   # 💰 合計金額（全アイテムの合計）- seller_priceベース
   def total_price

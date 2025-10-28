@@ -3,6 +3,8 @@
     <h4>
       <% if @category == 'wott' %>
         WOTT 商品一覧
+      <% elsif @category == 'ms' %>
+        マナーズサウンド 商品一覧
       <% else %>
         幹細胞培養上精液 商品一覧
       <% end %>
@@ -41,7 +43,11 @@
                 
                 <div class="mb-3">
                   <%= f.label :quantity, "数量", class: "form-label" %>
-                  <%= f.select :quantity, options_for_select((1..10).map { |i| [i, i] }), 
+                  <% 
+                    max_quantity = (@category == 'ms' || @category == 'wott') ? 5 : 10
+                    quantity_options = (1..max_quantity).map { |i| [i, i] }
+                  %>
+                  <%= f.select :quantity, options_for_select(quantity_options), 
                       { prompt: "数量を選択" }, 
                       { class: "form-select" } %>
                 </div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_27_042208) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_28_060003) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -90,6 +90,42 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_27_042208) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_carts_on_user_id"
+  end
+
+  create_table "clinic_reservations", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "purchase_id", null: false
+    t.integer "clinic_id"
+    t.text "treatment_methods"
+    t.date "preferred_date_1"
+    t.string "preferred_time_1"
+    t.date "preferred_date_2"
+    t.string "preferred_time_2"
+    t.date "preferred_date_3"
+    t.string "preferred_time_3"
+    t.text "disease_name"
+    t.text "current_treatment"
+    t.text "current_condition"
+    t.text "questions"
+    t.integer "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["purchase_id"], name: "index_clinic_reservations_on_purchase_id"
+    t.index ["user_id"], name: "index_clinic_reservations_on_user_id"
+  end
+
+  create_table "delivery_informations", force: :cascade do |t|
+    t.integer "purchase_id", null: false
+    t.string "delivery_type", null: false
+    t.integer "clinic_id"
+    t.string "address_type"
+    t.text "delivery_address"
+    t.text "delivery_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["clinic_id"], name: "index_delivery_informations_on_clinic_id"
+    t.index ["purchase_id", "delivery_type"], name: "index_delivery_informations_on_purchase_id_and_delivery_type"
+    t.index ["purchase_id"], name: "index_delivery_informations_on_purchase_id"
   end
 
   create_table "inquiries", force: :cascade do |t|
@@ -345,6 +381,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_27_042208) do
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["level_id"], name: "index_users_on_level_id"
     t.index ["lstep_user_id"], name: "index_users_on_lstep_user_id", unique: true
+    t.index ["phone"], name: "index_users_on_phone", unique: true
     t.index ["referral_token"], name: "index_users_on_referral_token"
     t.index ["referred_by_id"], name: "index_users_on_referred_by_id"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
@@ -370,6 +407,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_27_042208) do
   add_foreign_key "cart_items", "carts"
   add_foreign_key "cart_items", "products"
   add_foreign_key "carts", "users"
+  add_foreign_key "clinic_reservations", "purchases"
+  add_foreign_key "clinic_reservations", "users"
+  add_foreign_key "delivery_informations", "purchases"
+  add_foreign_key "delivery_informations", "users", column: "clinic_id"
   add_foreign_key "invoice_bases", "users"
   add_foreign_key "invoice_recipients", "users"
   add_foreign_key "invoices", "invoice_recipients"

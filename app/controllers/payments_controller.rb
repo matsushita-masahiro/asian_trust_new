@@ -128,6 +128,58 @@ class PaymentsController < ApplicationController
 
   private
 
+  def create_delivery_information(purchase)
+    delivery_type = params[:delivery_type] || 'home'
+    address_type = params[:address_type] || 'registration'
+    clinic_id = params[:clinic_id]
+    
+    Rails.logger.info "=== CREATE DELIVERY INFORMATION DEBUG ==="
+    Rails.logger.info "Purchase ID: #{purchase.id}"
+    Rails.logger.info "Delivery type: #{delivery_type}"
+    Rails.logger.info "Address type: #{address_type}"
+    Rails.logger.info "Clinic ID: #{clinic_id}"
+    Rails.logger.info "============================================"
+    
+    # 配送先住所を取得してスナップショットとして保存
+    delivery_address = get_delivery_address(address_type, clinic_id)
+    
+    delivery_info = DeliveryInformation.create!(
+      purchase: purchase,
+      delivery_type: delivery_type,
+      clinic_id: clinic_id,
+      address_type: address_type,
+      delivery_address: delivery_address,
+      delivery_notes: params[:delivery_notes]
+    )
+    
+    Rails.logger.info "Created delivery_information: ID #{delivery_info.id}, Type: #{delivery_info.delivery_type}"
+  rescue => e
+    Rails.logger.error "Failed to create delivery_information: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    raise e
+  end
+
+  def get_delivery_address(address_type, clinic_id)
+    addresses = []
+    
+    # 自宅配送の住所
+    if address_type == 'shipping' && current_user.shipping_address
+      addresses << "#{current_user.shipping_address.postal_code}|#{current_user.shipping_address.address}"
+    elsif current_user.registration_address
+      addresses << "#{current_user.registration_address.postal_code}|#{current_user.registration_address.address}"
+    end
+    
+    # クリニック配送の住所
+    if clinic_id.present?
+      clinic = User.joins(:invoice_base).find_by(id: clinic_id)
+      if clinic&.invoice_base
+        addresses << "#{clinic.invoice_base.postal_code}|#{clinic.invoice_base.address}|#{clinic.name}"
+      end
+    end
+    
+    addresses.join("\n")
+  end
+
   def ensure_cart_has_items
     @cart = current_user.cart
     if @cart.nil? || @cart.cart_items.empty?
@@ -166,6 +218,9 @@ class PaymentsController < ApplicationController
         # 送料データを作成
         purchase.create_shipping_fees!
 
+        # 配送情報を作成
+        create_delivery_information(purchase)
+
         # 料金計算
         product_amount = purchase.total_price
         
@@ -194,7 +249,7 @@ class PaymentsController < ApplicationController
           purchase: purchase,
           invoice_number: PurchaseInvoice.generate_invoice_number,
           invoice_date: Date.current,
-          due_date: Date.current + 30.days,
+          due_date: Date.current + 1.week,
           total_amount: product_amount,
           shipping_fee: shipping_fee,
           admin_fee: admin_fee,

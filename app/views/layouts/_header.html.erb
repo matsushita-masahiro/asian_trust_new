@@ -18,7 +18,7 @@
               <%= link_to "予約・注文", orders_path, class: "nav-link" %>
             </li>
           <% end %>
-          <% if user_signed_in? && !current_user.admin %>
+          <% if user_signed_in? && !current_user.admin? && current_user.level.value != 7 %>
             <li class="nav-item">
               <%= link_to "請求書管理", invoices_path, class: "nav-link" %>
             </li>
@@ -40,18 +40,14 @@
             </a>
             <ul class="custom-dropdown-menu" id="mypageDropdownMenu">
               <li><%= link_to "マイアカウント", user_path(current_user), class: "custom-dropdown-item" %></li>
-              <li>
-                <% if current_user.level.value == 7 %>
-                  <%= link_to "購入情報", mysales_path, class: "custom-dropdown-item" %>
-                <% else %>
-                  <%= link_to "売上情報", mysales_path, class: "custom-dropdown-item" %>
-                <% end %>
-              </li>
+              <% unless current_user.level.value == 7 %>
+                <li><%= link_to "売上情報", mysales_path, class: "custom-dropdown-item" %></li>
+              <% end %>
               <% unless current_user.admin? %>
                 <li><%= link_to "購入履歴", my_history_purchases_path, class: "custom-dropdown-item" %></li>
               <% end %>
               <% if current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
-                <li><%= link_to "紹介機能", referrals_path, class: "custom-dropdown-item" %></li>
+                <li><%= link_to "紹介機能", new_referral_invitation_path, class: "custom-dropdown-item" %></li>
               <% end %>
             </ul>
           </li>
@@ -79,4 +75,53 @@
   </div>
 </nav>
 
+<script>
+// カスタムドロップダウンの制御
+function initializeCustomDropdown() {
+  const dropdownToggle = document.getElementById('mypageDropdown');
+  const dropdownMenu = document.getElementById('mypageDropdownMenu');
+  
+  if (!dropdownToggle || !dropdownMenu) return;
+  
+  // クリックイベントでドロップダウンを切り替え
+  dropdownToggle.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const isShown = dropdownMenu.classList.contains('show');
+    
+    // 他のドロップダウンを閉じる
+    document.querySelectorAll('.custom-dropdown-menu.show').forEach(menu => {
+      if (menu !== dropdownMenu) {
+        menu.classList.remove('show');
+      }
+    });
+    
+    // 現在のドロップダウンを切り替え
+    if (isShown) {
+      dropdownMenu.classList.remove('show');
+    } else {
+      dropdownMenu.classList.add('show');
+    }
+  });
+  
+  // 外側をクリックしたらドロップダウンを閉じる
+  document.addEventListener('click', function(e) {
+    if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
+      dropdownMenu.classList.remove('show');
+    }
+  });
+  
+  // ESCキーでドロップダウンを閉じる
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      dropdownMenu.classList.remove('show');
+    }
+  });
+}
 
+// Turbo対応の初期化
+document.addEventListener('DOMContentLoaded', initializeCustomDropdown);
+document.addEventListener('turbo:load', initializeCustomDropdown);
+document.addEventListener('turbo:render', initializeCustomDropdown);
+</script>

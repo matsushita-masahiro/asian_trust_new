@@ -28,7 +28,7 @@ class Admin::PurchaseInvoicesController < ApplicationController
     @purchase_invoice = @purchase.build_purchase_invoice
     @purchase_invoice.invoice_number = PurchaseInvoice.generate_invoice_number
     @purchase_invoice.invoice_date = Date.current
-    @purchase_invoice.due_date = Date.current + 30.days
+    @purchase_invoice.due_date = Date.current + 1.week
     @purchase_invoice.total_amount = @purchase.total_price
     @purchase_invoice.status = PurchaseInvoice::DRAFT
   end

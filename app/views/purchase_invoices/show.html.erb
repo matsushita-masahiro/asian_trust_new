@@ -192,6 +192,105 @@
       
       <div class="card mt-3">
         <div class="card-header">
+          <h6><i class="fas fa-university me-2"></i>振込口座情報</h6>
+        </div>
+        <div class="card-body">
+          <% if @bank_info %>
+            <div class="row mb-2">
+              <div class="col-4"><strong>銀行名:</strong></div>
+              <div class="col-8"><%= @bank_info.bank_name %></div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-4"><strong>支店名:</strong></div>
+              <div class="col-8"><%= @bank_info.bank_branch_name %></div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-4"><strong>口座種別:</strong></div>
+              <div class="col-8">
+                <% if @bank_info.bank_account_type == 'savings' %>
+                  普通
+                <% elsif @bank_info.bank_account_type == 'checking' %>
+                  当座
+                <% else %>
+                  <%= @bank_info.bank_account_type %>
+                <% end %>
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-4"><strong>口座番号:</strong></div>
+              <div class="col-8"><%= @bank_info.bank_account_number %></div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-4"><strong>口座名義:</strong></div>
+              <div class="col-8"><%= @bank_info.bank_account_name %></div>
+            </div>
+            <hr class="my-3">
+            <div class="alert alert-info small mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              お振込の際は、請求書番号（<strong><%= @purchase_invoice.invoice_number %></strong>）を必ずお振込名義人欄にご記入ください。
+            </div>
+          <% else %>
+            <div class="alert alert-warning mb-0">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              振込先情報が設定されていません。管理者にお問い合わせください。
+            </div>
+          <% end %>
+        </div>
+      </div>
+      
+      <!-- クリニック予約セクション -->
+      <div class="card mt-3">
+        <div class="card-header">
+          <h6><i class="fas fa-calendar-alt me-2"></i>クリニック予約</h6>
+        </div>
+        <div class="card-body">
+          <% case @purchase_invoice.clinic_reservation_status %>
+          <% when :not_required %>
+            <div class="alert alert-secondary mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              この購入にはクリニック予約は不要です。
+            </div>
+          <% when :payment_required %>
+            <div class="alert alert-warning mb-0">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              入金確認後にクリニック予約が可能になります。
+            </div>
+          <% when :reserved %>
+            <div class="alert alert-success mb-3">
+              <i class="fas fa-check-circle me-2"></i>
+              クリニック予約済みです。
+            </div>
+            <% reservation = @purchase_invoice.clinic_reservation %>
+            <div class="mb-2">
+              <strong>予約状況:</strong> 
+              <span class="badge bg-<%= reservation.pending? ? 'warning' : reservation.confirmed? ? 'success' : 'info' %>">
+                <%= reservation.status_name %>
+              </span>
+            </div>
+            <div class="mb-2">
+              <strong>第1希望:</strong> <%= reservation.preferred_date_1&.strftime('%Y/%m/%d') %> <%= reservation.preferred_time_1 %>
+            </div>
+            <% if reservation.preferred_date_2.present? %>
+              <div class="mb-2">
+                <strong>第2希望:</strong> <%= reservation.preferred_date_2&.strftime('%Y/%m/%d') %> <%= reservation.preferred_time_2 %>
+              </div>
+            <% end %>
+            <% if reservation.preferred_date_3.present? %>
+              <div class="mb-3">
+                <strong>第3希望:</strong> <%= reservation.preferred_date_3&.strftime('%Y/%m/%d') %> <%= reservation.preferred_time_3 %>
+              </div>
+            <% end %>
+            <%= link_to "予約詳細を見る", clinic_reservation_path(reservation), 
+                class: "btn btn-outline-primary btn-sm w-100" %>
+          <% when :not_reserved %>
+            <%= link_to "クリニック予約", new_purchase_clinic_reservation_path(@purchase_invoice.purchase), 
+                class: "btn btn-primary btn-sm w-100" %>
+          <% end %>
+        </div>
+      </div>
+      
+      <div class="card mt-3">
+        <div class="card-header">
           <h6>ステータス履歴</h6>
         </div>
         <div class="card-body">

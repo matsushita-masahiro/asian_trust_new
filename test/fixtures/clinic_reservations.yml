@@ -1,0 +1,35 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  purchase: one
+  clinic_id: 1
+  treatment_methods: MyText
+  preferred_date_1: 2025-10-28
+  preferred_time_1: MyString
+  preferred_date_2: 2025-10-28
+  preferred_time_2: MyString
+  preferred_date_3: 2025-10-28
+  preferred_time_3: MyString
+  disease_name: MyText
+  current_treatment: MyText
+  current_condition: MyText
+  questions: MyText
+  status: 1
+
+two:
+  user: two
+  purchase: two
+  clinic_id: 1
+  treatment_methods: MyText
+  preferred_date_1: 2025-10-28
+  preferred_time_1: MyString
+  preferred_date_2: 2025-10-28
+  preferred_time_2: MyString
+  preferred_date_3: 2025-10-28
+  preferred_time_3: MyString
+  disease_name: MyText
+  current_treatment: MyText
+  current_condition: MyText
+  questions: MyText
+  status: 1

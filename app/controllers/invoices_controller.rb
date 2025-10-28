@@ -1,5 +1,6 @@
 class InvoicesController < ApplicationController
   before_action :authenticate_user!
+  before_action :check_customer_access
 
   def index
     # 請求書管理のメインページ
@@ -17,7 +18,10 @@ class InvoicesController < ApplicationController
     
     # デフォルト値を設定
     @invoice.invoice_date = Date.current
-    @invoice.due_date = 1.week.from_now
+    
+    # 支払期限：インセンティブ対象月の翌月月末日
+    target_month_date = Date.strptime(@selected_month, "%Y-%m")
+    @invoice.due_date = target_month_date.next_month.end_of_month
     
     # 該当月の設定（パラメータから取得、なければ今月）
     @selected_month = params[:month].presence || Date.current.strftime("%Y-%m")
@@ -301,6 +305,12 @@ class InvoicesController < ApplicationController
   end
 
   private
+
+  def check_customer_access
+    if current_user.level.value == 7 # お客様レベル
+      redirect_to root_path, alert: 'このページにアクセスする権限がありません。'
+    end
+  end
 
   def format_postal_code(postal_code)
     # 数字のみを抽出

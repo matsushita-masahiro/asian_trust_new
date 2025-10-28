@@ -18,7 +18,12 @@
                 <div class="col-md-2">
                   <%= form_with url: update_item_cart_path, method: :patch, local: true, class: "d-flex align-items-center" do |f| %>
                     <%= f.hidden_field :cart_item_id, value: item.id %>
-                    <%= f.select :quantity, options_for_select((1..10).map { |i| [i, i] }, item.quantity), 
+                    <% 
+                      # WOTT商品またはMANNERSSOUND商品の場合は5個まで、その他は10個まで
+                      max_quantity = (['wott', 'ms'].include?(item.product.category)) ? 5 : 10
+                      quantity_options = (1..max_quantity).map { |i| [i, i] }
+                    %>
+                    <%= f.select :quantity, options_for_select(quantity_options, item.quantity), 
                         {}, { class: "form-select form-select-sm", onchange: "this.form.submit();" } %>
                   <% end %>
                 </div>
@@ -219,7 +224,7 @@
             <% end %>
             <% if has_stem_cell_product %>
               <div class="d-flex justify-content-between mb-2">
-                <span>事務手数料 (クリニック配送):</span>
+                <span>事務手数料:</span>
                 <span class="text-warning">¥<%= number_with_delimiter(admin_fee) %></span>
               </div>
             <% end %>

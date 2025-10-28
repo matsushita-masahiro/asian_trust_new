@@ -1,0 +1,159 @@
+<div class="container-fluid" style="padding-top: 100px;">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary">
+          <i class="fas fa-calendar-alt me-2"></i>
+          クリニック予約管理
+        </h4>
+        <div class="d-flex gap-2">
+          <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- フィルター -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <%= form_with url: admin_clinic_reservations_path, method: :get, local: true, class: "row g-3" do |f| %>
+        <div class="col-md-3">
+          <%= f.select :status, 
+              options_for_select([
+                ['全てのステータス', ''],
+                ['申込中', ClinicReservation::PENDING],
+                ['予約確定', ClinicReservation::CONFIRMED],
+                ['施術完了', ClinicReservation::COMPLETED],
+                ['キャンセル', ClinicReservation::CANCELLED]
+              ], params[:status]), 
+              {}, 
+              { class: "form-select" } %>
+        </div>
+        <div class="col-md-4">
+          <%= f.text_field :search, 
+              placeholder: "ユーザー名・メールアドレスで検索", 
+              value: params[:search], 
+              class: "form-control" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.submit "検索", class: "btn btn-primary" %>
+        </div>
+        <div class="col-md-2">
+          <%= link_to "リセット", admin_clinic_reservations_path, class: "btn btn-outline-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- 予約一覧 -->
+  <div class="card">
+    <div class="card-body">
+      <% if @clinic_reservations.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>予約ID</th>
+                <th>ユーザー</th>
+                <th>第1希望日時</th>
+                <th>施術方法</th>
+                <th>ステータス</th>
+                <th>申込日</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @clinic_reservations.each do |reservation| %>
+                <tr style="cursor: pointer;" onclick="window.location='<%= admin_clinic_reservation_path(reservation) %>'">
+                  <td>
+                    <strong>#<%= reservation.id %></strong>
+                  </td>
+                  <td>
+                    <div>
+                      <strong><%= reservation.user.name %></strong><br>
+                      <small class="text-muted"><%= reservation.user.email %></small>
+                    </div>
+                  </td>
+                  <td>
+                    <div>
+                      <strong><%= reservation.preferred_date_1&.strftime('%Y/%m/%d') %></strong><br>
+                      <small><%= reservation.preferred_time_1 %></small>
+                    </div>
+                  </td>
+                  <td>
+                    <% reservation.treatment_methods_array.first(2).each do |method| %>
+                      <small class="d-block text-truncate" style="max-width: 200px;">
+                        <i class="fas fa-check text-success me-1"></i>
+                        <%= truncate(method, length: 25) %>
+                      </small>
+                    <% end %>
+                    <% if reservation.treatment_methods_array.size > 2 %>
+                      <small class="text-muted">他<%= reservation.treatment_methods_array.size - 2 %>件</small>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% case reservation.status %>
+                    <% when ClinicReservation::PENDING %>
+                      <span class="badge bg-warning">申込中</span>
+                    <% when ClinicReservation::CONFIRMED %>
+                      <span class="badge bg-success">予約確定</span>
+                    <% when ClinicReservation::COMPLETED %>
+                      <span class="badge bg-info">施術完了</span>
+                    <% when ClinicReservation::CANCELLED %>
+                      <span class="badge bg-danger">キャンセル</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%= reservation.created_at.strftime('%Y/%m/%d %H:%M') %>
+                  </td>
+                  <td onclick="event.stopPropagation();">
+                    <div class="btn-group" role="group">
+                      <%= link_to admin_clinic_reservation_path(reservation), class: "btn btn-sm btn-outline-primary" do %>
+                        <i class="fas fa-eye"></i>
+                      <% end %>
+                      <% if reservation.pending? %>
+                        <%= link_to confirm_admin_clinic_reservation_path(reservation), 
+                            method: :patch, 
+                            class: "btn btn-sm btn-success",
+                            confirm: "予約を確定しますか？" do %>
+                          <i class="fas fa-check"></i>
+                        <% end %>
+                      <% end %>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- ページネーション -->
+        <% if respond_to?(:paginate) %>
+          <%= paginate @clinic_reservations %>
+        <% end %>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">予約がありません</h5>
+          <p class="text-muted">
+            <% if params[:status].present? || params[:search].present? %>
+              検索条件に一致する予約が見つかりませんでした。
+            <% else %>
+              まだクリニック予約がありません。
+            <% end %>
+          </p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<style>
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.table tbody tr {
+  transition: background-color 0.2s ease;
+}
+</style>

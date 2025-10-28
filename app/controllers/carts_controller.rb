@@ -15,6 +15,33 @@ class CartsController < ApplicationController
       return
     end
     
+    # 追加しようとする商品のカテゴリを判定
+    product_category = product.category
+    new_category = if product_category.nil? || product_category == 'sl'
+                     'stem_cell'
+                   else
+                     product_category
+                   end
+    
+    # カートに既に商品がある場合、カテゴリチェック
+    current_category = @cart.get_current_category
+    if current_category && current_category != new_category
+      category_names = {
+        'stem_cell' => '幹細胞商品',
+        'wott' => 'WOTT商品',
+        'ms' => 'マナーズサウンド商品'
+      }
+      
+      current_name = category_names[current_category] || current_category
+      new_name = category_names[new_category] || new_category
+      
+      redirect_back(
+        fallback_location: orders_products_path, 
+        alert: "カートに#{current_name}が入っています。#{new_name}と一緒に購入することはできません。先にカートを空にしてから追加してください。"
+      )
+      return
+    end
+    
     cart_item = @cart.cart_items.find_by(product: product)
     
     if cart_item

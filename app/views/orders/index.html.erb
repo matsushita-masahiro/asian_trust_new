@@ -4,42 +4,8 @@
   <% is_customer = current_user.level&.value == 7 %>
   
   <% if is_customer %>
-    <!-- お客様の場合：2つのカードを中央寄せで表示 -->
+    <!-- お客様の場合：1段目に幹細胞とクリニック予約 -->
     <div class="row mt-4 justify-content-center">
-      <div class="col-md-6 col-lg-4 mb-3">
-        <div class="card order-card">
-          <div class="card-body text-center">
-            <h5 class="card-title">クリニックの予約をする</h5>
-            <button class="btn btn-primary" disabled>
-              準備中
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-md-6 col-lg-4 mb-3">
-        <div class="card order-card">
-          <div class="card-body text-center">
-            <h5 class="card-title">幹細胞培養上精液を注文する</h5>
-            <%= link_to "商品一覧を見る", orders_products_path, class: "btn btn-success" %>
-          </div>
-        </div>
-      </div>
-    </div>
-  <% else %>
-    <!-- 一般ユーザーの場合：1段目に3つ -->
-    <div class="row mt-4">
-      <div class="col-md-4 mb-3">
-        <div class="card order-card">
-          <div class="card-body text-center">
-            <h5 class="card-title">クリニックの予約をする</h5>
-            <button class="btn btn-primary" disabled>
-              準備中
-            </button>
-          </div>
-        </div>
-      </div>
-      
       <div class="col-md-4 mb-3">
         <div class="card order-card">
           <div class="card-body text-center">
@@ -52,18 +18,16 @@
       <div class="col-md-4 mb-3">
         <div class="card order-card">
           <div class="card-body text-center">
-            <h5 class="card-title">エアーガンを注文する</h5>
-            <button class="btn btn-primary" disabled>
-              準備中
-            </button>
+            <h5 class="card-title">クリニックの予約</h5>
+            <%= link_to "予約する", clinic_reservations_path, class: "btn btn-primary" %>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- 2段目に2つ -->
-    <div class="row">
-      <div class="col-md-4 offset-md-2 mb-3">
+    <!-- 2段目にWOTTとMANNERSSOUND -->
+    <div class="row justify-content-center">
+      <div class="col-md-4 mb-3">
         <div class="card order-card-with-image">
           <img src="/images/wottdevice_unit.jpg" class="mx-auto d-block" alt="WOTT Device" style="height: 60px; object-fit: contain; margin-top: 15px;">
           <div class="card-body text-center">
@@ -77,10 +41,66 @@
         <div class="card order-card-with-image">
           <img src="/images/mannerssound.jpg" class="mx-auto d-block" alt="MANNERSOUND" style="height: 60px; object-fit: contain; margin-top: 15px;">
           <div class="card-body text-center">
-            <h5 class="card-title">MANNERSSOUNDを注文する</h5>
+            <h5 class="card-title">マナーズサウンドを注文する</h5>
+            <%= link_to "商品一覧を見る", orders_products_path(category: 'ms'), class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <!-- 一般ユーザーの場合：1段目に幹細胞とクリニック予約 -->
+    <div class="row mt-4 justify-content-center">
+      <div class="col-md-4 mb-3">
+        <div class="card order-card">
+          <div class="card-body text-center">
+            <h5 class="card-title">幹細胞培養上精液を注文する</h5>
+            <%= link_to "商品一覧を見る", orders_products_path, class: "btn btn-success" %>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4 mb-3">
+        <div class="card order-card">
+          <div class="card-body text-center">
+            <h5 class="card-title">クリニックの予約</h5>
+            <%= link_to "予約する", clinic_reservations_path, class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 2段目にエアーガンとWOTT -->
+    <div class="row justify-content-center">
+      <div class="col-md-4 mb-3">
+        <div class="card order-card">
+          <div class="card-body text-center">
+            <h5 class="card-title">エアーガンを注文する</h5>
             <button class="btn btn-primary" disabled>
               準備中
             </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4 mb-3">
+        <div class="card order-card-with-image">
+          <img src="/images/wottdevice_unit.jpg" class="mx-auto d-block" alt="WOTT Device" style="height: 60px; object-fit: contain; margin-top: 15px;">
+          <div class="card-body text-center">
+            <h5 class="card-title">WOTTを注文する</h5>
+            <%= link_to "商品一覧を見る", orders_products_path(category: 'wott'), class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 3段目にマナーズサウンド -->
+    <div class="row justify-content-center">
+      <div class="col-md-4 mb-3">
+        <div class="card order-card-with-image">
+          <img src="/images/mannerssound.jpg" class="mx-auto d-block" alt="MANNERSOUND" style="height: 60px; object-fit: contain; margin-top: 15px;">
+          <div class="card-body text-center">
+            <h5 class="card-title">マナーズサウンドを注文する</h5>
+            <%= link_to "商品一覧を見る", orders_products_path(category: 'ms'), class: "btn btn-primary" %>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ puts "🔄 Seeding started......"
 
 # Load fixtures
 require 'seed-fu'
+require 'set'
 
 adapter = ActiveRecord::Base.connection.adapter_name
 
@@ -298,12 +299,29 @@ end
 
 puts "✅ Created MANNERSOUND products pricing structure"
 
+# 電話番号の重複を避けるためのヘルパーメソッド
+def generate_unique_phone(base_number, existing_phones)
+  phone = base_number
+  counter = 1
+  while existing_phones.include?(phone)
+    # 末尾の数字を変更して重複を避ける
+    phone = base_number.gsub(/\d{4}$/) { |match| format('%04d', match.to_i + counter) }
+    counter += 1
+  end
+  existing_phones << phone
+  phone
+end
+
+# 使用済み電話番号を追跡するSet
+used_phones = Set.new
+
 # 最上位
 company = User.create!(
   id: user_id_seq,
   name: "アジアビジネストラスト",
   email: "info@abt-saisei.com",
   password: "111111",
+  phone: generate_unique_phone("03-1234-5678", used_phones),
   level_id: levels["アジアビジネストラスト"].id,
   wott_level_id: wott_levels["アジアビジネストラスト"].id,
   lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
@@ -353,7 +371,7 @@ clinics_data.each_with_index do |clinic_data, index|
   user = User.create!(
     id: user_id_seq,
     name: clinic_data[:name],
-    phone: clinic_data[:phone],
+    phone: generate_unique_phone(clinic_data[:phone], used_phones),
     email: clinic_data[:email],
     level_id: clinic_level.id,
     wott_level_id: wott_clinic_level.id,
@@ -389,6 +407,7 @@ special_agents = special_agent_names.map.with_index do |name, i|
     name: name,
     email: "special_agent#{i + 1}@example.com",
     password: "111111",
+    phone: generate_unique_phone("090-#{1000 + i}-#{5678 + i}", used_phones),
     level_id: levels["総代理店"].id,
     wott_level_id: wott_level.id,
     referred_by_id: company.id,
@@ -417,6 +436,7 @@ special_agents.each_with_index do |parent, i|
       name: name,
       email: "agent#{i + 1}-#{j + 1}@example.com",
       password: "111111",
+      phone: generate_unique_phone("080-#{2000 + (i * 10) + j}-#{1234 + j}", used_phones),
       level_id: levels["代理店"].id,
       wott_level_id: wott_level.id,
       referred_by_id: parent.id,
@@ -450,6 +470,7 @@ agents.each_with_index do |parent, i|
       name: name,
       email: "advisor#{i + 1}-#{j + 1}@example.com",
       password: "111111",
+      phone: generate_unique_phone("070-#{3000 + (i * 10) + j}-#{2345 + j}", used_phones),
       level_id: levels["アドバイザー"].id,
       wott_level_id: wott_level.id,
       referred_by_id: parent.id,
@@ -491,6 +512,7 @@ advisors.each_with_index do |parent, i|
       name: type_data[:name],
       email: "#{type_data[:email_prefix]}#{i + 1}@example.com",
       password: "111111",
+      phone: generate_unique_phone("050-#{4000 + (parent.id * 10) + i}-#{3456 + i}", used_phones),
       level_id: levels[type_data[:type]].id,
       wott_level_id: wott_level.id,
       referred_by_id: parent.id,
@@ -515,6 +537,7 @@ supporter_customer_names = ["美香さんのお客様", "真理さんのお客�
     name: supporter_names[i],
     email: "supporter#{i + 1}@example.com",
     password: "111111",
+    phone: generate_unique_phone("060-#{5000 + i}-#{4567 + i}", used_phones),
     level_id: levels["サポーター"].id,
     wott_level_id: wott_level.id,
     referred_by_id: special_agents[0].id,
@@ -530,6 +553,7 @@ supporter_customer_names = ["美香さんのお客様", "真理さんのお客�
     name: supporter_customer_names[i],
     email: "supporter_customer#{i + 1}@example.com",
     password: "111111",
+    phone: generate_unique_phone("080-#{6000 + i}-#{5678 + i}", used_phones),
     level_id: levels["お客様"].id,
     wott_level_id: wott_levels["お客様"].id,
     referred_by_id: supporter.id,
@@ -547,6 +571,7 @@ supporter_customer_names = ["美香さんのお客様", "真理さんのお客�
       name: "美香サロン",
       email: "aoki_salon@example.com",
       password: "111111",
+      phone: generate_unique_phone("03-7000-1111", used_phones),
       level_id: levels["サロン"].id,
       wott_level_id: wott_levels["サロン"].id,
       referred_by_id: supporter.id,
@@ -562,6 +587,7 @@ supporter_customer_names = ["美香さんのお客様", "真理さんのお客�
       name: "美香クリニック",
       email: "aoki_clinic@example.com",
       password: "111111",
+      phone: generate_unique_phone("03-7000-2222", used_phones),
       level_id: levels["クリニック"].id,
       wott_level_id: wott_levels["クリニック"].id,
       referred_by_id: supporter.id,
@@ -582,6 +608,7 @@ additional_salon_names_2 = ["花音サロン", "美容室彩花"]
     name: additional_salon_names_2[i],
     email: "special2_salon#{i + 1}@example.com",
     password: "111111",
+    phone: generate_unique_phone("03-#{8000 + i}-#{3333 + i}", used_phones),
     level_id: levels["サロン"].id,
     wott_level_id: wott_levels["サロン"].id,
     referred_by_id: special_agents[1].id,
@@ -605,6 +632,7 @@ additional_salon_names_3 = ["優花サロン", "彩乃エステ"]
     name: additional_advisor_names_3[i][0],
     email: "special3_advisor#{i + 1}_1@example.com",
     password: "111111",
+    phone: generate_unique_phone("070-#{9000 + (i * 2)}-#{4444 + i}", used_phones),
     level_id: levels["アドバイザー"].id,
     wott_level_id: wott_levels["サポーター"].id,
     referred_by_id: special_agents[2].id,
@@ -619,6 +647,7 @@ additional_salon_names_3 = ["優花サロン", "彩乃エステ"]
     name: additional_advisor_names_3[i][1],
     email: "special3_advisor#{i + 1}_2@example.com",
     password: "111111",
+    phone: generate_unique_phone("070-#{9000 + (i * 2) + 1}-#{5555 + i}", used_phones),
     level_id: levels["アドバイザー"].id,
     wott_level_id: wott_levels["サポーター"].id,
     referred_by_id: advisor1.id,
@@ -633,6 +662,7 @@ additional_salon_names_3 = ["優花サロン", "彩乃エステ"]
     name: additional_salon_names_3[i],
     email: "special3_salon#{i + 1}@example.com",
     password: "111111",
+    phone: generate_unique_phone("03-#{9500 + i}-#{6666 + i}", used_phones),
     level_id: levels["サロン"].id,
     wott_level_id: wott_levels["サロン"].id,
     referred_by_id: advisor2.id,
@@ -828,6 +858,7 @@ special_agents.each_with_index do |special_agent, i|
       name: customer_name,
       email: "special_customer#{i + 1}-#{j + 1}@example.com",
       password: "111111",
+      phone: generate_unique_phone("090-#{7000 + (i * 10) + j}-#{7777 + j}", used_phones),
       level_id: levels["お客様"].id,
       wott_level_id: wott_levels["お客様"].id,
       referred_by_id: special_agent.id,
@@ -850,6 +881,7 @@ agents.each_with_index do |agent, i|
       name: customer_name,
       email: "agent_customer#{i + 1}-#{j + 1}@example.com",
       password: "111111",
+      phone: generate_unique_phone("080-#{8000 + (i * 10) + j}-#{8888 + j}", used_phones),
       level_id: levels["お客様"].id,
       wott_level_id: wott_levels["お客様"].id,
       referred_by_id: agent.id,
@@ -872,6 +904,7 @@ advisors.each_with_index do |advisor, i|
       name: customer_name,
       email: "advisor_customer#{i + 1}-#{j + 1}@example.com",
       password: "111111",
+      phone: generate_unique_phone("070-#{9000 + (i * 10) + j}-#{9999 + j}", used_phones),
       level_id: levels["お客様"].id,
       wott_level_id: wott_levels["お客様"].id,
       referred_by_id: advisor.id,
@@ -894,6 +927,7 @@ salons_and_clinics.first(20).each_with_index do |salon_clinic, i|
     name: customer_name,
     email: "salon_customer#{i + 1}@example.com",
     password: "111111",
+    phone: generate_unique_phone("050-#{1000 + i}-#{1111 + i}", used_phones),
     level_id: levels["お客様"].id,
     wott_level_id: wott_levels["お客様"].id,
     referred_by_id: salon_clinic.id,

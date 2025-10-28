@@ -15,11 +15,20 @@ class PurchasesController < ApplicationController
                             .where(purchased_at: @selected_month_start..@selected_month_end)
                             .order(purchased_at: :desc)
 
-    # 統計情報（送料・事務手数料込み）
+    # 統計情報（税込み金額）
     @total_amount = @purchases.sum do |purchase|
-      purchase.total_price + 
-      purchase.total_shipping_fees + 
-      (purchase.purchase_invoice&.admin_fee || 0)
+      # purchase_invoiceがある場合は税込み金額を使用
+      if purchase.purchase_invoice&.total_with_tax.present? && purchase.purchase_invoice.total_with_tax > 0
+        purchase.purchase_invoice.total_with_tax
+      else
+        # 従来の計算方法（税込み）
+        product_amount = purchase.total_price
+        shipping_fee = purchase.total_shipping_fees
+        admin_fee = purchase.purchase_invoice&.admin_fee || 0
+        subtotal_before_tax = product_amount + shipping_fee + admin_fee
+        tax_amount = (subtotal_before_tax * 0.1).round  # 消費税10%
+        subtotal_before_tax + tax_amount
+      end
     end
     @total_count = @purchases.count
     @total_items = @purchases.joins(:purchase_items).sum('purchase_items.quantity')

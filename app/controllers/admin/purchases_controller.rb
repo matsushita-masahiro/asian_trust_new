@@ -15,19 +15,49 @@ class Admin::PurchasesController < Admin::BaseController
       @purchases = @purchases.where(status: 'built')
     end
     
-    # 統計情報（unit_priceベースで計算）
-    @total_amount = @purchases.sum { |purchase| purchase.purchase_items.sum { |item| item.quantity * item.unit_price } }
+    # 統計情報（税込み金額で計算）
+    @total_amount = @purchases.sum do |purchase|
+      if purchase.purchase_invoice&.total_with_tax.present? && purchase.purchase_invoice.total_with_tax > 0
+        purchase.purchase_invoice.total_with_tax
+      else
+        # 従来の計算方法（税込み）
+        seller_price_total = purchase.purchase_items.sum { |item| item.quantity * item.unit_price }
+        shipping_fee = purchase.total_shipping_fees
+        admin_fee = purchase.purchase_invoice&.admin_fee || 0
+        subtotal_before_tax = seller_price_total + shipping_fee + admin_fee
+        tax_amount = (subtotal_before_tax * 0.1).round  # 消費税10%
+        subtotal_before_tax + tax_amount
+      end
+    end
     @total_count = @purchases.count
     
-    # 未入金購入分の合計金額を計算
-    @pending_amount = @purchases.where(status: 'built').sum { |purchase| 
-      purchase.purchase_items.sum { |item| item.quantity * item.unit_price } 
-    }
+    # 未入金購入分の合計金額を計算（税込み）
+    @pending_amount = @purchases.where(status: 'built').sum do |purchase|
+      if purchase.purchase_invoice&.total_with_tax.present? && purchase.purchase_invoice.total_with_tax > 0
+        purchase.purchase_invoice.total_with_tax
+      else
+        seller_price_total = purchase.purchase_items.sum { |item| item.quantity * item.unit_price }
+        shipping_fee = purchase.total_shipping_fees
+        admin_fee = purchase.purchase_invoice&.admin_fee || 0
+        subtotal_before_tax = seller_price_total + shipping_fee + admin_fee
+        tax_amount = (subtotal_before_tax * 0.1).round
+        subtotal_before_tax + tax_amount
+      end
+    end
     
-    # 入金済み購入分の合計金額を計算
-    @paid_amount = @purchases.where(status: ['paid', 'reserved']).sum { |purchase| 
-      purchase.purchase_items.sum { |item| item.quantity * item.unit_price } 
-    }
+    # 入金済み購入分の合計金額を計算（税込み）
+    @paid_amount = @purchases.where(status: ['paid', 'reserved']).sum do |purchase|
+      if purchase.purchase_invoice&.total_with_tax.present? && purchase.purchase_invoice.total_with_tax > 0
+        purchase.purchase_invoice.total_with_tax
+      else
+        seller_price_total = purchase.purchase_items.sum { |item| item.quantity * item.unit_price }
+        shipping_fee = purchase.total_shipping_fees
+        admin_fee = purchase.purchase_invoice&.admin_fee || 0
+        subtotal_before_tax = seller_price_total + shipping_fee + admin_fee
+        tax_amount = (subtotal_before_tax * 0.1).round
+        subtotal_before_tax + tax_amount
+      end
+    end
     
     # 月選択用のオプション（過去12ヶ月分）
     @month_options = generate_month_options

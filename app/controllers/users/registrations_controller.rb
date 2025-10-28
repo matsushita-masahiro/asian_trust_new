@@ -13,10 +13,64 @@ class Users::RegistrationsController < ApplicationController
     end
     
     @user = User.new
-    @minimum_password_length = User.password_length.min
+    @minimum_password_length = 6 # Deviseのデフォルト値
+  end
+
+  # 紹介者経由の新規登録（お客様として自動登録）
+  def new_with_referrer
+    if params[:ref].blank?
+      redirect_to root_path, alert: '紹介者情報が不正です。'
+      return
+    end
+
+    @referrer = User.find_by(referral_token: params[:ref])
+    if @referrer.nil?
+      redirect_to root_path, alert: '紹介者が見つかりません。'
+      return
+    end
+
+    @user = User.new
+    @minimum_password_length = 6 # Deviseのデフォルト値
+    @customer_level = Level.find_by(name: "お客様") # お客様レベル
   end
 
   def create
+    # 紹介者経由の登録（URLから直接）
+    if params[:referrer_token].present?
+      @referrer = User.find_by(referral_token: params[:referrer_token])
+      if @referrer.nil?
+        redirect_to root_path, alert: '紹介者が見つかりません。'
+        return
+      end
+
+      @user = User.new(user_params)
+      @user.referrer = @referrer
+      @user.level = Level.find_by(name: "お客様") # お客様レベル
+      @user.wott_level = WottLevel.find_by(name: "お客様") # お客様レベル（WOTT）
+
+      # 電話番号の必須チェック
+      if @user.phone.blank?
+        @user.errors.add(:phone, "を入力してください")
+      end
+
+      if @user.save
+        # メール確認を自動で完了させる
+        @user.confirm if @user.respond_to?(:confirm)
+        
+        # ログイン処理
+        sign_in(@user)
+        
+        flash[:notice] = "#{@referrer.name || '紹介者'}さんからの紹介で登録が完了しました！"
+        redirect_to root_path
+      else
+        @minimum_password_length = 6 # Deviseのデフォルト値
+        @customer_level = Level.find_by(name: "お客様")
+        render :new_with_referrer, status: :unprocessable_entity
+      end
+      return
+    end
+
+    # 従来の招待経由の登録
     if params[:ref].present? && @referral_invitation.nil?
       redirect_to new_user_registration_path, alert: '無効な紹介リンクです。'
       return
@@ -74,6 +128,6 @@ class Users::RegistrationsController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:name, :email, :password, :password_confirmation)
+    params.require(:user).permit(:name, :email, :phone, :password, :password_confirmation)
   end
 end

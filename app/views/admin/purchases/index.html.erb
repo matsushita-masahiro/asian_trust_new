@@ -136,10 +136,26 @@
                         <% end %>
                       </td>
                       <td class="text-end">
+                        <% 
+                          # purchase_invoiceがある場合は税込み金額を使用
+                          if purchase.purchase_invoice&.total_with_tax.present? && purchase.purchase_invoice.total_with_tax > 0
+                            total_amount = purchase.purchase_invoice.total_with_tax
+                          else
+                            # 従来の計算方法（税込み）
+                            seller_price_total = purchase.purchase_items.sum { |item| item.quantity * (item.seller_price || item.unit_price) }
+                            shipping_fee = purchase.total_shipping_fees
+                            admin_fee = purchase.purchase_invoice&.admin_fee || 0
+                            subtotal_before_tax = seller_price_total + shipping_fee + admin_fee
+                            tax_amount = (subtotal_before_tax * 0.1).round  # 消費税10%
+                            total_amount = subtotal_before_tax + tax_amount
+                          end
+                        %>
                         <div class="fw-bold text-success">
-                          <% seller_price_total = purchase.purchase_items.sum { |item| item.quantity * (item.seller_price || item.unit_price) } %>
-                          ¥<%= number_with_delimiter(seller_price_total) %>
+                          ¥<%= number_with_delimiter(total_amount) %>
                         </div>
+                        <% if purchase.purchase_invoice&.shipping_fee.to_i > 0 || purchase.purchase_invoice&.admin_fee.to_i > 0 %>
+                          <small class="text-muted">税込</small>
+                        <% end %>
                       </td>
                       <td class="text-center">
                         <% if purchase.built? %>

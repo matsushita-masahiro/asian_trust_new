@@ -107,15 +107,19 @@ body .custom-dropdown-toggle:focus {
 
     /* 初期状態（非表示） */
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-15px) scale(0.95);
     visibility: hidden;
-    transition: all 0.3s ease-in-out;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .custom-dropdown-menu.show {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     visibility: visible;
+    pointer-events: auto;
 }
 
 .custom-dropdown-menu li {
@@ -152,6 +156,22 @@ body .custom-dropdown-toggle:focus {
         border: none;
         background-color: #495057;
         border-radius: 0;
+        /* スマホでも初期状態は非表示 */
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .custom-dropdown-menu.show {
+        max-height: 300px; /* 十分な高さを設定 */
+        opacity: 1;
+        transform: translateY(0);
+        visibility: visible;
+        pointer-events: auto;
     }
 
     .custom-dropdown-item {

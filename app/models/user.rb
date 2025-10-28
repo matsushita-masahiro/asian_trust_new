@@ -27,9 +27,18 @@ class User < ApplicationRecord
   # 会員レベル
   belongs_to :level
   belongs_to :wott_level, optional: true
+
+  # 紹介トークン
+  before_save :generate_referral_token, if: -> { referral_token.blank? }
+
+  # バリデーション
+  validates :phone, presence: true, if: :referral_registration?
+  validates :phone, format: { with: /\A[\d\-\(\)\+\s]+\z/, message: "は有効な電話番号を入力してください" }, allow_blank: true
+  validates :phone, uniqueness: { message: "は既に使用されています" }, allow_blank: true
   
   # 購入関連のリレーション
   has_many :purchases, class_name: 'Purchase', foreign_key: 'user_id'  # 自分の購入
+  has_many :clinic_reservations, dependent: :destroy
   
   # カート機能
   has_one :cart, dependent: :destroy
@@ -702,6 +711,12 @@ class User < ApplicationRecord
       token = SecureRandom.urlsafe_base64(12)
       break token unless User.exists?(referral_token: token)
     end
+  end
+
+  # 紹介経由の登録かどうかを判定
+  def referral_registration?
+    # 紹介者が存在し、かつお客様レベル（value: 8）の場合
+    referrer.present? && level&.value == 8
   end
 
 

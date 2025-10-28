@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  # クリニック予約
+  resources :purchases, only: [] do
+    resources :clinic_reservations, only: [:new, :create]
+  end
+  resources :clinic_reservations, only: [:index, :show, :edit, :update, :destroy]
   get "carts/show"
   get "carts/add_item"
   get "carts/remove_item"
@@ -27,6 +32,8 @@ Rails.application.routes.draw do
   devise_scope :user do
     get '/users/sign_up', to: 'users/registrations#new', as: :new_user_registration
     post '/users', to: 'users/registrations#create', as: :user_registration
+    # 紹介者経由の新規登録
+    get '/signup', to: 'users/registrations#new_with_referrer', as: :signup_with_referrer
   end
 
   # トップページと各種ページ
@@ -39,6 +46,13 @@ Rails.application.routes.draw do
 
   # 管理者画面
   namespace :admin do
+    resources :clinic_reservations, only: [:index, :show, :edit, :update, :destroy] do
+      member do
+        patch :confirm
+        patch :complete
+        patch :cancel
+      end
+    end
     root to: 'dashboard#index'  # /admin → ダッシュボード
     resources :sales, only: [:index]
     resources :products, only: [:index, :edit, :update, :destroy] do

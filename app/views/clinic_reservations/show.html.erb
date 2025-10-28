@@ -1,0 +1,126 @@
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-success text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-check-circle me-2"></i>
+            クリニック予約完了
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-success">
+            <h5 class="alert-heading">
+              <i class="fas fa-thumbs-up me-2"></i>
+              予約申込みが完了しました
+            </h5>
+            <p class="mb-0">
+              クリニックより確定のご連絡をお待ちください。
+            </p>
+          </div>
+
+          <!-- 予約内容 -->
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">
+                <i class="fas fa-calendar-alt me-2"></i>
+                予約内容
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-sm-4"><strong>予約番号:</strong></div>
+                <div class="col-sm-8">#<%= @clinic_reservation.id %></div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-sm-4"><strong>ステータス:</strong></div>
+                <div class="col-sm-8">
+                  <span class="badge bg-warning"><%= @clinic_reservation.status_name %></span>
+                </div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-sm-4"><strong>施術方法:</strong></div>
+                <div class="col-sm-8">
+                  <% @clinic_reservation.treatment_methods_array.each do |method| %>
+                    <div class="mb-1">
+                      <i class="fas fa-check text-success me-1"></i>
+                      <%= method %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-sm-4"><strong>第1希望:</strong></div>
+                <div class="col-sm-8">
+                  <%= @clinic_reservation.preferred_date_1&.strftime('%Y年%m月%d日') %>
+                  <%= @clinic_reservation.preferred_time_1 %>
+                </div>
+              </div>
+              
+              <% if @clinic_reservation.preferred_date_2.present? %>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>第2希望:</strong></div>
+                  <div class="col-sm-8">
+                    <%= @clinic_reservation.preferred_date_2&.strftime('%Y年%m月%d日') %>
+                    <%= @clinic_reservation.preferred_time_2 %>
+                  </div>
+                </div>
+              <% end %>
+              
+              <% if @clinic_reservation.preferred_date_3.present? %>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>第3希望:</strong></div>
+                  <div class="col-sm-8">
+                    <%= @clinic_reservation.preferred_date_3&.strftime('%Y年%m月%d日') %>
+                    <%= @clinic_reservation.preferred_time_3 %>
+                  </div>
+                </div>
+              <% end %>
+              
+              <% if @clinic_reservation.has_stem_cell_treatment? %>
+                <hr>
+                <h6 class="text-primary mb-3">骨髄幹細胞治療関連情報</h6>
+                
+                <% if @clinic_reservation.disease_name.present? %>
+                  <div class="row mb-3">
+                    <div class="col-sm-4"><strong>病気・目的:</strong></div>
+                    <div class="col-sm-8"><%= simple_format(@clinic_reservation.disease_name) %></div>
+                  </div>
+                <% end %>
+                
+                <% if @clinic_reservation.current_treatment.present? %>
+                  <div class="row mb-3">
+                    <div class="col-sm-4"><strong>現在の治療:</strong></div>
+                    <div class="col-sm-8"><%= simple_format(@clinic_reservation.current_treatment) %></div>
+                  </div>
+                <% end %>
+                
+                <% if @clinic_reservation.current_condition.present? %>
+                  <div class="row mb-3">
+                    <div class="col-sm-4"><strong>身体の状況:</strong></div>
+                    <div class="col-sm-8"><%= simple_format(@clinic_reservation.current_condition) %></div>
+                  </div>
+                <% end %>
+                
+                <% if @clinic_reservation.questions.present? %>
+                  <div class="row mb-3">
+                    <div class="col-sm-4"><strong>質問:</strong></div>
+                    <div class="col-sm-8"><%= simple_format(@clinic_reservation.questions) %></div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- アクションボタン -->
+          <div class="text-center">
+            <%= link_to "予約一覧に戻る", clinic_reservations_path, class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -16,6 +16,9 @@ class PurchaseInvoicesController < ApplicationController
       redirect_to root_path, alert: "アクセス権がありません"
       return
     end
+    
+    # user_id=1のInvoiceRecipientから振込口座情報を取得
+    @bank_info = InvoiceRecipient.find_by(user_id: 1)
   end
 
   def new
@@ -30,7 +33,7 @@ class PurchaseInvoicesController < ApplicationController
     @purchase_invoice = @purchase.build_purchase_invoice
     @purchase_invoice.invoice_number = PurchaseInvoice.generate_invoice_number
     @purchase_invoice.invoice_date = Date.current
-    @purchase_invoice.due_date = Date.current + 30.days
+    @purchase_invoice.due_date = @purchase.purchased_at.to_date + 1.week
     @purchase_invoice.total_amount = @purchase.total_price
     @purchase_invoice.status = PurchaseInvoice::DRAFT
   end

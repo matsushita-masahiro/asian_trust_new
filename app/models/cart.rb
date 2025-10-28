@@ -14,4 +14,32 @@ class Cart < ApplicationRecord
   def total_items
     cart_items.sum(:quantity)
   end
+  
+  def has_stem_cell_products?
+    cart_items.joins(:product).where(products: { category: [nil, 'sl'] }).exists?
+  end
+  
+  def has_wott_products?
+    cart_items.joins(:product).where(products: { category: 'wott' }).exists?
+  end
+  
+  def has_ms_products?
+    cart_items.joins(:product).where(products: { category: 'ms' }).exists?
+  end
+  
+  def clear_all_items
+    cart_items.destroy_all
+  end
+  
+  def get_current_category
+    return nil if cart_items.empty?
+    
+    first_product = cart_items.first.product
+    category = first_product.category
+    
+    # 幹細胞商品（categoryがnilまたは'sl'）は'stem_cell'として扱う
+    return 'stem_cell' if category.nil? || category == 'sl'
+    
+    category
+  end
 end

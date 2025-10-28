@@ -1,0 +1,2 @@
+module ClinicReservationsHelper
+end

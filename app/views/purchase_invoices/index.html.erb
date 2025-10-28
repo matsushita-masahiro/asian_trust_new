@@ -11,6 +11,7 @@
             <th>支払期限</th>
             <th>金額</th>
             <th>ステータス</th>
+            <th>クリニック予約</th>
             <th>販売者</th>
             <th>操作</th>
           </tr>
@@ -74,6 +75,23 @@
                 <span class="badge bg-<%= invoice.status == 0 ? 'secondary' : invoice.status == 1 ? 'warning' : invoice.status == 2 ? 'success' : 'info' %>">
                   <%= invoice.status_display_name %>
                 </span>
+              </td>
+              <td>
+                <% case invoice.clinic_reservation_status %>
+                <% when :not_required %>
+                  <span class="badge bg-secondary">予約不要</span>
+                <% when :payment_required %>
+                  <span class="badge bg-warning">入金後予約可能</span>
+                <% when :reserved %>
+                  <span class="badge bg-success">予約済み</span>
+                  <div class="mt-1">
+                    <%= link_to "予約詳細", clinic_reservation_path(invoice.clinic_reservation), 
+                        class: "btn btn-xs btn-outline-info", style: "font-size: 0.7rem; padding: 2px 6px;" %>
+                  </div>
+                <% when :not_reserved %>
+                  <%= link_to "クリニック予約", new_purchase_clinic_reservation_path(invoice.purchase), 
+                      class: "btn btn-xs btn-primary", style: "font-size: 0.7rem; padding: 2px 6px;" %>
+                <% end %>
               </td>
               <td><%= invoice.user.name %></td>
               <td>

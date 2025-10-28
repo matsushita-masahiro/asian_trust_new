@@ -104,4 +104,42 @@ class PurchaseInvoice < ApplicationRecord
   # 購入明細の委譲
   delegate :purchase_items, to: :purchase
   delegate :total_price, to: :purchase
+  
+  # クリニック予約関連メソッド
+  def has_clinic_delivery?
+    purchase.delivery_informations.where(delivery_type: ['clinic', 'multiple']).exists?
+  end
+  
+  def clinic_reservation
+    purchase.clinic_reservation
+  end
+  
+  def clinic_reservation_required?
+    has_clinic_delivery? && purchase.paid?
+  end
+  
+  def clinic_reservation_status
+    if !has_clinic_delivery?
+      :not_required
+    elsif !purchase.paid?
+      :payment_required
+    elsif clinic_reservation.present?
+      :reserved
+    else
+      :not_reserved
+    end
+  end
+  
+  def clinic_reservation_status_text
+    case clinic_reservation_status
+    when :not_required
+      "予約不要"
+    when :payment_required
+      "入金後予約可能"
+    when :reserved
+      "予約済み"
+    when :not_reserved
+      "未予約"
+    end
+  end
 end

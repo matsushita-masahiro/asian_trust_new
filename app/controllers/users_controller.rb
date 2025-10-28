@@ -28,9 +28,15 @@ class UsersController < ApplicationController
     end
     
     if @user.update(user_params)
-      redirect_to user_path(@user), notice: "メールアドレスを更新しました。"
+      # 更新されたフィールドに応じてメッセージを変更
+      updated_fields = []
+      updated_fields << "メールアドレス" if user_params[:email].present?
+      updated_fields << "電話番号" if user_params[:phone].present?
+      
+      field_name = updated_fields.join("・")
+      redirect_to user_path(@user), notice: "#{field_name}を更新しました。"
     else
-      redirect_to user_path(@user), alert: "メールアドレスの更新に失敗しました。#{@user.errors.full_messages.join(', ')}"
+      redirect_to user_path(@user), alert: "更新に失敗しました。#{@user.errors.full_messages.join(', ')}"
     end
   end
 
@@ -130,6 +136,6 @@ class UsersController < ApplicationController
     end
 
     def user_params
-      params.require(:user).permit(:email)
+      params.require(:user).permit(:email, :phone)
     end
 end

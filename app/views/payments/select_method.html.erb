@@ -145,6 +145,32 @@
                 <li>送料（骨髄別送）: クリニックへの配送 ¥6,000</li>
                 <li class="text-warning">事務手数料: クリニック配送 ¥10,000</li>
                 <li class="text-info">複数配送先: 骨髄幹細胞培培養上清液はクリニック、その他商品はご登録住所へ配送</li>
+            </ul>
+            
+            <div class="mt-3 p-3 bg-light border-start border-4 border-warning">
+              <h6 class="text-warning mb-2">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                お支払いについて
+              </h6>
+              <p class="mb-2">下記の通り2回にわけてお願いしております。</p>
+              <div class="mb-2">
+                <strong>①幹細胞商品代等</strong><br>
+                ⇒添付の請求書にて期限内にお支払いお願いします。
+              </div>
+              <div class="mb-2">
+                <strong>②病院使用料等　22,000円税込</strong><br>
+                （※施術方法が複数箇所の場合はそれぞれ費用がかかります。腰を選択の場合、別途整形外科診察料が必要です。）<br>
+                ⇒当日、現金にて直接クリニックへお願いします。
+              </div>
+              <p class="mb-0 text-danger">
+                <small>
+                  <i class="fas fa-info-circle me-1"></i>
+                  また、入金確認後メーカーに発注いたしますので、メーカー発送後のキャンセルはお受けいたしかねますのでご了承くださいませ。
+                </small>
+              </p>
+            </div>
+            
+            <ul class="mb-0 mt-2" style="display: none;">
               <% elsif has_stem_cell_product %>
                 <li>送料（骨髄別送）: クリニックへの配送 ¥6,000</li>
                 <li class="text-warning">事務手数料: クリニック配送 ¥10,000</li>
@@ -174,6 +200,10 @@
                     <li><i class="fas fa-check text-success me-2"></i>法人・個人どちらでも可</li>
                   </ul>
                   <%= form_with url: bank_transfer_payments_path, method: :post, local: true, class: "mt-3" do |f| %>
+                    <%= f.hidden_field :delivery_type, value: params[:delivery_type] %>
+                    <%= f.hidden_field :address_type, value: params[:address_type] %>
+                    <%= f.hidden_field :clinic_id, value: params[:clinic_id] %>
+                    <%= f.hidden_field :delivery_notes, value: params[:delivery_notes] %>
                     <%= f.submit "銀行振込で注文する", class: "btn btn-primary btn-lg w-100", 
                         confirm: "銀行振込で注文を確定しますか？" %>
                   <% end %>

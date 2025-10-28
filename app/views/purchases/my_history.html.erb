@@ -16,34 +16,6 @@
     </div>
   </div>
 
-  <!-- 統計情報 -->
-  <div class="row mb-4">
-    <div class="col-md-4">
-      <div class="card bg-primary text-white">
-        <div class="card-body text-center">
-          <h5 class="card-title">購入回数</h5>
-          <h2 class="mb-0"><%= @total_count %>回</h2>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card bg-success text-white">
-        <div class="card-body text-center">
-          <h5 class="card-title">購入商品数</h5>
-          <h2 class="mb-0"><%= @total_items %>個</h2>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card bg-info text-white">
-        <div class="card-body text-center">
-          <h5 class="card-title">合計金額</h5>
-          <h2 class="mb-0">¥<%= number_with_delimiter(@total_amount) %></h2>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- 購入履歴一覧 -->
   <div class="row">
     <div class="col-12">
@@ -61,6 +33,7 @@
                     <th>商品情報</th>
                     <th>数量</th>
                     <th>合計金額</th>
+                    <th>クリニック予約</th>
                     <th>詳細</th>
                   </tr>
                 </thead>
@@ -97,21 +70,58 @@
                       </td>
                       <td>
                         <% 
-                          total_with_fees = purchase.total_price + 
-                                          purchase.total_shipping_fees + 
-                                          (purchase.purchase_invoice&.admin_fee || 0)
+                          # purchase_invoiceがある場合は税込み金額を使用
+                          if purchase.purchase_invoice&.total_with_tax.present? && purchase.purchase_invoice.total_with_tax > 0
+                            total_amount = purchase.purchase_invoice.total_with_tax
+                            product_amount = purchase.purchase_invoice.total_amount
+                            shipping_fee = purchase.purchase_invoice.shipping_fee
+                            admin_fee = purchase.purchase_invoice.admin_fee
+                            tax_amount = purchase.purchase_invoice.tax_amount
+                          else
+                            # 従来の計算方法（税抜き）
+                            product_amount = purchase.total_price
+                            shipping_fee = purchase.total_shipping_fees
+                            admin_fee = purchase.purchase_invoice&.admin_fee || 0
+                            subtotal_before_tax = product_amount + shipping_fee + admin_fee
+                            tax_amount = calculate_tax(subtotal_before_tax)
+                            total_amount = subtotal_before_tax + tax_amount
+                          end
                         %>
-                        <div class="fw-bold text-success">¥<%= number_with_delimiter(total_with_fees) %></div>
-                        <% if purchase.shipping_fees.any? || (purchase.purchase_invoice&.admin_fee || 0) > 0 %>
+                        <div class="fw-bold text-success">¥<%= number_with_delimiter(total_amount) %></div>
+                        <% if shipping_fee > 0 || admin_fee > 0 || tax_amount > 0 %>
                           <small class="text-muted">
-                            商品: ¥<%= number_with_delimiter(purchase.total_price) %>
-                            <% if purchase.total_shipping_fees > 0 %>
-                              + 送料: ¥<%= number_with_delimiter(purchase.total_shipping_fees) %>
+                            商品: ¥<%= number_with_delimiter(product_amount) %>
+                            <% if shipping_fee > 0 %>
+                              + 送料: ¥<%= number_with_delimiter(shipping_fee) %>
                             <% end %>
-                            <% if (purchase.purchase_invoice&.admin_fee || 0) > 0 %>
-                              + 手数料: ¥<%= number_with_delimiter(purchase.purchase_invoice.admin_fee) %>
+                            <% if admin_fee > 0 %>
+                              + 手数料: ¥<%= number_with_delimiter(admin_fee) %>
+                            <% end %>
+                            <% if tax_amount > 0 %>
+                              + 税: ¥<%= number_with_delimiter(tax_amount) %>
                             <% end %>
                           </small>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if purchase.purchase_invoice.present? %>
+                          <% case purchase.purchase_invoice.clinic_reservation_status %>
+                          <% when :not_required %>
+                            <span class="badge bg-secondary">予約不要</span>
+                          <% when :payment_required %>
+                            <span class="badge bg-warning">入金後予約可能</span>
+                          <% when :reserved %>
+                            <span class="badge bg-success">予約済み</span>
+                            <div class="mt-1">
+                              <%= link_to "予約詳細", clinic_reservation_path(purchase.clinic_reservation), 
+                                  class: "btn btn-xs btn-outline-info", style: "font-size: 0.7rem; padding: 2px 6px;" %>
+                            </div>
+                          <% when :not_reserved %>
+                            <%= link_to "クリニック予約", new_purchase_clinic_reservation_path(purchase), 
+                                class: "btn btn-xs btn-primary", style: "font-size: 0.7rem; padding: 2px 6px;" %>
+                          <% end %>
+                        <% else %>
+                          <span class="badge bg-secondary">請求書未作成</span>
                         <% end %>
                       </td>
                       <td>

@@ -15,7 +15,14 @@
           <h5 class="card-title mb-0">購入情報</h5>
         </div>
         <div class="card-body">
-          <% seller_price_total = @purchase.purchase_items.sum { |item| item.quantity * (item.seller_price || item.unit_price) } %>
+          <% 
+            seller_price_total = @purchase.purchase_items.sum { |item| item.quantity * (item.seller_price || item.unit_price) }
+            purchase_invoice = @purchase.purchase_invoice
+            shipping_fee = purchase_invoice&.shipping_fee || @purchase.total_shipping_fees || 0
+            admin_fee = purchase_invoice&.admin_fee || 0
+            tax_amount = purchase_invoice&.tax_amount || 0
+            total_with_tax = purchase_invoice&.total_with_tax || (seller_price_total + shipping_fee + admin_fee + tax_amount)
+          %>
           <div class="row mb-4">
             <div class="col-md-6">
               <table class="table table-borderless">
@@ -47,8 +54,39 @@
             </div>
             <div class="col-md-6">
               <div class="text-end">
-                <h4 class="text-primary">合計金額: ¥<%= number_with_delimiter(seller_price_total) %></h4>
-                <p class="text-muted">商品数: <%= @purchase.purchase_items.count %>点</p>
+                <div class="card border-0 bg-light">
+                  <div class="card-body">
+                    <h6 class="text-muted mb-2">料金詳細</h6>
+                    <div class="d-flex justify-content-between mb-1">
+                      <span>商品代金:</span>
+                      <span>¥<%= number_with_delimiter(seller_price_total) %></span>
+                    </div>
+                    <% if shipping_fee > 0 %>
+                      <div class="d-flex justify-content-between mb-1">
+                        <span>送料:</span>
+                        <span>¥<%= number_with_delimiter(shipping_fee) %></span>
+                      </div>
+                    <% end %>
+                    <% if admin_fee > 0 %>
+                      <div class="d-flex justify-content-between mb-1">
+                        <span>事務手数料:</span>
+                        <span class="text-warning">¥<%= number_with_delimiter(admin_fee) %></span>
+                      </div>
+                    <% end %>
+                    <% if tax_amount > 0 %>
+                      <div class="d-flex justify-content-between mb-1">
+                        <span>消費税:</span>
+                        <span>¥<%= number_with_delimiter(tax_amount) %></span>
+                      </div>
+                    <% end %>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between">
+                      <strong>合計金額:</strong>
+                      <strong class="text-primary">¥<%= number_with_delimiter(total_with_tax) %></strong>
+                    </div>
+                    <p class="text-muted small mb-0 mt-2">商品数: <%= @purchase.purchase_items.count %>点</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -80,9 +118,35 @@
                 <% end %>
               </tbody>
               <tfoot>
-                <tr class="table-info">
-                  <th colspan="3">合計</th>
+                <tr>
+                  <th colspan="3">商品代金計</th>
                   <th>¥<%= number_with_delimiter(seller_price_total) %></th>
+                  <th></th>
+                </tr>
+                <% if shipping_fee > 0 %>
+                  <tr>
+                    <th colspan="3">送料</th>
+                    <th>¥<%= number_with_delimiter(shipping_fee) %></th>
+                    <th></th>
+                  </tr>
+                <% end %>
+                <% if admin_fee > 0 %>
+                  <tr>
+                    <th colspan="3">事務手数料</th>
+                    <th class="text-warning">¥<%= number_with_delimiter(admin_fee) %></th>
+                    <th></th>
+                  </tr>
+                <% end %>
+                <% if tax_amount > 0 %>
+                  <tr>
+                    <th colspan="3">消費税</th>
+                    <th>¥<%= number_with_delimiter(tax_amount) %></th>
+                    <th></th>
+                  </tr>
+                <% end %>
+                <tr class="table-success">
+                  <th colspan="3">合計金額</th>
+                  <th class="text-success">¥<%= number_with_delimiter(total_with_tax) %></th>
                   <th></th>
                 </tr>
               </tfoot>
@@ -96,7 +160,7 @@
                   method: :patch, 
                   class: "btn btn-success btn-lg",
                   data: { 
-                    confirm: "この購入の入金を確認しますか？\n\n購入者: #{@purchase.user.name.present? ? @purchase.user.name : @purchase.user.email}\n合計金額: ¥#{number_with_delimiter(seller_price_total)}\n\n確認後、お客様にメールが送信されます。" 
+                    confirm: "この購入の入金を確認しますか？\n\n購入者: #{@purchase.user.name.present? ? @purchase.user.name : @purchase.user.email}\n合計金額: ¥#{number_with_delimiter(total_with_tax)}\n\n確認後、お客様にメールが送信されます。" 
                   } do %>
                 <i class="fas fa-check-circle me-2"></i>入金確認
               <% end %>

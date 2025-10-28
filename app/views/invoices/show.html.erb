@@ -210,13 +210,12 @@
               <table class="table table-hover align-middle">
                 <thead class="table-light">
                   <tr>
-                    <th>種別</th>
-                    <th>販売者</th>
+                    <th>日付</th>
+                    <th>購入者</th>
                     <th>商品名</th>
                     <th class="text-end">数量</th>
                     <th class="text-end">単価</th>
                     <th class="text-end">金額</th>
-                    <th>日付</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -224,20 +223,12 @@
                   <% @bonus_details.each_with_index do |detail, index| %>
                     <% total_amount += detail[:total_bonus] %>
                     <tr>
-                      <td>
-                        <!-- デバッグ: 行 <%= index + 1 %> -->
-                        <% if detail[:type] == '自己販売' %>
-                          <span class="badge bg-primary">自己販売</span>
-                        <% else %>
-                          <span class="badge bg-success">下位販売</span>
-                        <% end %>
-                      </td>
+                      <td><%= detail[:purchased_at]&.strftime("%m/%d") %></td>
                       <td><%= detail[:user_name] %></td>
                       <td><%= detail[:product_name] %></td>
                       <td class="text-end"><%= detail[:quantity] %></td>
                       <td class="text-end">¥<%= number_with_delimiter(detail[:unit_bonus]) %></td>
                       <td class="text-end text-success fw-bold">¥<%= number_with_delimiter(detail[:total_bonus]) %></td>
-                      <td><%= detail[:purchased_at]&.strftime("%m/%d") %></td>
                     </tr>
                   <% end %>
                 </tbody>

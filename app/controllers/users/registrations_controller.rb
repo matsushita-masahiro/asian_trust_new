@@ -12,6 +12,9 @@ class Users::RegistrationsController < ApplicationController
       return
     end
     
+    # 紹介者情報を設定
+    @referrer = @referral_invitation&.referrer
+    
     @user = User.new
     @minimum_password_length = 6 # Deviseのデフォルト値
   end
@@ -99,6 +102,11 @@ class Users::RegistrationsController < ApplicationController
     @user = User.new(user_params)
     @user.referrer = @referral_invitation.referrer
     @user.level = @referral_invitation.target_level
+
+    # 電話番号の必須チェック
+    if @user.phone.blank?
+      @user.errors.add(:phone, "を入力してください")
+    end
 
     if @user.save
       # メール確認を自動で完了させる（開発環境用）

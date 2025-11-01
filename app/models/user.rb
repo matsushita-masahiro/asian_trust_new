@@ -32,7 +32,7 @@ class User < ApplicationRecord
   before_save :generate_referral_token, if: -> { referral_token.blank? }
 
   # バリデーション
-  validates :phone, presence: true, if: :referral_registration?
+  validates :phone, presence: true
   validates :phone, format: { with: /\A[\d\-\(\)\+\s]+\z/, message: "は有効な電話番号を入力してください" }, allow_blank: true
   validates :phone, uniqueness: { message: "は既に使用されています" }, allow_blank: true
   

@@ -12,8 +12,7 @@
             <div class="alert alert-info d-flex align-items-center mb-4">
               <i class="fas fa-user-friends me-2"></i>
               <div>
-                <strong>紹介者</strong><br>
-                <span class="text-muted"><%= @referrer.display_name %></span>
+                <strong><%= @referrer.name || @referrer.email %></strong>さんからの紹介で登録します
               </div>
             </div>
           <% end %>
@@ -47,11 +46,13 @@
               <div class="form-text">紹介者から受け取った4桁の暗証番号を入力してください。</div>
             </div>
 
-            <%# 電話番号フィールドは一時的にコメントアウト %>
-            <%# <div class="mb-3">
+            <div class="mb-3">
               <%= f.label :phone, "電話番号", class: "form-label" %>
-              <%#= f.telephone_field :phone, class: "form-control" %>
-            <%# </div> %>
+              <%= f.text_field :phone, class: "form-control", required: true, placeholder: "" %>
+              <div class="form-text">
+                ハイフンありなしどちらでも入力可能です
+              </div>
+            </div>
 
             <div class="mb-3">
               <%= f.label :password, "パスワード", class: "form-label" %>

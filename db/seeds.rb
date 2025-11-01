@@ -81,9 +81,9 @@ level_data = [
   { id: 2, name: "総代理店", value: 1 },
   { id: 3, name: "代理店", value: 2 },
   { id: 4, name: "アドバイザー", value: 3 },
-  { id: 5, name: "サロン", value: 4 },
-  { id: 6, name: "クリニック", value: 5 },
-  { id: 7, name: "サポーター", value: 6 },
+  { id: 5, name: "サポーター", value: 4 },
+  { id: 6, name: "サロン", value: 5 },
+  { id: 7, name: "クリニック", value: 6 },
   { id: 8, name: "お客様", value: 7 }
 ]
 
@@ -122,11 +122,10 @@ wott_level_data = [
   { id: 1, name: "アジアビジネストラスト", value: 0 },
   { id: 2, name: "総代理店", value: 1 },
   { id: 3, name: "代理店", value: 2 },
-  { id: 4, name: "アドバイザー", value: 3 },
-  { id: 5, name: "サポーター", value: 4 },
-  { id: 6, name: "サロン", value: 5 },
-  { id: 7, name: "クリニック", value: 6 },
-  { id: 8, name: "お客様", value: 7 }
+  { id: 5, name: "サポーター", value: 3 },
+  { id: 6, name: "サロン", value: 4 },
+  { id: 7, name: "クリニック", value: 5 },
+  { id: 8, name: "お客様", value: 6 }
 ]
 
 wott_level_data.each do |data|
@@ -163,9 +162,9 @@ price_data_1 = [
   { level_name: "総代理店", price: 26000 },
   { level_name: "代理店", price: 28000 },
   { level_name: "アドバイザー", price: 30000 },
+  { level_name: "サポーター", price: 36000 },
   { level_name: "サロン", price: 40000 },
   { level_name: "クリニック", price: 40000 },
-  { level_name: "サポーター", price: 36000 },
   { level_name: "お客様", price: 40000 }
 ]
 
@@ -175,9 +174,9 @@ price_data_2 = [
   { level_name: "総代理店", price: 20000 },
   { level_name: "代理店", price: 22000 },
   { level_name: "アドバイザー", price: 24000 },
+  { level_name: "サポーター", price: 28000 },
   { level_name: "サロン", price: 30000 },
   { level_name: "クリニック", price: 30000 },
-  { level_name: "サポーター", price: 28000 },
   { level_name: "お客様", price: 30000 }
 ]
 
@@ -186,9 +185,9 @@ price_data_3 = [
   { level_name: "総代理店", price: 20000 },
   { level_name: "代理店", price: 22000 },
   { level_name: "アドバイザー", price: 24000 },
+  { level_name: "サポーター", price: 28000 },
   { level_name: "サロン", price: 30000 },
   { level_name: "クリニック", price: 30000 },
-  { level_name: "サポーター", price: 28000 },
   { level_name: "お客様", price: 30000 }
 ]
 
@@ -197,9 +196,9 @@ price_data_4 = [
   { level_name: "総代理店", price: 20000 },
   { level_name: "代理店", price: 22000 },
   { level_name: "アドバイザー", price: 24000 },
+  { level_name: "サポーター", price: 28000 },
   { level_name: "サロン", price: 30000 },
   { level_name: "クリニック", price: 30000 },
-  { level_name: "サポーター", price: 28000 },
   { level_name: "お客様", price: 30000 }
 ]
 
@@ -228,9 +227,9 @@ if bone_marrow_stem_cell
     { level_name: "総代理店", price: 3040000 },
     { level_name: "代理店", price: 3230000 },
     { level_name: "アドバイザー", price: 3420000 },
+    { level_name: "サポーター", price: 3610000 },
     { level_name: "サロン", price: 3800000 },
     { level_name: "クリニック", price: 3800000 },
-    { level_name: "サポーター", price: 3610000 },
     { level_name: "お客様", price: 3800000 }
   ]
   
@@ -252,8 +251,7 @@ if wott_product
   wott_price_data = [
     { wott_level_name: "アジアビジネストラスト", price: 500000 },
     { wott_level_name: "総代理店", price: 880000 },
-    { wott_level_name: "代理店", price: 935000 },
-    { wott_level_name: "アドバイザー", price: 990000 },
+    { wott_level_name: "代理店", price: 990000 },
     { wott_level_name: "サポーター", price: 1045000 },
     { wott_level_name: "サロン", price: 1100000 },
     { wott_level_name: "クリニック", price: 1100000 },
@@ -281,9 +279,9 @@ mannersound_products.each do |ms_product|
     { level_name: "総代理店", price: ms_product.base_price },
     { level_name: "代理店", price: ms_product.base_price },
     { level_name: "アドバイザー", price: ms_product.base_price },
+    { level_name: "サポーター", price: ms_product.base_price },
     { level_name: "サロン", price: ms_product.base_price },
     { level_name: "クリニック", price: ms_product.base_price },
-    { level_name: "サポーター", price: ms_product.base_price },
     { level_name: "お客様", price: ms_product.base_price }
   ]
   

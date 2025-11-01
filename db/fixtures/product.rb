@@ -19,6 +19,9 @@ Product.seed(:id,
   { id: 11, name: '身体の免疫向上シリーズ', short_name: 'MS V', base_price: 121000, is_active: true, unit_quantity: 1 , unit_label: "セット", category: "ms", tax_included: true, description: "免疫力向上と身体機能の最適化をサポートする音響シリーズです。6種類の健康音響が含まれています。" },
   { id: 12, name: '運気上昇シリーズ', short_name: 'MS VI', base_price: 121000, is_active: true, unit_quantity: 1 , unit_label: "セット", category: "ms", tax_included: true, description: "総合的な運気向上をサポートする音響シリーズです。5種類の運気向上音響が含まれています。" },
   { id: 13, name: '恋愛結婚運上昇シリーズ', short_name: 'MS VII', base_price: 121000, is_active: true, unit_quantity: 1 , unit_label: "セット", category: "ms", tax_included: true, description: "恋愛運と結婚運の向上をサポートする特別な音響シリーズです。5種類のロマンス音響が含まれています。" },
-  { id: 14, name: '髪の健康ケアシリーズ', short_name: 'MS VIII', base_price: 121000, is_active: true, unit_quantity: 1 , unit_label: "セット", category: "ms", tax_included: true, description: "髪の健康と育毛をサポートする音響シリーズです。5種類のヘアケア音響が含まれています。" }
+  { id: 14, name: '髪の健康ケアシリーズ', short_name: 'MS VIII', base_price: 121000, is_active: true, unit_quantity: 1 , unit_label: "セット", category: "ms", tax_included: true, description: "髪の健康と育毛をサポートする音響シリーズです。5種類のヘアケア音響が含まれています。" },
+  
+  # エアガン商品 (category: ag) - 税込価格
+  { id: 15, name: 'プロフェッショナルエアガン', short_name: 'AG Pro', base_price: 600000, is_active: true, unit_quantity: 1 , unit_label: "丁", category: "ag", tax_included: true, description: "プロフェッショナル仕様の高性能エアガンです。精密射撃に最適な製品です。" }
 )
 

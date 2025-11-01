@@ -1,59 +1,95 @@
-<% if product.category == 'wott' %>
-  <!-- WOTT商品の場合はWOTTレベル別価格設定 -->
-  <h5 class="mt-5 mb-3">💰 <strong>WOTTレベル別価格設定</strong></h5>
-  <div class="alert alert-info">
-    <i class="fas fa-info-circle me-2"></i>
-    <strong>WOTT商品の価格設定:</strong> 購入価格は全レベル共通で基本価格（¥<%= number_with_delimiter(product.base_price || 1100000) %>）が使用されます。
-    インセンティブ額は各レベルごとに設定できます。
-  </div>
+<% if product.category == 'wott' || product.category == 'ms' || product.category == 'ag' %>
+  <!-- WOTT・MANNERSSOUND商品の場合はWOTTレベル別価格設定 -->
+  <% if product.category == 'wott' %>
+    <h5 class="mt-5 mb-3">💰 <strong>WOTTレベル別価格設定</strong></h5>
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      <strong>WOTT商品の価格設定:</strong> 購入価格は全レベル共通で基本価格（¥<%= number_with_delimiter(product.base_price || 1100000) %>）が使用されます。
+      インセンティブ額は各レベルごとに設定できます。
+    </div>
+  <% elsif product.category == 'ms' %>
+    <h5 class="mt-5 mb-3">🎵 <strong>MANNERSSOUNDレベル別価格設定</strong></h5>
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      <strong>MANNERSSOUND商品の価格設定:</strong> 購入価格は全レベル共通で基本価格（¥<%= number_with_delimiter(product.base_price || 0) %>）が使用されます。
+      インセンティブ率は各レベルごとに設定できます。
+    </div>
+  <% else %>
+    <h5 class="mt-5 mb-3">🔫 <strong>エアガンレベル別価格設定</strong></h5>
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      <strong>エアガン商品の価格設定:</strong> 購入価格は全レベル共通で基本価格（¥<%= number_with_delimiter(product.base_price || 0) %>）が使用されます。
+      インセンティブ率は各レベルごとに設定できます。
+    </div>
+  <% end %>
   <div class="table-responsive">
     <table class="table table-bordered table-hover table-striped align-middle">
       <thead class="table-light">
         <tr>
-          <th style="width: 30%">WOTTレベル名</th>
+          <th style="width: 30%">
+            <% if product.category == 'wott' %>
+              WOTTレベル名
+            <% elsif product.category == 'ms' %>
+              MANNERSSOUNDレベル名
+            <% else %>
+              エアガンレベル名
+            <% end %>
+          </th>
           <th style="width: 35%">購入価格（円）</th>
-          <th style="width: 35%">インセンティブ額（円）</th>
+          <th style="width: 35%">インセンティブ率（%）</th>
         </tr>
       </thead>
       <tbody>
-        <% WottLevel.ordered.each do |wott_level| %>
-          <% price_record = product.product_prices.find { |pp| pp.wott_level_id == wott_level.id } || product.product_prices.build(wott_level: wott_level) %>
+        <% @price_data.each do |data| %>
           <tr>
-            <td class="fw-semibold"><%= wott_level.name %></td>
+            <td class="fw-semibold"><%= data[:level].name %></td>
             <td>
               <div class="form-control bg-light text-muted" style="min-width: 120px;">
-                ¥<%= number_with_delimiter(product.base_price || 1100000) %>
+                ¥<%= number_with_delimiter(data[:base_price]) %>
               </div>
               <small class="text-muted">（全レベル共通・編集不可）</small>
             </td>
             <td>
-              <%= form.fields_for :product_prices, price_record do |pp_form| %>
-                <%= pp_form.hidden_field :wott_level_id %>
-                <% 
-                  default_incentive = case wott_level.symbol
-                  when :special_agent
-                    220000
-                  when :agent
-                    165000
-                  when :advisor
-                    110000
-                  when :supporter
-                    55000
-                  else
-                    0
-                  end
-                %>
-                <%= pp_form.number_field :price, 
-                    class: "form-control", 
-                    placeholder: number_with_delimiter(default_incentive),
-                    value: price_record.price || default_incentive,
-                    style: "min-width: 120px;" %>
-                <% if default_incentive > 0 %>
+              <% if data[:has_incentive] %>
+                <%= form.fields_for :product_prices, data[:price_record] do |pp_form| %>
+                  <% if product.category == 'wott' %>
+                    <%= pp_form.hidden_field :wott_level_id %>
+                    <%= pp_form.hidden_field :price, value: data[:base_price] %>
+                    <!-- インセンティブ率の入力フィールド（パーセンテージ） -->
+                    <%= pp_form.number_field :incentive_percentage, 
+                        class: "form-control", 
+                        placeholder: data[:default_rate],
+                        value: data[:price_record].incentive_percentage,
+                        style: "min-width: 120px;",
+                        step: 1,
+                        min: 0,
+                        max: 100 %>
+                  <% else %>
+                    <%= pp_form.hidden_field :level_id %>
+                    <%= pp_form.hidden_field :price, value: data[:base_price] %>
+                    <!-- インセンティブ率の入力フィールド（パーセンテージ） -->
+                    <%= pp_form.number_field :incentive_percentage, 
+                        class: "form-control", 
+                        placeholder: data[:default_rate],
+                        value: data[:price_record].incentive_percentage,
+                        style: "min-width: 120px;",
+                        step: 1,
+                        min: 0,
+                        max: 100 %>
+                  <% end %>
                   <small class="text-muted">
-                    デフォルト: ¥<%= number_with_delimiter(default_incentive) %>
-                    (<%= (default_incentive.to_f / (product.base_price || 1100000) * 100).round(1) %>%)
+                    <% if product.category == 'wott' %>
+                      <%= data[:price_record].incentive_percentage || 0 %>%インセンティブ（¥<%= number_with_delimiter(data[:incentive_amount]) %>）
+                    <% else %>
+                      <%= data[:price_record].incentive_percentage || 0 %>%インセンティブ
+                    <% end %>
                   </small>
                 <% end %>
+              <% else %>
+                <div class="form-control bg-light text-muted" style="min-width: 120px;">
+                  0
+                </div>
+                <small class="text-muted">（インセンティブなし）</small>
               <% end %>
             </td>
           </tr>
@@ -73,12 +109,11 @@
         </tr>
       </thead>
       <tbody>
-        <% Level.all.each do |level| %>
-          <% price_record = product.product_prices.find { |pp| pp.level_id == level.id } || product.product_prices.build(level: level) %>
+        <% @price_data.each do |data| %>
           <tr>
-            <td class="fw-semibold"><%= level.name %></td>
+            <td class="fw-semibold"><%= data[:level].name %></td>
             <td>
-              <%= form.fields_for :product_prices, price_record do |pp_form| %>
+              <%= form.fields_for :product_prices, data[:price_record] do |pp_form| %>
                 <%= pp_form.hidden_field :level_id %>
                 <%= pp_form.number_field :price, class: "form-control", placeholder: "例: 45000", style: "min-width: 120px;" %>
               <% end %>
@@ -88,4 +123,66 @@
       </tbody>
     </table>
   </div>
+<% end %>
+
+<% if product.category == 'ms' %>
+<script>
+// MANNERSSOUNDのインセンティブ額入力を購入価格に変換
+document.addEventListener('DOMContentLoaded', function() {
+  const incentiveInputs = document.querySelectorAll('.ms-incentive-display');
+  
+  incentiveInputs.forEach(function(input) {
+    input.addEventListener('input', function() {
+      const basePrice = parseFloat(this.dataset.basePrice) || 0;
+      const incentiveAmount = parseFloat(this.value) || 0;
+      const purchasePrice = basePrice - incentiveAmount;
+      
+      // 対応する購入価格フィールドを更新
+      const purchaseFieldId = this.dataset.purchaseFieldId;
+      const purchaseField = document.querySelector(`input[name*="${purchaseFieldId}"]`);
+      if (purchaseField) {
+        purchaseField.value = purchasePrice;
+      }
+      
+      // パーセンテージ表示を更新
+      const percentage = basePrice > 0 ? ((incentiveAmount / basePrice) * 100).toFixed(1) : 0;
+      const percentageDisplay = this.parentElement.querySelector('.text-muted');
+      if (percentageDisplay) {
+        percentageDisplay.textContent = `${percentage}%割引`;
+      }
+    });
+  });
+});
+
+// Turbo対応
+document.addEventListener('turbo:load', function() {
+  const incentiveInputs = document.querySelectorAll('.ms-incentive-display');
+  
+  incentiveInputs.forEach(function(input) {
+    input.removeEventListener('input', updateMSIncentive);
+    input.addEventListener('input', updateMSIncentive);
+  });
+});
+
+function updateMSIncentive(event) {
+  const input = event.target;
+  const basePrice = parseFloat(input.dataset.basePrice) || 0;
+  const incentiveAmount = parseFloat(input.value) || 0;
+  const purchasePrice = basePrice - incentiveAmount;
+  
+  // 対応する購入価格フィールドを更新
+  const purchaseFieldId = input.dataset.purchaseFieldId;
+  const purchaseField = document.querySelector(`input[name*="${purchaseFieldId}"]`);
+  if (purchaseField) {
+    purchaseField.value = purchasePrice;
+  }
+  
+  // パーセンテージ表示を更新
+  const percentage = basePrice > 0 ? ((incentiveAmount / basePrice) * 100).toFixed(1) : 0;
+  const percentageDisplay = input.parentElement.querySelector('.text-muted');
+  if (percentageDisplay) {
+    percentageDisplay.textContent = `${percentage}%割引`;
+  }
+}
+</script>
 <% end %>

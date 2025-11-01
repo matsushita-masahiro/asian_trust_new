@@ -107,19 +107,7 @@
                     <%= reservation.created_at.strftime('%Y/%m/%d %H:%M') %>
                   </td>
                   <td onclick="event.stopPropagation();">
-                    <div class="btn-group" role="group">
-                      <%= link_to admin_clinic_reservation_path(reservation), class: "btn btn-sm btn-outline-primary" do %>
-                        <i class="fas fa-eye"></i>
-                      <% end %>
-                      <% if reservation.pending? %>
-                        <%= link_to confirm_admin_clinic_reservation_path(reservation), 
-                            method: :patch, 
-                            class: "btn btn-sm btn-success",
-                            confirm: "予約を確定しますか？" do %>
-                          <i class="fas fa-check"></i>
-                        <% end %>
-                      <% end %>
-                    </div>
+                    <%= link_to "詳細", admin_clinic_reservation_path(reservation), class: "btn btn-sm btn-outline-primary" %>
                   </td>
                 </tr>
               <% end %>

@@ -1,2 +1,301 @@
-<h1>Admin::ClinicReservations#show</h1>
-<p>Find me in app/views/admin/clinic_reservations/show.html.erb</p>
+<div class="container-fluid" style="padding-top: 100px;">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary">
+          <i class="fas fa-calendar-alt me-2"></i>
+          クリニック予約詳細 #<%= @clinic_reservation.id %>
+        </h4>
+        <div class="d-flex gap-2">
+          <%= link_to "← 予約一覧に戻る", admin_clinic_reservations_path, class: "btn btn-outline-secondary" %>
+          <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- 予約情報 -->
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            予約情報
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-sm-3"><strong>予約ID:</strong></div>
+            <div class="col-sm-9">#<%= @clinic_reservation.id %></div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-sm-3"><strong>ステータス:</strong></div>
+            <div class="col-sm-9">
+              <% case @clinic_reservation.status %>
+              <% when ClinicReservation::PENDING %>
+                <span class="badge bg-warning fs-6">申込中</span>
+              <% when ClinicReservation::CONFIRMED %>
+                <span class="badge bg-success fs-6">予約確定</span>
+              <% when ClinicReservation::COMPLETED %>
+                <span class="badge bg-info fs-6">施術完了</span>
+              <% when ClinicReservation::CANCELLED %>
+                <span class="badge bg-danger fs-6">キャンセル</span>
+              <% end %>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-sm-3"><strong>申込日時:</strong></div>
+            <div class="col-sm-9"><%= @clinic_reservation.created_at.strftime("%Y年%m月%d日 %H:%M") %></div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-sm-3"><strong>施術方法:</strong></div>
+            <div class="col-sm-9">
+              <% @clinic_reservation.treatment_methods_array.each do |method| %>
+                <div class="mb-1">
+                  <i class="fas fa-check text-success me-1"></i>
+                  <%= method %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-sm-3"><strong>第1希望:</strong></div>
+            <div class="col-sm-9">
+              <strong><%= @clinic_reservation.preferred_date_1&.strftime('%Y年%m月%d日') %></strong>
+              <%= @clinic_reservation.preferred_time_1 %>
+            </div>
+          </div>
+          
+          <% if @clinic_reservation.preferred_date_2.present? %>
+            <div class="row mb-3">
+              <div class="col-sm-3"><strong>第2希望:</strong></div>
+              <div class="col-sm-9">
+                <%= @clinic_reservation.preferred_date_2&.strftime('%Y年%m月%d日') %>
+                <%= @clinic_reservation.preferred_time_2 %>
+              </div>
+            </div>
+          <% end %>
+          
+          <% if @clinic_reservation.preferred_date_3.present? %>
+            <div class="row mb-3">
+              <div class="col-sm-3"><strong>第3希望:</strong></div>
+              <div class="col-sm-9">
+                <%= @clinic_reservation.preferred_date_3&.strftime('%Y年%m月%d日') %>
+                <%= @clinic_reservation.preferred_time_3 %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- 骨髄幹細胞治療関連情報 -->
+      <% if @clinic_reservation.has_stem_cell_treatment? %>
+        <div class="card mb-4">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-microscope me-2"></i>
+              骨髄幹細胞治療関連情報
+            </h5>
+          </div>
+          <div class="card-body">
+            <% if @clinic_reservation.disease_name.present? %>
+              <div class="row mb-3">
+                <div class="col-sm-3"><strong>病気・目的:</strong></div>
+                <div class="col-sm-9">
+                  <div class="border rounded p-2 bg-light">
+                    <%= simple_format(@clinic_reservation.disease_name) %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+            
+            <% if @clinic_reservation.current_treatment.present? %>
+              <div class="row mb-3">
+                <div class="col-sm-3"><strong>現在の治療:</strong></div>
+                <div class="col-sm-9">
+                  <div class="border rounded p-2 bg-light">
+                    <%= simple_format(@clinic_reservation.current_treatment) %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+            
+            <% if @clinic_reservation.current_condition.present? %>
+              <div class="row mb-3">
+                <div class="col-sm-3"><strong>身体の状況:</strong></div>
+                <div class="col-sm-9">
+                  <div class="border rounded p-2 bg-light">
+                    <%= simple_format(@clinic_reservation.current_condition) %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+            
+            <% if @clinic_reservation.questions.present? %>
+              <div class="row mb-3">
+                <div class="col-sm-3"><strong>質問:</strong></div>
+                <div class="col-sm-9">
+                  <div class="border rounded p-2 bg-light">
+                    <%= simple_format(@clinic_reservation.questions) %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- サイドバー -->
+    <div class="col-md-4">
+      <!-- ユーザー情報 -->
+      <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-user me-2"></i>
+            ユーザー情報
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="text-center mb-3">
+            <h6 class="text-primary"><%= @clinic_reservation.user.name %></h6>
+            <small class="text-muted"><%= @clinic_reservation.user.email %></small>
+          </div>
+          
+          <table class="table table-sm table-borderless">
+            <tr>
+              <th width="40%">ユーザーID:</th>
+              <td><%= @clinic_reservation.user.id %></td>
+            </tr>
+            <tr>
+              <th>レベル:</th>
+              <td>
+                <span class="badge bg-secondary"><%= @clinic_reservation.user.level_label %></span>
+              </td>
+            </tr>
+            <% if @clinic_reservation.user.phone.present? %>
+              <tr>
+                <th>電話番号:</th>
+                <td><%= @clinic_reservation.user.phone %></td>
+              </tr>
+            <% end %>
+            <tr>
+              <th>登録日:</th>
+              <td><%= @clinic_reservation.user.created_at.strftime("%Y/%m/%d") %></td>
+            </tr>
+          </table>
+          
+          <div class="d-grid">
+            <%= link_to "ユーザー詳細", admin_user_path(@clinic_reservation.user), 
+                class: "btn btn-outline-primary btn-sm" %>
+          </div>
+        </div>
+      </div>
+
+      <!-- 関連購入情報 -->
+      <% if @clinic_reservation.purchase.present? %>
+        <div class="card mb-4">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-shopping-cart me-2"></i>
+              関連購入情報
+            </h5>
+          </div>
+          <div class="card-body">
+            <table class="table table-sm table-borderless">
+              <tr>
+                <th width="40%">購入ID:</th>
+                <td>#<%= @clinic_reservation.purchase.id %></td>
+              </tr>
+              <tr>
+                <th>購入日:</th>
+                <td><%= @clinic_reservation.purchase.purchased_at.strftime("%Y/%m/%d") %></td>
+              </tr>
+              <tr>
+                <th>ステータス:</th>
+                <td>
+                  <% if @clinic_reservation.purchase.built? %>
+                    <span class="badge bg-warning">入金待ち</span>
+                  <% elsif @clinic_reservation.purchase.paid? %>
+                    <span class="badge bg-success">支払い完了</span>
+                  <% else %>
+                    <span class="badge bg-secondary"><%= @clinic_reservation.purchase.status %></span>
+                  <% end %>
+                </td>
+              </tr>
+            </table>
+            
+            <div class="mb-3">
+              <strong class="small">購入商品:</strong>
+              <% @clinic_reservation.purchase.purchase_items.each do |item| %>
+                <div class="small text-muted">
+                  <i class="fas fa-box me-1"></i>
+                  <%= item.product.name %> × <%= item.quantity %>
+                </div>
+              <% end %>
+            </div>
+            
+            <div class="d-grid">
+              <%= link_to "購入詳細", admin_purchase_path(@clinic_reservation.purchase), 
+                  class: "btn btn-outline-success btn-sm" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- 管理操作 -->
+      <div class="card">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="mb-0">
+            <i class="fas fa-cogs me-2"></i>
+            管理操作
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @clinic_reservation.pending? %>
+            <div class="d-grid gap-2">
+              <%= link_to confirm_admin_clinic_reservation_path(@clinic_reservation), 
+                  method: :patch, 
+                  class: "btn btn-success",
+                  data: { 
+                    confirm: "この予約を確定しますか？\n\n予約者: #{@clinic_reservation.user.name}\n第1希望: #{@clinic_reservation.preferred_date_1&.strftime('%Y/%m/%d')} #{@clinic_reservation.preferred_time_1}" 
+                  } do %>
+                <i class="fas fa-check me-1"></i>予約を確定する
+              <% end %>
+              
+              <%= link_to cancel_admin_clinic_reservation_path(@clinic_reservation), 
+                  method: :patch, 
+                  class: "btn btn-outline-danger",
+                  data: { 
+                    confirm: "この予約をキャンセルしますか？\n\nこの操作は取り消せません。" 
+                  } do %>
+                <i class="fas fa-times me-1"></i>予約をキャンセル
+              <% end %>
+            </div>
+          <% elsif @clinic_reservation.confirmed? %>
+            <div class="d-grid gap-2">
+              <%= link_to complete_admin_clinic_reservation_path(@clinic_reservation), 
+                  method: :patch, 
+                  class: "btn btn-info",
+                  data: { 
+                    confirm: "施術完了にしますか？" 
+                  } do %>
+                <i class="fas fa-check-circle me-1"></i>施術完了にする
+              <% end %>
+            </div>
+          <% else %>
+            <div class="text-center text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              利用可能な操作はありません
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

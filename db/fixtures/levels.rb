@@ -7,7 +7,7 @@ end
 
 # 新しいレベル「サポーター」を追加
 Level.find_or_create_by(name: 'サポーター') do |level|
-  level.value = 6
+  level.value = 4
 end
 
 # 「お客様」のvalueを7に更新
@@ -20,5 +20,5 @@ Level.find_or_create_by(name: 'アジアビジネストラスト') { |l| l.value
 Level.find_or_create_by(name: '総代理店') { |l| l.value = 1 }
 Level.find_or_create_by(name: '代理店') { |l| l.value = 2 }
 Level.find_or_create_by(name: 'アドバイザー') { |l| l.value = 3 }
-Level.find_or_create_by(name: 'サロン') { |l| l.value = 4 }
-Level.find_or_create_by(name: 'クリニック') { |l| l.value = 5 }
+Level.find_or_create_by(name: 'サロン') { |l| l.value = 5 }
+Level.find_or_create_by(name: 'クリニック') { |l| l.value = 6 }

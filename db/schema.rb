@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_28_060003) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_31_162058) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -233,6 +233,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_28_060003) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "wott_level_id"
+    t.decimal "incentive_rate", precision: 5, scale: 2
     t.index ["level_id"], name: "index_product_prices_on_level_id"
     t.index ["product_id"], name: "index_product_prices_on_product_id"
     t.index ["wott_level_id"], name: "index_product_prices_on_wott_level_id"

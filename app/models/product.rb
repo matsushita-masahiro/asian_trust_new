@@ -72,7 +72,7 @@ class Product < ApplicationRecord
       when 'wott'
         # WOTT商品は全員一律でbase_price（1,100,000円）
         return base_price
-      when 'sl', 'ms'
+      when 'sl', 'ms', 'ag'
         return price_for(user.level&.symbol)
       end
       
@@ -116,6 +116,7 @@ class Product < ApplicationRecord
     scope :stem_cell, -> { where(category: 'sl') }
     scope :mannersound, -> { where(category: 'ms') }
     scope :wott, -> { where(category: 'wott') }
+    scope :airgun, -> { where(category: 'ag') }
     
     # カテゴリー名を取得
     def category_name
@@ -126,25 +127,8 @@ class Product < ApplicationRecord
         'MANNERSOUND'
       when 'wott'
         'WOTT'
-      else
-        'その他'
-      end
-    end
-    
-    # カテゴリー別のスコープ
-    scope :stem_cell, -> { where(category: 'sl') }
-    scope :mannersound, -> { where(category: 'ms') }
-    scope :wott, -> { where(category: 'wott') }
-    
-    # カテゴリー名を取得
-    def category_name
-      case category
-      when 'sl'
-        '幹細胞培養上清液'
-      when 'ms'
-        'MANNERSOUND'
-      when 'wott'
-        'WOTT'
+      when 'ag'
+        'エアガン'
       else
         'その他'
       end

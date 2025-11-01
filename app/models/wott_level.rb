@@ -14,8 +14,6 @@ class WottLevel < ApplicationRecord
       :special_agent
     when '代理店'
       :agent
-    when 'アドバイザー'
-      :advisor
     when 'サポーター'
       :supporter
     when 'サロン'

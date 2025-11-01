@@ -11,6 +11,7 @@ html body .custom-navbar {
     background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
 }
 
+
 /* ナビゲーションブランド */
 .navbar-brand,
 body .navbar-brand,
@@ -53,6 +54,10 @@ body .navbar-nav .nav-link:focus {
     text-shadow: 0 2px 8px rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
     opacity: 1 !important;
+}
+
+#navbarNav {
+    padding-right: 20px;
 }
 
 /* ナビゲーションロゴ */

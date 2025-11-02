@@ -22,7 +22,7 @@ class ReferralInvitationsController < ApplicationController
     
     if @referral_invitation.save
       redirect_to referral_invitation_path(@referral_invitation), 
-                  notice: '紹介招待が作成されました。'
+                  notice: '紹介QRが作成されました。'
     else
       @levels = get_invitable_levels(current_user.level.value)
       render :new, status: :unprocessable_entity

@@ -2,7 +2,7 @@
   <%= link_to user_path(hierarchy_data[:user]), class: "user-node-link" do %>
     <div class="user-node">
       <div class="user-name">
-        <%= hierarchy_data[:user].display_name %>
+        <%= hierarchy_data[:user].name %>
         <% if hierarchy_data[:user].level %>
           <span class="badge bg-secondary ms-2"><%= hierarchy_data[:user].level.name %></span>
         <% end %>

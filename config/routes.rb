@@ -88,10 +88,12 @@ Rails.application.routes.draw do
         patch :deactivate
         patch :suspend
         patch :reactivate
+        patch :certify  # アドバイザー認定
         get :sales_details  # 売上明細ページ
       end
       collection do
         get :all_users
+        get :advisor_pre_list  # アドバイザー認定前一覧
       end
     end
     
@@ -130,6 +132,13 @@ Rails.application.routes.draw do
         patch :send_invoice      # 請求書送付
         patch :confirm_payment   # 支払い確認
         patch :send_receipt      # 領収書発行
+      end
+    end
+    
+    # アドバイザー認定前管理
+    resources :advisor_pre_certifications, only: [:index, :show] do
+      member do
+        patch :certify  # アドバイザーに認定
       end
     end
   end

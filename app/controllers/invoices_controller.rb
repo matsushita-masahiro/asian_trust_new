@@ -307,7 +307,7 @@ class InvoicesController < ApplicationController
   private
 
   def check_customer_access
-    if current_user.level.value == 7 # お客様レベル
+    if current_user.level.value == 8 # お客様レベル
       redirect_to root_path, alert: 'このページにアクセスする権限がありません。'
     end
   end

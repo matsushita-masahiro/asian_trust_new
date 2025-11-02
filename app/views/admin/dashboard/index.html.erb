@@ -11,6 +11,12 @@
               新規クリニック予約: <strong><%= pending_reservations_count %>件</strong>
             <% end %>
           <% end %>
+          <% if @advisor_pre_count > 0 %>
+            <%= link_to advisor_pre_list_admin_users_path, class: "alert alert-success text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
+              <i class="fas fa-user-graduate"></i>
+              アドバイザー認定前: <strong><%= @advisor_pre_count %>名</strong>
+            <% end %>
+          <% end %>
           <% unconfirmed_invoices_count = Invoice.where(status: Invoice::SENT).count %>
           <% if unconfirmed_invoices_count > 0 %>
             <%= link_to admin_invoice_status_index_path, class: "btn btn-danger btn-sm d-flex align-items-center gap-2" do %>
@@ -22,6 +28,12 @@
             <%= link_to admin_purchases_path(status: 'pending'), class: "alert alert-warning text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
               <i class="fas fa-exclamation-triangle"></i>
               未入金注文: <strong><%= @pending_payments_count %>件</strong>
+            <% end %>
+          <% end %>
+          <% if @advisor_pre_count > 0 %>
+            <%= link_to admin_users_path(level: 'アドバイザー認定前'), class: "alert alert-info text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
+              <i class="fas fa-user-clock"></i>
+              アドバイザー認定前: <strong><%= @advisor_pre_count %>名</strong>
             <% end %>
           <% end %>
           <div class="text-muted">

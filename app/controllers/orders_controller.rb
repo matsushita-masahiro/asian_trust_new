@@ -1,5 +1,6 @@
 class OrdersController < ApplicationController
   before_action :authenticate_user!
+  before_action :check_purchase_permission, only: [:products, :checkout, :purchase]
   
   def index
     # 予約・注文メニューページ
@@ -158,6 +159,13 @@ class OrdersController < ApplicationController
   end
 
   private
+
+  def check_purchase_permission
+    # アドバイザー認定前レベル（value: 4）は商品購入不可
+    if current_user.level&.name == 'アドバイザー認定前'
+      redirect_to root_path, alert: 'アドバイザー認定前レベルでは商品を購入できません。正式なアドバイザーレベルへの昇格をお待ちください。'
+    end
+  end
 
   def create_delivery_information(purchase)
     delivery_type = params[:delivery_type] || 'home'

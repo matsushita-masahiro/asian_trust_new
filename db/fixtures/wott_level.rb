@@ -1,8 +1,6 @@
 # WottLevel seed data
 
-# 既存のWOTTレベルを全て削除してから再作成
-WottLevel.destroy_all
-
+# 既存のWOTTレベルを削除せずに更新
 WottLevel.seed(:id,
   { id: 1, name: "アジアビジネストラスト", value: 0 },
   { id: 2, name: "総代理店", value: 1 },

@@ -1,0 +1,133 @@
+<div class="container-fluid" style="padding-top: 100px;">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary">
+          <i class="fas fa-user-graduate me-2"></i>アドバイザー認定前ユーザー
+        </h4>
+        <%= link_to "ダッシュボードに戻る", admin_root_path, class: "btn btn-outline-secondary" %>
+      </div>
+    </div>
+  </div>
+
+  <% if @advisor_pre_users.any? %>
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header bg-light">
+            <h5 class="card-title mb-0">
+              認定待ちユーザー（<%= @advisor_pre_users.count %>名）
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>名前</th>
+                    <th>メールアドレス</th>
+                    <th>紹介者</th>
+                    <th>登録日</th>
+                    <th>現在のレベル</th>
+                    <th>アクション</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @advisor_pre_users.each do |user| %>
+                    <tr>
+                      <td>
+                        <span class="badge bg-secondary">#<%= user.id %></span>
+                      </td>
+                      <td>
+                        <div class="fw-bold">
+                          <%= link_to user.name, admin_user_path(user), class: "text-decoration-none" %>
+                        </div>
+                        <% if user.phone.present? %>
+                          <small class="text-muted">
+                            <i class="fas fa-phone me-1"></i><%= user.phone %>
+                          </small>
+                        <% end %>
+                      </td>
+                      <td>
+                        <div><%= user.email %></div>
+                        <% if user.confirmed_at %>
+                          <small class="text-success">
+                            <i class="fas fa-check-circle me-1"></i>確認済み
+                          </small>
+                        <% else %>
+                          <small class="text-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>未確認
+                          </small>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if user.referrer %>
+                          <div>
+                            <%= link_to user.referrer.name, admin_user_path(user.referrer), class: "text-decoration-none" %>
+                          </div>
+                          <small class="text-muted">
+                            <span class="badge bg-info"><%= user.referrer.level.name %></span>
+                          </small>
+                        <% else %>
+                          <span class="text-muted">直接登録</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <div><%= user.created_at.strftime("%Y/%m/%d") %></div>
+                        <small class="text-muted"><%= user.created_at.strftime("%H:%M") %></small>
+                      </td>
+                      <td>
+                        <span class="badge bg-warning text-dark">
+                          <%= user.level.name %>
+                        </span>
+                      </td>
+                      <td>
+                        <div class="d-flex gap-2">
+                          <%= link_to "詳細", admin_user_path(user), class: "btn btn-outline-primary btn-sm" %>
+                          <%= button_to "アドバイザーに認定", 
+                              certify_admin_user_path(user), 
+                              method: :patch,
+                              class: "btn btn-success btn-sm",
+                              confirm: "#{user.name}さんをアドバイザーに認定しますか？",
+                              data: { 
+                                bs_toggle: "tooltip", 
+                                bs_placement: "top", 
+                                bs_title: "レベルをアドバイザーに変更します" 
+                              } %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body text-center py-5">
+            <i class="fas fa-user-check fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">認定待ちのユーザーはいません</h5>
+            <p class="text-muted">すべてのアドバイザー認定前ユーザーが認定済みです。</p>
+            <%= link_to "ダッシュボードに戻る", admin_root_path, class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<script>
+// ツールチップを有効化
+document.addEventListener('DOMContentLoaded', function() {
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+});
+</script>

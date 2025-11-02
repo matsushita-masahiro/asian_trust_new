@@ -392,58 +392,60 @@
     </div>
   </div>
 
-  <!-- 購入履歴 -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0"><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>の購入履歴</h5>
-        </div>
-        <div class="card-body">
-          <% 
-            # 対象月の購入履歴を取得
-            current_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
-            current_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
-            monthly_purchases = @user.purchases.where(purchased_at: current_month_start..current_month_end).includes(purchase_items: :product)
-          %>
-          <% if monthly_purchases.any? %>
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead class="table-light">
-                  <tr>
-                    <th>購入日</th>
-                    <th>商品名</th>
-                    <th>数量</th>
-                    <th>単価</th>
-                    <th>合計</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% monthly_purchases.each do |purchase| %>
-                    <% purchase.purchase_items.each_with_index do |item, index| %>
-                      <tr>
-                        <% if index == 0 %>
-                          <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at.strftime("%Y/%m/%d") %></td>
-                        <% end %>
-                        <td><%= item.product.name %></td>
-                        <td><%= item.quantity %></td>
-                        <td>¥<%= number_with_delimiter(item.seller_price) %></td>
-                        <td class="text-success">¥<%= number_with_delimiter(item.seller_price * item.quantity) %></td>
-                      </tr>
+  <!-- 購入履歴（アドバイザー認定前は非表示） -->
+  <% unless @user.level&.name == 'アドバイザー認定前' %>
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0"><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>の購入履歴</h5>
+          </div>
+          <div class="card-body">
+            <% 
+              # 対象月の購入履歴を取得
+              current_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
+              current_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
+              monthly_purchases = @user.purchases.where(purchased_at: current_month_start..current_month_end).includes(purchase_items: :product)
+            %>
+            <% if monthly_purchases.any? %>
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead class="table-light">
+                    <tr>
+                      <th>購入日</th>
+                      <th>商品名</th>
+                      <th>数量</th>
+                      <th>単価</th>
+                      <th>合計</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% monthly_purchases.each do |purchase| %>
+                      <% purchase.purchase_items.each_with_index do |item, index| %>
+                        <tr>
+                          <% if index == 0 %>
+                            <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at.strftime("%Y/%m/%d") %></td>
+                          <% end %>
+                          <td><%= item.product.name %></td>
+                          <td><%= item.quantity %></td>
+                          <td>¥<%= number_with_delimiter(item.seller_price) %></td>
+                          <td class="text-success">¥<%= number_with_delimiter(item.seller_price * item.quantity) %></td>
+                        </tr>
+                      <% end %>
                     <% end %>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          <% else %>
-            <div class="text-center py-4">
-              <p class="text-muted"><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>の購入履歴はありません</p>
-            </div>
-          <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% else %>
+              <div class="text-center py-4">
+                <p class="text-muted"><%= Date.strptime(@selected_month, "%Y-%m").strftime("%Y/%-m") %>の購入履歴はありません</p>
+              </div>
+            <% end %>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  <% end %>
 </div>
 
 

@@ -41,6 +41,19 @@
               <td>
                 <% if @user.level %>
                   <span class="badge bg-success"><%= @user.level.name %></span>
+                  <% if @user.level.name == 'アドバイザー認定前' %>
+                    <div class="mt-2">
+                      <%= button_to "アドバイザーに認定する", 
+                          certify_admin_user_path(@user), 
+                          method: :patch,
+                          class: "btn btn-warning btn-sm",
+                          confirm: "#{@user.name}さんをアドバイザーに認定しますか？",
+                          data: { 
+                            confirm_title: "アドバイザー認定確認",
+                            confirm_text: "この操作は取り消せません。よろしいですか？"
+                          } %>
+                    </div>
+                  <% end %>
                 <% else %>
                   <span class="text-muted">未設定</span>
                 <% end %>

@@ -1,18 +1,51 @@
 # app/controllers/admin/users_controller.rb
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [:show, :edit, :update, :deactivate, :suspend, :reactivate]
+  before_action :set_user, only: [:show, :edit, :update, :deactivate, :suspend, :reactivate, :certify]
   before_action :set_selected_month_range, only: [:show, :all_users]
 
   def index
-    @users = User.includes(:referrer, :referrals).order(:id)
+    @users = User.includes(:referrer, :referrals, :level).order(:id)
+  end
+
+  def advisor_pre_list
+    @advisor_pre_users = User.joins(:level)
+                            .where(levels: { name: 'アドバイザー認定前' })
+                            .includes(:level, :referrer)
+                            .order(:created_at)
   end
 
   def all_users
     # 全ユーザーの階層構造を構築
     @all_users = User.includes(:referrer, :referrals, :level, purchases: { purchase_items: :product }).order(:id)
     
-    # ルートユーザー（紹介者がいないユーザー）を取得
-    @root_users = @all_users.select { |user| user.referrer.nil? }
+    # ルートユーザー（紹介者がいないユーザー）を取得してレベル順でソート
+    root_users = @all_users.select { |user| user.referrer.nil? }
+    
+    # レベル順でソート（アジアビジネストラスト、総代理店、代理店...、クリニックを最後に）
+    @root_users = root_users.sort_by do |user|
+      case user.level&.name
+      when 'アジアビジネストラスト'
+        0
+      when '総代理店'
+        1
+      when '代理店'
+        2
+      when 'アドバイザー'
+        3
+      when 'アドバイザー認定前'
+        4
+      when 'サポーター'
+        5
+      when 'サロン'
+        6
+      when 'クリニック'
+        7  # クリニックを最後に
+      when 'お客様'
+        8
+      else
+        9
+      end
+    end
     
     # 今月と先月の期間を動的に設定
     @current_month = Date.current.beginning_of_month
@@ -191,6 +224,43 @@ class Admin::UsersController < Admin::BaseController
     @user = User.find(params[:id])
     @user.update!(status: 'active')
     redirect_to admin_user_path(@user), notice: 'ユーザーを再アクティブ化しました。'
+  end
+
+  def certify
+    # アドバイザー認定前のユーザーのみ認定可能
+    unless @user.level&.name == 'アドバイザー認定前'
+      redirect_to admin_user_path(@user), alert: 'このユーザーはアドバイザー認定前ではありません。'
+      return
+    end
+
+    advisor_level = Level.find_by(name: 'アドバイザー')
+    
+    if advisor_level.nil?
+      redirect_to admin_user_path(@user), alert: 'アドバイザーレベルが見つかりません。'
+      return
+    end
+
+    ActiveRecord::Base.transaction do
+      # レベル変更履歴を記録
+      UserLevelHistory.create!(
+        user: @user,
+        from_level: @user.level,
+        to_level: advisor_level,
+        changed_by: current_user,
+        reason: 'アドバイザー認定（管理者による昇格）',
+        changed_at: Time.current
+      )
+
+      # ユーザーのレベルを更新
+      @user.update!(level: advisor_level)
+    end
+
+    redirect_to admin_user_path(@user), 
+                notice: "#{@user.name}さんをアドバイザーに認定しました。"
+  rescue => e
+    Rails.logger.error "アドバイザー認定エラー: #{e.message}"
+    redirect_to admin_user_path(@user), 
+                alert: "認定処理中にエラーが発生しました: #{e.message}"
   end
 
   private

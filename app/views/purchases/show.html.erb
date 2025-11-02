@@ -160,8 +160,24 @@
             # 同月の購入履歴を取得
             month_start = @purchase.purchased_at.beginning_of_month
             month_end = @purchase.purchased_at.end_of_month
-            month_purchases = current_user.purchases.where(purchased_at: month_start..month_end)
-            month_total_amount = month_purchases.sum(&:total_price)
+            month_purchases = current_user.purchases.includes(:purchase_invoice, :shipping_fees).where(purchased_at: month_start..month_end)
+            
+            # 税込み金額を正しく計算
+            month_total_amount = month_purchases.sum do |purchase|
+              # purchase_invoiceがある場合は税込み金額を使用
+              if purchase.purchase_invoice&.total_with_tax.present? && purchase.purchase_invoice.total_with_tax > 0
+                purchase.purchase_invoice.total_with_tax
+              else
+                # 従来の計算方法（税込み）
+                product_amount = purchase.total_price
+                shipping_fee = purchase.total_shipping_fees
+                admin_fee = purchase.purchase_invoice&.admin_fee || 0
+                subtotal_before_tax = product_amount + shipping_fee + admin_fee
+                tax_amount = (subtotal_before_tax * 0.1).round  # 消費税10%
+                subtotal_before_tax + tax_amount
+              end
+            end
+            
             month_total_count = month_purchases.count
             month_total_items = month_purchases.joins(:purchase_items).sum('purchase_items.quantity')
           %>

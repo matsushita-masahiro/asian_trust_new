@@ -81,10 +81,11 @@ level_data = [
   { id: 2, name: "総代理店", value: 1 },
   { id: 3, name: "代理店", value: 2 },
   { id: 4, name: "アドバイザー", value: 3 },
-  { id: 5, name: "サポーター", value: 4 },
-  { id: 6, name: "サロン", value: 5 },
+  { id: 5, name: "アドバイザー認定前", value: 4 },
+  { id: 6, name: "サポーター", value: 5 },
   { id: 7, name: "クリニック", value: 6 },
-  { id: 8, name: "お客様", value: 7 }
+  { id: 8, name: "サロン", value: 7 },
+  { id: 9, name: "お客様", value: 8 }
 ]
 
 # 既存のレベルデータをクリアしてから新しいデータを作成
@@ -122,10 +123,10 @@ wott_level_data = [
   { id: 1, name: "アジアビジネストラスト", value: 0 },
   { id: 2, name: "総代理店", value: 1 },
   { id: 3, name: "代理店", value: 2 },
-  { id: 5, name: "サポーター", value: 3 },
-  { id: 6, name: "サロン", value: 4 },
-  { id: 7, name: "クリニック", value: 5 },
-  { id: 8, name: "お客様", value: 6 }
+  { id: 4, name: "サポーター", value: 3 },
+  { id: 5, name: "サロン", value: 4 },
+  { id: 6, name: "クリニック", value: 5 },
+  { id: 7, name: "お客様", value: 6 }
 ]
 
 wott_level_data.each do |data|
@@ -481,6 +482,33 @@ agents.each_with_index do |parent, i|
   end
 end
 
+# アドバイザー認定前のユーザーを作成（代理店の直下に2人）
+# 注意：アドバイザー認定前は紹介機能が使えないため、下位ユーザーは作成しない
+advisor_pre_names = ["山田花音", "佐藤美里"]
+advisor_pres = []
+
+# 最初の代理店（鈴木愛美）の直下に2人のアドバイザー認定前を作成
+first_agent = agents.first
+advisor_pre_names.each_with_index do |name, i|
+  user = User.create!(
+    id: user_id_seq,
+    name: name,
+    email: "advisor_pre#{i + 1}@example.com",
+    password: "111111",
+    phone: generate_unique_phone("060-#{4000 + i}-#{3456 + i}", used_phones),
+    level_id: levels["アドバイザー認定前"].id,
+    wott_level_id: wott_levels["サポーター"].id, # WOTTレベルはサポーターにマッピング
+    referred_by_id: first_agent.id,
+    lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+    confirmed_at: Time.current
+  )
+  user_id_seq += 1
+  lstep_id_seq += 1
+  advisor_pres << user
+end
+
+puts "✅ Created #{advisor_pre_names.length} advisor pre-certification users under #{first_agent.name} (no subordinates - referral function disabled)"
+
 # サロン・クリニック
 salon_clinic_names = [
   ["美容サロン花音", "田中クリニック"],   # 中村結衣の下位
@@ -690,10 +718,11 @@ else
   special_agent_1 = User.find_by(name: "田中美咲")
   
   if special_agent_1
-    # 複数月の購入データを作成（データ量を半分に）
+    # 複数月の購入データを作成（2025年9月、10月、11月）
     months = [
       { month: "2025-09", day: 15, quantity: 20 },
-      { month: "2025-10", day: 5, quantity: 25 }
+      { month: "2025-10", day: 5, quantity: 25 },
+      { month: "2025-11", day: 1, quantity: 18 }
     ]
     
     months.each_with_index do |month_data, month_idx|
@@ -720,9 +749,11 @@ else
     # 他の代理店の購入データも複数月で作成（データ量を半分に）
     agents.first(2).each_with_index do |agent, i|
       months.each_with_index do |month_data, month_idx|
-        # 10月は1-17日の範囲に収める
+        # 日付を適切に設定
         day = if month_data[:month] == "2025-10"
                 6 + i + month_idx  # 6日から開始して重複を避ける
+              elsif month_data[:month] == "2025-11"
+                1 + i + month_idx  # 11月は1日から開始
               else
                 10 + i + month_idx
               end
@@ -748,79 +779,91 @@ else
     
     puts "✅ Created purchase data for agents (9月, 10月、データ量を半分に削減)"
     
-    # 中村結衣さんの自己購入データを作成（10月に4回のみ）
+    # 中村結衣さんの自己購入データを作成（9月、10月、11月）
     nakamura = User.find_by(name: "中村結衣")
     if nakamura
-      # 10月に4回購入（1日〜17日の範囲）
-      purchase_days = [1, 5, 9, 13]  # 10月1, 5, 9, 13日
-      purchase_days.each_with_index do |day, day_idx|
+      # 各月に購入
+      purchase_dates = [
+        { date: "2025-09-10", quantity: 8 },
+        { date: "2025-10-05", quantity: 7 },
+        { date: "2025-10-15", quantity: 6 },
+        { date: "2025-11-01", quantity: 5 }
+      ]
+      
+      purchase_dates.each_with_index do |purchase_data, idx|
         purchase = Purchase.create!(
           user_id: nakamura.id,
-          purchased_at: "2025-10-#{format('%02d', day)} 16:00:00"
+          purchased_at: "#{purchase_data[:date]} 16:00:00"
         )
         
         # 日によって異なる商品を購入
-        product = products[day_idx % products.length]
+        product = products[idx % products.length]
         PurchaseItem.create!(
           purchase: purchase,
           product: product,
-          quantity: 7,
+          quantity: purchase_data[:quantity],
           unit_price: 30000,
           seller_price: get_seller_price(product, nakamura)
         )
       end
-      puts "✅ Created purchase data for 中村結衣 (10月に4回)"
+      puts "✅ Created purchase data for 中村結衣 (9月、10月、11月)"
     end
     
-    # 他のアドバイザーの購入データ（中村結衣以外、データ量を半分に）
+    # 他のアドバイザーの購入データ（中村結衣以外）
     other_advisors = advisors.reject { |advisor| advisor.name == "中村結衣" }
-    other_advisors.first(1).each_with_index do |advisor, i|
-      # 10月のみ購入
-      purchase = Purchase.create!(
-        user_id: advisor.id,        # 購入者
-        purchased_at: "2025-10-15 16:00:00"
-      )
-      
-      # 複数商品を購入
-      products.each_with_index do |product, product_idx|
-        base_quantity = 6
-        quantity = base_quantity / products.length + (product_idx == 0 ? base_quantity % products.length : 0)
-        PurchaseItem.create!(
-          purchase: purchase,
-          product: product,
-          quantity: quantity,
-          unit_price: 30000,
-          seller_price: get_seller_price(product, advisor)
+    other_advisors.first(2).each_with_index do |advisor, i|
+      # 9月、10月、11月に購入
+      purchase_dates = ["2025-09-20", "2025-10-15", "2025-11-02"]
+      purchase_dates.each_with_index do |date, date_idx|
+        purchase = Purchase.create!(
+          user_id: advisor.id,
+          purchased_at: "#{date} 16:00:00"
         )
+        
+        # 複数商品を購入
+        products.each_with_index do |product, product_idx|
+          base_quantity = 4 + date_idx
+          quantity = base_quantity / products.length + (product_idx == 0 ? base_quantity % products.length : 0)
+          PurchaseItem.create!(
+            purchase: purchase,
+            product: product,
+            quantity: quantity,
+            unit_price: 30000,
+            seller_price: get_seller_price(product, advisor)
+          )
+        end
       end
     end
     
-    puts "✅ Created purchase data for advisors (10月のみ、データ量を半分に削減)"
+    puts "✅ Created purchase data for advisors (9月、10月、11月)"
     
-    # サポーターの購入データを作成（データ量を半分に）
+    # サポーターの購入データを作成
     supporters = User.joins(:level).where(levels: { name: "サポーター" })
-    supporters.first(1).each_with_index do |supporter, i|
-      # 10月のみ購入
-      purchase = Purchase.create!(
-        user_id: supporter.id,
-        purchased_at: "2025-10-02 18:00:00"
-      )
-      
-      # 複数商品を購入
-      products.each_with_index do |product, product_idx|
-        base_quantity = 4
-        quantity = base_quantity / products.length + (product_idx == 0 ? base_quantity % products.length : 0)
-        PurchaseItem.create!(
-          purchase: purchase,
-          product: product,
-          quantity: quantity,
-          unit_price: 30000,
-          seller_price: get_seller_price(product, supporter)
+    supporters.first(2).each_with_index do |supporter, i|
+      # 9月、10月、11月に購入
+      purchase_dates = ["2025-09-25", "2025-10-12", "2025-11-01"]
+      purchase_dates.each_with_index do |date, date_idx|
+        purchase = Purchase.create!(
+          user_id: supporter.id,
+          purchased_at: "#{date} 18:00:00"
         )
+        
+        # 複数商品を購入
+        products.each_with_index do |product, product_idx|
+          base_quantity = 3 + date_idx
+          quantity = base_quantity / products.length + (product_idx == 0 ? base_quantity % products.length : 0)
+          PurchaseItem.create!(
+            purchase: purchase,
+            product: product,
+            quantity: quantity,
+            unit_price: 30000,
+            seller_price: get_seller_price(product, supporter)
+          )
+        end
       end
     end
     
-    puts "✅ Created purchase data for supporters (10月のみ、データ量を半分に削減)"
+    puts "✅ Created purchase data for supporters (9月、10月、11月)"
   end
 end
 
@@ -917,7 +960,7 @@ advisors.each_with_index do |advisor, i|
 end
 
 # 4. サロン・クリニックの直接お客様（各サロン・クリニックに1名）
-salons_and_clinics = User.joins(:level).where(levels: { value: [4, 5] })
+salons_and_clinics = User.joins(:level).where(levels: { value: [6, 7] }) # クリニック(6)とサロン(7)のみ
 salons_and_clinics.first(20).each_with_index do |salon_clinic, i|
   customer_name = customer_names[customer_index]
   customer = User.create!(
@@ -946,24 +989,27 @@ puts "🛒 Creating customer purchase data..."
 if products.any?
   # 各レベルのお客様から一部を選んで購入データを作成
   
-  # 総代理店のお客様（6名中2名が購入、データ量を半分に）
+  # 総代理店のお客様（6名中3名が購入）
   special_customers = customers.select { |c| c.email.include?('special_customer') }
-  special_customers.first(2).each_with_index do |customer, i|
-    # 10月のみ購入
-    purchase = Purchase.create!(
-      user_id: customer.id,
-      purchased_at: "2025-10-#{format('%02d', 3 + i)} 12:00:00"
-    )
-    
-    # 顧客ごとに異なる商品を購入
-    product = products[i % products.length]
-    PurchaseItem.create!(
-      purchase: purchase,
-      product: product,
-      quantity: 1,
-      unit_price: 30000,
-      seller_price: get_seller_price(product, customer)
-    )
+  special_customers.first(3).each_with_index do |customer, i|
+    # 9月、10月、11月に購入
+    purchase_dates = ["2025-09-#{format('%02d', 5 + i)}", "2025-10-#{format('%02d', 3 + i)}", "2025-11-01"]
+    purchase_dates.each do |date|
+      purchase = Purchase.create!(
+        user_id: customer.id,
+        purchased_at: "#{date} 12:00:00"
+      )
+      
+      # 顧客ごとに異なる商品を購入
+      product = products[i % products.length]
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: product,
+        quantity: 1,
+        unit_price: 30000,
+        seller_price: get_seller_price(product, customer)
+      )
+    end
   end
   
   # 代理店のお客様（12名中3名が購入、データ量を半分に）

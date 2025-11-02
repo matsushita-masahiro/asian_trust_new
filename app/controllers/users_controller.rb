@@ -62,7 +62,7 @@ class UsersController < ApplicationController
                             .order(purchased_at: :desc)
         @is_customer_view = true
         @is_own_purchases = true
-      elsif @user.level.value == 7
+      elsif @user.level.value == 8
         # お客様の場合：自分が購入者として記録された購入履歴を表示
         @purchases = Purchase.includes({ purchase_items: :product }, :user)
                             .where(user_id: @user.id)

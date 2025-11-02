@@ -4,7 +4,31 @@
       <div class="user-name">
         <%= user.name.present? ? user.name : user.email %>
         <% if user.level %>
-          <span class="badge bg-secondary ms-2"><%= user.level.name %></span>
+          <% 
+            badge_class = case user.level.name
+            when 'アジアビジネストラスト'
+              'bg-danger'
+            when '総代理店'
+              'bg-warning text-dark'
+            when '代理店'
+              'bg-primary'
+            when 'アドバイザー'
+              'bg-success'
+            when 'アドバイザー認定前'
+              'bg-info'
+            when 'サポーター'
+              'bg-dark'
+            when 'サロン'
+              'bg-secondary'
+            when 'クリニック'
+              'bg-light text-dark'
+            when 'お客様'
+              'bg-muted text-white'
+            else
+              'bg-secondary'
+            end
+          %>
+          <span class="badge <%= badge_class %> ms-2"><%= user.level.name %></span>
         <% end %>
         <span class="badge bg-info ms-1">ID: <%= user.id %></span>
       </div>

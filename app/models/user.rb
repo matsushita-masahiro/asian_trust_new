@@ -81,6 +81,16 @@ class User < ApplicationRecord
     level&.name
   end
 
+  # お客様レベルかどうかを判定
+  def customer?
+    level&.customer?
+  end
+
+  # アジアビジネストラストかどうかを判定
+  def company?
+    level&.company?
+  end
+
   def display_name
     name.present? ? "#{name} (#{level_label})" : level_label
   end

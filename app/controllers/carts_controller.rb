@@ -1,5 +1,6 @@
 class CartsController < ApplicationController
   before_action :authenticate_user!
+  before_action :check_purchase_permission
   before_action :ensure_cart
   
   def show
@@ -76,6 +77,13 @@ class CartsController < ApplicationController
   end
   
   private
+  
+  def check_purchase_permission
+    # アドバイザー認定前レベル（value: 4）は商品購入不可
+    if current_user.level&.name == 'アドバイザー認定前'
+      redirect_to root_path, alert: 'アドバイザー認定前レベルでは商品を購入できません。正式なアドバイザーレベルへの昇格をお待ちください。'
+    end
+  end
   
   def ensure_cart
     @cart = current_user.ensure_cart

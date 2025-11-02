@@ -5,7 +5,7 @@
     <div class="col-md-8 col-lg-6">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title mb-0">新しい紹介招待を作成</h2>
+          <h2 class="card-title mb-0">新しい招待QRを作成</h2>
         </div>
         <div class="card-body">
           <%= form_with model: @referral_invitation, local: true do |f| %>
@@ -21,12 +21,11 @@
             <% end %>
 
             <div class="mb-4">
-              <%= f.label :target_level_id, "被紹介者のレベル", class: "form-label" %>
+              <%= f.label :target_level_id, "紹介したい人のレベル", class: "form-label" %>
               <%= f.select :target_level_id, 
                           options_from_collection_for_select(@levels, :id, :name, @referral_invitation.target_level_id),
                           { prompt: "レベルを選択してください" },
                           { class: "form-select" } %>
-              <div class="form-text">新規登録者に設定するレベルを選択してください。（あなたより低いレベルのみ選択可能）</div>
             </div>
 
             <div class="alert alert-info">

@@ -18,7 +18,7 @@
               <p class="mb-1"><strong>🤏 レベル:</strong> <%= @user.level_label %></p>
             </div>
             <div class="text-end">
-              <% if @user.level.value == 7 %>
+              <% if @user.level.value == 8 %>
                 <p>本人購入：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
                 <p>合計購入：<strong><%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month).to_i) %></strong> 円</p>
                 <div class="mt-2">
@@ -45,7 +45,7 @@
             </div>
             
             <div class="text-center">
-              <% if @user.level.value == 7 %>
+              <% if @user.level.value == 8 %>
                 <p class="mb-1">本人購入：<%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month)) %>円</p>
                 <p class="mb-2">合計購入：<strong><%= number_with_delimiter(@user.own_monthly_sales_total(@selected_month).to_i) %></strong> 円</p>
                 <div>
@@ -82,7 +82,7 @@
                       <div class="col-md-8">
                         <p class="mb-1 fw-bold text-success">#<%= i + 1 %>. <%= ref_user.name %>（<%= ref_user.level_label %>）</p>
                         <p class="mb-1 text-break">📧 <%= ref_user.email %></p>
-                        <% if ref_user.level.value == 7 %>
+                        <% if ref_user.level.value == 8 %>
                           <div>購入：<%= number_with_delimiter(ref_user.own_monthly_sales_total(@selected_month).to_i) %>円</div>
                         <% else %>
                           <div>売上：<%= number_with_delimiter(ref_user.total_sales_with_descendants(@selected_month).to_i) %>円</div>

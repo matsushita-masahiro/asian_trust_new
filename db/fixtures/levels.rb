@@ -1,24 +1,43 @@
-# 既存のレベルデータを更新（外部キー制約を考慮）
-# まず「お客様」のvalueを一時的に変更してUNIQUE制約を回避
-customer_level = Level.find_by(name: 'お客様')
-if customer_level && customer_level.value == 6
-  customer_level.update!(value: 99)  # 一時的な値
+# Levelデータを全削除してから再作成
+
+# 1. 全削除（外部キー制約があるため、依存データも削除）
+puts "Levelデータを削除中..."
+
+# 外部キー制約のあるテーブルから先に削除
+ProductPrice.delete_all
+ReferralInvitation.delete_all
+
+# Userのlevel_idをnullに設定
+User.update_all(level_id: nil)
+
+# Levelを削除
+Level.delete_all
+
+# SQLiteの場合はシーケンステーブルをリセット
+if ActiveRecord::Base.connection.adapter_name == 'SQLite'
+  ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name='levels'")
 end
 
-# 新しいレベル「サポーター」を追加
-Level.find_or_create_by(name: 'サポーター') do |level|
-  level.value = 4
+puts "Levelデータを再作成中..."
+
+# 2. 新しいレベル構成で作成
+Level.create!([
+  { id: 1, name: 'アジアビジネストラスト', value: 0 },
+  { id: 2, name: '総代理店', value: 1 },
+  { id: 3, name: '代理店', value: 2 },
+  { id: 4, name: 'アドバイザー', value: 3 },
+  { id: 5, name: 'アドバイザー認定前', value: 4 },
+  { id: 6, name: 'サポーター', value: 5 },
+  { id: 7, name: 'クリニック', value: 6 },
+  { id: 8, name: 'サロン', value: 7 },
+  { id: 9, name: 'お客様', value: 8 }
+])
+
+puts "✅ Levelデータの再作成完了"
+puts "新しいレベル構成:"
+Level.order(:value).each do |level|
+  puts "  #{level.value}: #{level.name}"
 end
 
-# 「お客様」のvalueを7に更新
-if customer_level
-  customer_level.update!(value: 7)
-end
-
-# 他のレベルも確認・更新
-Level.find_or_create_by(name: 'アジアビジネストラスト') { |l| l.value = 0 }
-Level.find_or_create_by(name: '総代理店') { |l| l.value = 1 }
-Level.find_or_create_by(name: '代理店') { |l| l.value = 2 }
-Level.find_or_create_by(name: 'アドバイザー') { |l| l.value = 3 }
-Level.find_or_create_by(name: 'サロン') { |l| l.value = 5 }
-Level.find_or_create_by(name: 'クリニック') { |l| l.value = 6 }
+puts "\n⚠️  注意: ProductPriceとReferralInvitationのデータも削除されました"
+puts "   必要に応じて他のfixturesも再実行してください"

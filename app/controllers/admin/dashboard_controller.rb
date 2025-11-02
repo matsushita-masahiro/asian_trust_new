@@ -8,6 +8,9 @@ class Admin::DashboardController < Admin::BaseController
     
     # 未入金注文件数を取得
     @pending_payments_count = Purchase.built.count
+    
+    # アドバイザー認定前ユーザー数を取得
+    @advisor_pre_count = User.joins(:level).where(levels: { name: 'アドバイザー認定前' }).count
   end
 
   private

@@ -17,45 +17,48 @@ end
 # 1. 購入請求書関連データを削除
 PurchaseInvoice.delete_all
 
-# 2. 購入関連データを削除
+# 2. 送料データを削除（purchasesを参照しているため先に削除）
+ShippingFee.delete_all
+
+# 3. 購入関連データを削除
 PurchaseItem.delete_all
 Purchase.delete_all
 
-# 3. 請求書関連データを削除
+# 4. 請求書関連データを削除
 Invoice.delete_all
 
-# 4. レベル変更申請を削除
+# 5. レベル変更申請を削除
 LevelChangeApplication.delete_all
 
-# 5. 紹介招待を削除
+# 6. 紹介招待を削除
 ReferralInvitation.delete_all
 
-# 6. ユーザーレベル履歴を削除
+# 7. ユーザーレベル履歴を削除
 UserLevelHistory.delete_all
 
-# 7. カート関連データを削除
+# 8. カート関連データを削除
 CartItem.delete_all
 Cart.delete_all
 
-# 8. アクセスログを削除
+# 9. アクセスログを削除
 AccessLog.delete_all
 
-# 9. 住所データを削除（usersを参照しているため先に削除）
+# 10. 住所データを削除（usersを参照しているため先に削除）
 Address.delete_all
 
-# 10. 請求先情報を削除
+# 11. 請求先情報を削除
 InvoiceRecipient.delete_all
 
-# 11. 請求基本情報を削除
+# 12. 請求基本情報を削除
 InvoiceBase.delete_all
 
-# 12. ユーザーを削除（外部キー参照があるため最後に削除）
+# 13. ユーザーを削除（外部キー参照があるため最後に削除）
 User.delete_all
 
-# 13. 商品価格データを削除
+# 14. 商品価格データを削除
 ProductPrice.delete_all
 
-# 14. WOTTレベルデータを削除
+# 15. WOTTレベルデータを削除
 WottLevel.delete_all
 
 # SQLite環境のみ、シーケンスをリセット

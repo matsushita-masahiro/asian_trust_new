@@ -83,9 +83,9 @@
         <td style="text-align: right; font-weight: bold;">¥<%= number_with_delimiter(tax_amount) %></td>
       </tr>
       
-      <tr style="border-top: 2px solid #000; background-color: #f0f0f0;">
-        <td colspan="3" style="text-align: right; font-weight: bold; font-size: 16px;">合計金額</td>
-        <td style="text-align: right; font-weight: bold; font-size: 16px;">¥<%= number_with_delimiter(total_with_tax) %></td>
+      <tr class="total-row" style="border-top: 2px solid #000; background-color: #f0f0f0;">
+        <td colspan="3" style="text-align: right; font-weight: bold; font-size: 16px; color: #000;">合計金額</td>
+        <td style="text-align: right; font-weight: bold; font-size: 16px; color: #000;">¥<%= number_with_delimiter(total_with_tax) %></td>
       </tr>
     </tbody>
   </table>

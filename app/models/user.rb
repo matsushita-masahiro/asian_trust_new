@@ -701,6 +701,29 @@ class User < ApplicationRecord
     wott_level&.symbol
   end 
 
+  # 自分と下位userのproduct.idが1,2,3,4,5の商品の総購入量（cc）を計算
+  def total_purchase_volume_cc
+    # 自分と下位userのIDを取得
+    target_user_ids = [id] + descendant_ids
+    
+    # product.idが1,2,3,4,5の商品の購入アイテムを取得
+    purchase_items = PurchaseItem.joins(:purchase, :product)
+                                .where(purchases: { user_id: target_user_ids })
+                                .where(products: { id: [1, 2, 3, 4, 5] })
+                                .includes(:product)
+    
+    # quantity * product.unit_quantity の合計を計算
+    total_cc = purchase_items.sum do |item|
+      item.quantity * (item.product.unit_quantity || 0)
+    end
+    
+    total_cc
+  end
+
+  # 登録日からの総購入量（cc）を計算（エイリアス）
+  def lifetime_purchase_volume_cc
+    total_purchase_volume_cc
+  end
 
   private
 

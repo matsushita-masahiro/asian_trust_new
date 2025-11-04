@@ -34,8 +34,8 @@ class PurchaseInvoicePdfService
     admin_user = User.find_by(admin: true)
     invoice_base = admin_user&.invoice_base
     
-    # 請求先情報をinvoice_recipientsテーブルから取得
-    company_info = admin_user&.invoice_recipients&.first
+    # 請求先情報をinvoice_recipientテーブルから取得
+    company_info = admin_user&.invoice_recipient
     
     # 関連データを明示的に読み込み
     @purchase.reload
@@ -45,11 +45,14 @@ class PurchaseInvoicePdfService
       first_item = purchase_items.first
     end
     
-    # 税計算（外税）
-    subtotal = @purchase_invoice.total_amount.to_i  # 税抜き価格（整数）
-    tax_rate = ENV.fetch('TAX_RATE', '0.1').to_f  # 環境変数から消費税率を取得（デフォルト10%）
-    tax = (subtotal * tax_rate).to_i  # 消費税（整数）
-    total_with_tax = (subtotal + tax).to_i  # 税込み合計（整数）
+    # 税計算（外税）- 商品代金 + 送料 + 事務手数料
+    product_amount = @purchase_invoice.total_amount.to_i  # 商品代金（税抜き）
+    shipping_fee = @purchase_invoice.shipping_fee.to_i    # 送料
+    admin_fee = @purchase_invoice.admin_fee.to_i          # 事務手数料
+    subtotal = product_amount + shipping_fee + admin_fee  # 税抜き合計
+    tax_rate = ENV.fetch('TAX_RATE', '0.1').to_f          # 環境変数から消費税率を取得（デフォルト10%）
+    tax = (subtotal * tax_rate).to_i                      # 消費税（整数）
+    total_with_tax = (subtotal + tax).to_i                # 税込み合計（整数）
     
     # 会社情報を直接設定
     if invoice_base
@@ -95,10 +98,13 @@ class PurchaseInvoicePdfService
         invoice_base: invoice_base,
         company_info: company_info,
         purchase_items: purchase_items,
-        total_with_tax: total_with_tax,
+        product_amount: product_amount,
+        shipping_fee: shipping_fee,
+        admin_fee: admin_fee,
         subtotal: subtotal,
         tax: tax,
         tax_rate: tax_rate,
+        total_with_tax: total_with_tax,
         company_name: company_name,
         company_postal_code: company_postal_code,
         company_address: company_address,
@@ -145,7 +151,7 @@ class PurchaseInvoicePdfService
       access_key_id = ENV['AWS_ACCESS_KEY_ID']
       secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
       region = ENV['AWS_REGION']
-      bucket_name = ENV['AWS_PURCHASE_INVOICE_BUCKET'] || ENV['AWS_INVOICE_BUCKET'] # フォールバック
+      bucket_name = ENV['AWS_PURCHASE_INVOICE_BUCKET'] # フォールバック
       
       Rails.logger.info "PurchaseInvoicePdfService: Bucket name: #{bucket_name}"
       
@@ -195,7 +201,7 @@ class PurchaseInvoicePdfService
         missing_vars << "AWS_ACCESS_KEY_ID" unless access_key_id.present?
         missing_vars << "AWS_SECRET_ACCESS_KEY" unless secret_access_key.present?
         missing_vars << "AWS_REGION" unless region.present?
-        missing_vars << "AWS_PURCHASE_INVOICE_BUCKET or AWS_INVOICE_BUCKET" unless bucket_name.present?
+        missing_vars << "AWS_PURCHASE_INVOICE_BUCKET" unless bucket_name.present?
         
         raise "Missing environment variables: #{missing_vars.join(', ')}"
       end

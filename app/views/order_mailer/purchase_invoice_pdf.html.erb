@@ -334,13 +334,63 @@
           <td class="number">¥<%= number_with_delimiter(item.unit_price * item.quantity) %></td>
         </tr>
         <% end %>
+        <!-- 送料行を追加 -->
+        <% if local_assigns[:shipping_fee] && local_assigns[:shipping_fee] > 0 %>
+        <% 
+          # 骨髄幹細胞上清液（product.id = 1）が含まれているかチェック
+          has_bone_marrow_product = purchase_items.any? { |item| item.product_id == 1 }
+          has_other_products = purchase_items.any? { |item| item.product_id != 1 }
+          
+          # 送料の表示パターンを決定
+          if has_bone_marrow_product && has_other_products
+            # 骨髄 + 他の商品：2行表示
+        %>
+        <tr>
+          <td>送料</td>
+          <td class="number">-</td>
+          <td class="number">-</td>
+          <td class="number">¥6,000</td>
+        </tr>
+        <tr>
+          <td>送料（骨髄別送）</td>
+          <td class="number">-</td>
+          <td class="number">-</td>
+          <td class="number">¥6,000</td>
+        </tr>
+        <% elsif has_bone_marrow_product %>
+          <!-- 骨髄のみ：送料として表示 -->
+        <tr>
+          <td>送料</td>
+          <td class="number">-</td>
+          <td class="number">-</td>
+          <td class="number">¥<%= number_with_delimiter(local_assigns[:shipping_fee]) %></td>
+        </tr>
+        <% else %>
+          <!-- 他の商品のみ：送料として表示 -->
+        <tr>
+          <td>送料</td>
+          <td class="number">-</td>
+          <td class="number">-</td>
+          <td class="number">¥<%= number_with_delimiter(local_assigns[:shipping_fee]) %></td>
+        </tr>
+        <% end %>
+        <% end %>
+        <!-- 事務手数料行を追加 -->
+        <% if local_assigns[:admin_fee] && local_assigns[:admin_fee] > 0 %>
+        <tr>
+          <td>事務手数料</td>
+          <td class="number">-</td>
+          <td class="number">-</td>
+          <td class="number">¥<%= number_with_delimiter(local_assigns[:admin_fee]) %></td>
+        </tr>
+        <% end %>
         <!-- 合計行を tbody 内の最後の行として配置 -->
         <tr style="font-weight: bold; page-break-inside: avoid;">
           <td colspan="3" style="text-align: center;">小計（税抜）</td>
           <td class="number">¥<%= number_with_delimiter(subtotal) %></td>
         </tr>
         <tr style="font-weight: bold; page-break-inside: avoid;">
-          <td colspan="3" style="text-align: center;">消費税（<%= tax_rate_percentage %>%）</td>
+          <td colspan="3" style="text-align: center;">消費税（10%）</td>
           <td class="number">¥<%= number_with_delimiter(tax) %></td>
         </tr>
         <tr style="background-color: #d3d3d3; color: white; font-weight: bold; page-break-inside: avoid;">

@@ -38,44 +38,43 @@ class PaymentsController < ApplicationController
         
         if invoice_recipient
           @company_info = {
-            name: invoice_recipient.company_name || "株式会社アジアビジネストラスト",
-            department: invoice_recipient.department || "アジアビジネストラスト事業部",
-            address: invoice_recipient.address || "〒104-0061 東京都中央区銀座4丁目6-1",
-            building: "", # invoice_recipientにはbuilding項目がないため空文字
-            tel: invoice_recipient.tel || "03-5904-8148", # 固定値（DBに項目がない）
-            email: invoice_recipient.email || "abt1@asia-b-t.com",
-            footer: "アジアビジネストラスト 事務局", # 固定値
-            registration_number: "T4210001009156" # 固定値
+            name: invoice_recipient.company_name || ENV['COMPANY_NAME'] || "株式会社アジアビジネストラスト",
+            department: invoice_recipient.department || ENV['COMPANY_DEPARTMENT'] || "アジアビジネストラスト事業部",
+            address: invoice_recipient.address || "〒#{ENV['COMPANY_POSTAL_CODE'] || '104-0061'} #{ENV['COMPANY_ADDRESS'] || '東京都中央区銀座4丁目6-1'}",
+            building: ENV['COMPANY_BUILDING'] || "", # invoice_recipientにはbuilding項目がないため環境変数から取得
+            tel: invoice_recipient.tel || ENV['COMPANY_TEL'] || "03-5904-8148",
+            email: invoice_recipient.email || ENV['COMPANY_EMAIL'] || "abt1@asia-b-t.com",
+            footer: ENV['COMPANY_FOOTER'] || "アジアビジネストラスト 事務局",
+            registration_number: ENV['COMPANY_REGISTRATION_NUMBER'] || "T4210001009156"
           }
           
           @bank_info = {
-            name: invoice_base.bank_name || "楽天銀行",
-            branch: invoice_base.bank_branch_name || "第二営業支店",
-            branch_code: "252", # 固定値（DBに項目がない）
-            account_type: invoice_base.bank_account_type || "普通預金",
-            account_number: invoice_base.bank_account_number || "7747552",
+            name: invoice_base.bank_name || ENV['BANK_NAME'] || "楽天銀行",
+            branch: invoice_base.bank_branch_name || ENV['BANK_BRANCH'] || "第三営業支店",
+            branch_code: ENV['BANK_BRANCH_CODE'] || "252", # 固定値（DBに項目がない）
+            account_type: invoice_base.bank_account_type || ENV['BANK_ACCOUNT_TYPE'] || "普通預金",
+            account_number: invoice_base.bank_account_number || ENV['BANK_ACCOUNT_NUMBER'] || "7247552",
             account_name: invoice_base.bank_account_name || @company_info[:name]
           }
         else
           # DBに情報がない場合はデフォルト値を使用
           Rails.logger.warn "No invoice_recipient found for admin user, using default values"
           @company_info = {
-            name: "株式会社アジアビジネストラスト",
-            department: "アジアビジネストラスト事業部",
-            address: "〒104-0061 東京都中央区銀座4丁目6-1",
-            building: "銀座医科ビル3階",
-            tel: "TEL:03-5904-8148",
-            email: "abt1@asia-b-t.com",
-            footer: "アジアビジネストラスト 事務局",
-            registration_number: "T4210001009156"
+            name: ENV['COMPANY_NAME'] || "株式会社アジアビジネストラスト",
+            department: ENV['COMPANY_DEPARTMENT'] || "アジアビジネストラスト事業部",
+            address: "#{ENV['COMPANY_POSTAL_CODE'] || '104-0061'} #{ENV['COMPANY_ADDRESS'] || '東京都中央区銀座4丁目6-1 銀座医科ビル3階'}",
+            tel: "#{ENV['COMPANY_TEL'] || '03-5904-8148'}",
+            email: ENV['COMPANY_EMAIL'] || "abt1@asia-b-t.com",
+            footer: ENV['COMPANY_FOOTER'] || "アジアビジネストラスト 事務局",
+            registration_number: ENV['COMPANY_REGISTRATION_NUMBER'] || "T4210001009156"
           }
           
           @bank_info = {
-            name: "楽天銀行",
-            branch: "第二営業支店",
-            branch_code: "252",
-            account_type: "普通預金",
-            account_number: "7747552",
+            name: ENV['BANK_NAME'] || "楽天銀行",
+            branch: ENV['BANK_BRANCH'] || "第三営業支店",
+            branch_code: ENV['BANK_BRANCH_CODE'] || "252",
+            account_type: ENV['BANK_ACCOUNT_TYPE'] || "普通預金",
+            account_number: ENV['BANK_ACCOUNT_NUMBER'] || "7247552",
             account_name: @company_info[:name]
           }
         end
@@ -102,11 +101,11 @@ class PaymentsController < ApplicationController
         ).deliver_now
         
         Rails.logger.info "Bank transfer email sent successfully for Purchase #{@purchase.id}"
-        redirect_to purchase_invoices_path, notice: '注文が完了しました。銀行振込の詳細と請求書をメールでお送りしました。'
+        redirect_to my_history_purchases_path, notice: '注文が完了しました。銀行振込の詳細と請求書をメールでお送りしました。'
       rescue => e
         Rails.logger.error "Failed to send bank transfer email: #{e.message}"
         Rails.logger.error e.backtrace.join("\n")
-        redirect_to purchase_invoices_path, notice: '注文が完了しました。銀行振込の詳細は別途ご連絡いたします。'
+        redirect_to my_history_purchases_path, notice: '注文が完了しました。銀行振込の詳細は別途ご連絡いたします。'
       end
     else
       redirect_to select_method_payments_path, alert: result[:error]
@@ -257,7 +256,7 @@ class PaymentsController < ApplicationController
           tax_rate: tax_rate,
           subtotal_before_tax: subtotal_before_tax,
           total_with_tax: total_with_tax,
-          status: PurchaseInvoice::DRAFT,
+          status: PurchaseInvoice::SENT,
           notes: "商品購入に関する請求書"
         )
 

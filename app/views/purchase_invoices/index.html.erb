@@ -12,7 +12,7 @@
             <th>金額</th>
             <th>ステータス</th>
             <th>クリニック予約</th>
-            <th>購入者</th>
+            <th>請求書状況</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -93,7 +93,11 @@
                       class: "btn btn-xs btn-primary", style: "font-size: 0.7rem; padding: 2px 6px;" %>
                 <% end %>
               </td>
-              <td><%= invoice.user.name %></td>
+              <td>
+                <span class="badge bg-<%= invoice.status == 0 ? 'secondary' : invoice.status == 1 ? 'warning' : invoice.status == 2 ? 'success' : 'info' %>">
+                  <%= invoice.status_display_name %>
+                </span>
+              </td>
               <td>
                 <%= link_to "詳細", purchase_invoice_path(invoice), class: "btn btn-sm btn-outline-primary" %>
                 <% if invoice.paid? && !invoice.receipt_requested? %>

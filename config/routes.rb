@@ -203,6 +203,7 @@ Rails.application.routes.draw do
       patch :confirm_payment   # 支払い確認（管理者のみ）
       patch :request_receipt   # 領収書発行依頼
       patch :send_receipt      # 領収書発行（管理者のみ）
+      patch :mark_as_paid      # 振込済み報告（購入者のみ）
     end
   end
   

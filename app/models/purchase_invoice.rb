@@ -11,15 +11,19 @@ class PurchaseInvoice < ApplicationRecord
   validates :due_date, presence: true
   validates :total_amount, presence: true, numericality: { greater_than: 0 }
   
+  # コールバック：作成時にステータスをSENTに設定
+  before_validation :set_initial_status, on: :create
+  
   # ステータス定数
   DRAFT = 0           # 下書き
   SENT = 1            # 送付済み
-  PAID = 2            # 支払い完了
-  RECEIPT_REQUESTED = 3  # 領収書発行依頼済み
-  RECEIPT_SENT = 4       # 領収書発行完了
+  PAYMENT_CONFIRMATION_REQUEST = 2  # 支払確認依頼
+  PAID = 3            # 支払い完了
+  RECEIPT_REQUESTED = 4  # 領収書発行依頼済み
+  RECEIPT_SENT = 5       # 領収書発行完了
   
   # ステータスのバリデーション
-  validates :status, inclusion: { in: [DRAFT, SENT, PAID, RECEIPT_REQUESTED, RECEIPT_SENT] }
+  validates :status, inclusion: { in: [DRAFT, SENT, PAYMENT_CONFIRMATION_REQUEST, PAID, RECEIPT_REQUESTED, RECEIPT_SENT] }
   
   # ステータス判定メソッド
   def draft?
@@ -28,6 +32,10 @@ class PurchaseInvoice < ApplicationRecord
   
   def sent?
     status == SENT
+  end
+  
+  def payment_confirmation_request?
+    status == PAYMENT_CONFIRMATION_REQUEST
   end
   
   def paid?
@@ -51,6 +59,10 @@ class PurchaseInvoice < ApplicationRecord
     update!(status: SENT, sent_at: Time.current)
   end
   
+  def payment_confirmation_request!
+    update!(status: PAYMENT_CONFIRMATION_REQUEST)
+  end
+  
   def paid!
     update!(status: PAID, confirmed_at: Time.current)
   end
@@ -66,6 +78,7 @@ class PurchaseInvoice < ApplicationRecord
   # スコープ
   scope :draft, -> { where(status: DRAFT) }
   scope :sent, -> { where(status: SENT) }
+  scope :payment_confirmation_request, -> { where(status: PAYMENT_CONFIRMATION_REQUEST) }
   scope :paid, -> { where(status: PAID) }
   scope :receipt_requested, -> { where(status: RECEIPT_REQUESTED) }
   scope :receipt_sent, -> { where(status: RECEIPT_SENT) }
@@ -73,8 +86,9 @@ class PurchaseInvoice < ApplicationRecord
   # ステータス表示名を取得
   def status_display_name
     case status
-    when DRAFT then '下書き'
+    when DRAFT then '支払確認前'
     when SENT then '送付済み'
+    when PAYMENT_CONFIRMATION_REQUEST then '支払確認依頼'
     when PAID then '支払い完了'
     when RECEIPT_REQUESTED then '領収書発行依頼済み'
     when RECEIPT_SENT then '領収書発行完了'
@@ -141,5 +155,12 @@ class PurchaseInvoice < ApplicationRecord
     when :not_reserved
       "未予約"
     end
+  end
+
+  private
+
+  def set_initial_status
+    self.status = SENT if status.nil?
+    self.sent_at = Time.current if sent_at.nil?
   end
 end

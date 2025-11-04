@@ -1,6 +1,6 @@
 class PurchaseInvoicesController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_purchase_invoice, only: [:show, :edit, :update, :send_invoice, :confirm_payment, :request_receipt, :send_receipt]
+  before_action :set_purchase_invoice, only: [:show, :edit, :update, :send_invoice, :confirm_payment, :request_receipt, :send_receipt, :mark_as_paid]
 
   def index
     # 購入者として受け取った請求書一覧
@@ -19,6 +19,23 @@ class PurchaseInvoicesController < ApplicationController
     
     # user_id=1のInvoiceRecipientから振込口座情報を取得
     @bank_info = InvoiceRecipient.find_by(user_id: 1)
+    
+    respond_to do |format|
+      format.html
+      format.pdf do
+        if params[:type] == 'receipt'
+          # 領収書PDF表示
+          unless @purchase_invoice.receipt_sent?
+            redirect_to purchase_invoice_path(@purchase_invoice), alert: "領収書はまだ発行されていません"
+            return
+          end
+          render_receipt_pdf
+        else
+          # 請求書PDF表示
+          render_invoice_pdf
+        end
+      end
+    end
   end
 
   def new
@@ -35,13 +52,11 @@ class PurchaseInvoicesController < ApplicationController
     @purchase_invoice.invoice_date = Date.current
     @purchase_invoice.due_date = @purchase.purchased_at.to_date + 1.week
     @purchase_invoice.total_amount = @purchase.total_price
-    @purchase_invoice.status = PurchaseInvoice::DRAFT
   end
 
   def create
     @purchase = Purchase.find(params[:purchase_id])
     @purchase_invoice = @purchase.build_purchase_invoice(purchase_invoice_params)
-    @purchase_invoice.status = PurchaseInvoice::DRAFT
     
     if @purchase_invoice.save
       redirect_to purchase_invoice_path(@purchase_invoice), notice: '購入請求書が作成されました。'
@@ -118,14 +133,14 @@ class PurchaseInvoicesController < ApplicationController
   end
 
   def request_receipt
-    # 支払い完了済みの場合のみ領収書発行依頼可能
-    unless @purchase_invoice.paid?
+    # 支払い完了済み（status = 3）の場合のみ領収書発行依頼可能
+    unless @purchase_invoice.status == 3
       redirect_to purchase_invoice_path(@purchase_invoice), alert: '支払い完了済みの請求書のみ領収書発行依頼できます。'
       return
     end
 
     # 既に依頼済みの場合
-    if @purchase_invoice.receipt_requested?
+    if @purchase_invoice.status >= 4
       redirect_to purchase_invoice_path(@purchase_invoice), alert: '既に領収書発行を依頼済みです。'
       return
     end
@@ -144,8 +159,8 @@ class PurchaseInvoicesController < ApplicationController
       return
     end
 
-    # 領収書発行依頼済みの場合のみ領収書発行可能
-    unless @purchase_invoice.receipt_requested?
+    # 領収書発行依頼済み（status = 4）の場合のみ領収書発行可能
+    unless @purchase_invoice.status == 4
       redirect_to purchase_invoice_path(@purchase_invoice), alert: '領収書発行依頼済みの請求書のみ領収書を発行できます。'
       return
     end
@@ -161,10 +176,40 @@ class PurchaseInvoicesController < ApplicationController
       @purchase_invoice.receipt_sent!
       
       Rails.logger.info "Purchase receipt #{@purchase_invoice.id} generated successfully"
-      redirect_to purchase_invoice_path(@purchase_invoice), notice: '領収書を発行しました。（PDF生成は後で実装予定）'
+      redirect_to purchase_invoice_path(@purchase_invoice), notice: '領収書を発行しました。'
     rescue => e
       Rails.logger.error "Purchase receipt generation error: #{e.message}"
       redirect_to purchase_invoice_path(@purchase_invoice), alert: "領収書の発行に失敗しました。エラー: #{e.message}"
+    end
+  end
+
+  def mark_as_paid
+    # 購入者のみ実行可能（自分の請求書のみ）
+    unless @purchase_invoice.purchase.user == current_user
+      redirect_to purchase_invoice_path(@purchase_invoice), alert: "権限がありません"
+      return
+    end
+
+    # 送付済み（SENT）の場合のみ支払確認依頼処理可能
+    unless @purchase_invoice.sent?
+      redirect_to purchase_invoice_path(@purchase_invoice), alert: "この請求書は支払確認依頼できません"
+      return
+    end
+
+    # 既に支払確認依頼済みの場合
+    if @purchase_invoice.payment_confirmation_request? || @purchase_invoice.paid?
+      redirect_to purchase_invoice_path(@purchase_invoice), alert: '既に支払確認依頼済みです。'
+      return
+    end
+
+    begin
+      # purchase_invoiceのステータスを支払確認依頼（2）に更新
+      @purchase_invoice.payment_confirmation_request!
+      
+      redirect_to purchase_invoice_path(@purchase_invoice), notice: '支払確認を依頼しました。管理者が確認後、正式に支払い完了となります。'
+    rescue => e
+      Rails.logger.error "Mark as paid error: #{e.message}"
+      redirect_to purchase_invoice_path(@purchase_invoice), alert: "支払確認依頼に失敗しました。エラー: #{e.message}"
     end
   end
 
@@ -182,5 +227,37 @@ class PurchaseInvoicesController < ApplicationController
     # 購入者または管理者のみアクセス可能
     @purchase_invoice.purchase.user == current_user || 
     current_user.level&.value == 0  # アジアビジネストラスト
+  end
+
+  def render_invoice_pdf
+    # S3からPDFを取得して表示
+    if @purchase_invoice.pdf_file.attached?
+      # Active StorageからPDFを取得
+      pdf_data = @purchase_invoice.pdf_file.download
+      
+      send_data pdf_data,
+        filename: "請求書_#{@purchase_invoice.invoice_number}.pdf",
+        type: 'application/pdf',
+        disposition: 'inline'
+    else
+      # PDFが存在しない場合はエラーメッセージ
+      redirect_to purchase_invoice_path(@purchase_invoice), alert: "請求書PDFが見つかりません。"
+    end
+  end
+
+  def render_receipt_pdf
+    # 領収書PDF生成（簡易版）
+    html = render_to_string(
+      template: 'purchase_invoices/pdf_receipt',
+      layout: 'pdf',
+      formats: [:html]
+    )
+    
+    pdf = WickedPdf.new.pdf_from_string(html)
+    
+    send_data pdf,
+      filename: "領収書_#{@purchase_invoice.invoice_number}.pdf",
+      type: 'application/pdf',
+      disposition: 'inline'
   end
 end

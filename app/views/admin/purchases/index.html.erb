@@ -5,10 +5,24 @@
         <h4 class="text-primary">購入履歴管理</h4>
         <div class="d-flex align-items-center">
           <%= form_with url: admin_purchases_path, method: :get, local: true, class: "d-flex align-items-center me-3" do |form| %>
+            <label class="form-label me-2 mb-0">ステータス:</label>
+            <%= form.select :invoice_status, 
+                           options_for_select([
+                             ['全て', ''],
+                             ['下書き', PurchaseInvoice::DRAFT],
+                             ['送付済み', PurchaseInvoice::SENT],
+                             ['支払確認依頼', PurchaseInvoice::PAYMENT_CONFIRMATION_REQUEST],
+                             ['支払い完了', PurchaseInvoice::PAID],
+                             ['領収書発行依頼済み', PurchaseInvoice::RECEIPT_REQUESTED],
+                             ['領収書発行完了', PurchaseInvoice::RECEIPT_SENT]
+                           ], params[:invoice_status]), 
+                           {}, 
+                           { class: "form-select me-2", style: "width: auto;", onchange: "this.form.submit();" } %>
             <label class="form-label me-2 mb-0">対象月:</label>
             <%= form.select :month, options_for_select(@month_options, @selected_month), 
                            {}, 
                            { class: "form-select me-2", style: "width: auto;", onchange: "this.form.submit();" } %>
+            <%= form.hidden_field :status if params[:status].present? %>
           <% end %>
           <%= link_to "購入情報作成", new_admin_purchase_path, class: "btn btn-success me-2" %>
           <%= link_to "ダッシュボード", admin_root_path, class: "btn btn-outline-primary" %>
@@ -17,45 +31,7 @@
     </div>
   </div>
 
-  <!-- 統計情報 -->
-  <div class="row mb-4">
-    <div class="col-md-4">
-      <div class="card bg-primary text-white">
-        <div class="card-body text-center">
-          <h6 class="card-title"><%= @selected_month_name %></h6>
-          <h5 class="mb-0">購入件数</h5>
-          <h3 class="mb-0"><%= number_with_delimiter(@total_count) %>件</h3>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card bg-success text-white">
-        <div class="card-body text-center">
-          <h6 class="card-title"><%= @selected_month_name %></h6>
-          <h5 class="mb-0">総売上金額</h5>
-          <h3 class="mb-0">¥<%= number_with_delimiter(@total_amount) %></h3>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card bg-info text-white">
-        <div class="card-body text-center">
-          <h6 class="card-title mb-3">購入分合計</h6>
-          <div class="row">
-            <div class="col-6">
-              <small class="d-block mb-1">未入金購入分</small>
-              <h5 class="mb-0">¥<%= number_with_delimiter(@pending_amount) %></h5>
-            </div>
-            <div class="col-6">
-              <small class="d-block mb-1">入金済購入分</small>
-              <h5 class="mb-0">¥<%= number_with_delimiter(@paid_amount) %></h5>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-  </div>
 
   <!-- 購入履歴テーブル -->
   <div class="row">
@@ -158,15 +134,35 @@
                         <% end %>
                       </td>
                       <td class="text-center">
-                        <% if purchase.built? %>
-                          <span class="badge bg-warning text-dark">未入金</span>
-                        <% elsif purchase.paid? %>
-                          <span class="badge bg-success">入金済み</span>
-                        <% elsif purchase.reserved? %>
-                          <span class="badge bg-info">予約完了</span>
-                        <% else %>
-                          <span class="badge bg-secondary"><%= purchase.status %></span>
-                        <% end %>
+                        <div class="d-flex flex-column align-items-center gap-1">
+                          <% if purchase.built? %>
+                            <%= button_to "入金確認", confirm_payment_admin_purchase_path(purchase), 
+                                method: :patch,
+                                class: "btn btn-xs btn-success", 
+                                style: "font-size: 0.7rem; padding: 2px 6px; border: none;",
+                                confirm: "入金を確認しますか？",
+                                onclick: "event.stopPropagation();" %>
+                          <% elsif purchase.paid? %>
+                            <span class="badge bg-success">入金確認済</span>
+                          <% elsif purchase.reserved? %>
+                            <span class="badge bg-info">予約完了</span>
+                          <% else %>
+                            <span class="badge bg-secondary"><%= purchase.status_display_name %></span>
+                          <% end %>
+                          
+                          <% if purchase.purchase_invoice.present? %>
+                            <% if purchase.purchase_invoice.status == 4 %>
+                              <%= button_to "領収書を発行", send_receipt_admin_purchase_invoice_path(purchase.purchase_invoice), 
+                                  method: :patch,
+                                  class: "btn btn-xs btn-primary", 
+                                  style: "font-size: 0.7rem; padding: 2px 6px; border: none;",
+                                  confirm: "領収書を発行しますか？",
+                                  onclick: "event.stopPropagation();" %>
+                            <% elsif purchase.purchase_invoice.status == 5 %>
+                              <span class="badge bg-primary">領収書発行済み</span>
+                            <% end %>
+                          <% end %>
+                        </div>
                       </td>
                       <td>
                         <% 
@@ -304,11 +300,20 @@
       // 新しいイベントリスナーを追加
       row.addEventListener('click', handleRowClick);
     });
+    
+    // ボタンやリンクのクリックイベントを処理
+    const buttons = document.querySelectorAll('.clickable-row a, .clickable-row button');
+    buttons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+    });
   }
   
   function handleRowClick(e) {
-    // リンクがクリックされた場合は行のクリックを無効にする
-    if (e.target.closest('a')) {
+    // リンクやボタンがクリックされた場合は行のクリックを無効にする
+    if (e.target.closest('a') || e.target.closest('button') || e.target.closest('form')) {
+      e.stopPropagation();
       return;
     }
     

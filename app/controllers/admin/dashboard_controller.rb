@@ -11,6 +11,9 @@ class Admin::DashboardController < Admin::BaseController
     
     # アドバイザー認定前ユーザー数を取得
     @advisor_pre_count = User.joins(:level).where(levels: { name: 'アドバイザー認定前' }).count
+    
+    # 入金確認待ちの購入請求書件数を取得（status = 2: PAYMENT_CONFIRMATION_REQUEST）
+    @payment_confirmation_count = PurchaseInvoice.where(status: PurchaseInvoice::PAYMENT_CONFIRMATION_REQUEST).count
   end
 
   private

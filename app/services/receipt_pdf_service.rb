@@ -78,7 +78,7 @@ class ReceiptPdfService
       access_key_id = ENV['AWS_ACCESS_KEY_ID']
       secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
       region = ENV['AWS_REGION']
-      bucket_name = ENV['AWS_RECEIPT_BUCKET']
+      bucket_name = ENV['AWS_INCENTIVE_RECEIPT_BUCKET']
       
       Rails.logger.info "ReceiptPdfService: Bucket name: #{bucket_name}"
       

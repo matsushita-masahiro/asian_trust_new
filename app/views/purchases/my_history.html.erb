@@ -33,6 +33,7 @@
                     <th>商品情報</th>
                     <th>数量</th>
                     <th>合計金額</th>
+                    <th>請求書</th>
                     <th>クリニック予約</th>
                     <th>詳細</th>
                   </tr>
@@ -101,6 +102,34 @@
                               + 税: ¥<%= number_with_delimiter(tax_amount) %>
                             <% end %>
                           </small>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if purchase.purchase_invoice.present? %>
+                          <div class="d-flex flex-column align-items-start gap-1">
+
+                            <%= link_to "請求書", purchase_invoice_path(purchase.purchase_invoice), 
+                                class: "btn btn-xs btn-outline-primary", 
+                                style: "font-size: 0.7rem; padding: 2px 6px;" %>
+                            
+                            <% if purchase.purchase_invoice.status == 3 %>
+                              <%= link_to "領収書発行依頼", request_receipt_purchase_invoice_path(purchase.purchase_invoice), 
+                                  method: :patch,
+                                  class: "btn btn-xs btn-success", 
+                                  style: "font-size: 0.7rem; padding: 2px 6px;",
+                                  confirm: "領収書の発行を依頼しますか？" %>
+                            <% elsif purchase.purchase_invoice.status == 4 %>
+                              <span class="btn btn-xs btn-secondary disabled" style="font-size: 0.7rem; padding: 2px 6px;">
+                                領収書発行依頼済み
+                              </span>
+                            <% elsif purchase.purchase_invoice.status == 5 %>
+                              <span class="badge bg-success" style="font-size: 0.7rem;">
+                                領収書発行済み
+                              </span>
+                            <% end %>
+                          </div>
+                        <% else %>
+                          <span class="badge bg-secondary">請求書未作成</span>
                         <% end %>
                       </td>
                       <td>

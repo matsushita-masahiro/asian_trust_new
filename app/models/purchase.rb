@@ -31,6 +31,9 @@ class Purchase < ApplicationRecord
   # コールバック：購入後に送料を自動設定
   after_save :set_shipping_fees, if: :should_set_shipping_fees?
   
+  # コールバック：購入ステータスがpaidになった時にpurchase_invoiceのステータスも更新
+  after_update :update_purchase_invoice_status, if: :saved_change_to_status?
+  
 
 
   # 💰 合計金額（全アイテムの合計）- seller_priceベース
@@ -90,6 +93,16 @@ class Purchase < ApplicationRecord
     set_shipping_fees
   end
 
+  # ステータス表示名を取得
+  def status_display_name
+    case status
+    when 'built' then '入金確認前'
+    when 'paid' then '支払済み'
+    when 'reserved' then '予約完了'
+    else status
+    end
+  end
+
   private
 
   def set_initial_status
@@ -97,6 +110,14 @@ class Purchase < ApplicationRecord
       self.status = 'paid'
     else
       self.status = 'built'
+    end
+  end
+
+  def update_purchase_invoice_status
+    return unless purchase_invoice.present?
+    
+    if paid? && !purchase_invoice.paid?
+      purchase_invoice.paid!
     end
   end
 

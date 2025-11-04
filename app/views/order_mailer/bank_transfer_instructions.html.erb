@@ -117,9 +117,61 @@
           <% end %>
         </tbody>
         <tfoot>
+          <tr>
+            <td colspan="3">商品代金</td>
+            <td class="text-right">¥<%= number_with_delimiter(@purchase_items.sum { |item| item.unit_price * item.quantity }) %></td>
+          </tr>
+          <% 
+            # 送料と事務手数料の計算
+            shipping_fee = @purchase_invoice&.shipping_fee || 0
+            admin_fee = @purchase_invoice&.admin_fee || 0
+            
+            # 骨髄幹細胞上清液（product.id = 1）が含まれているかチェック
+            has_bone_marrow_product = @purchase_items.any? { |item| item.product_id == 1 }
+            has_other_products = @purchase_items.any? { |item| item.product_id != 1 }
+          %>
+          <% if shipping_fee > 0 %>
+            <% if has_bone_marrow_product && has_other_products %>
+              <!-- 骨髄 + 他の商品：2行表示 -->
+              <tr>
+                <td colspan="3">送料</td>
+                <td class="text-right">¥6,000</td>
+              </tr>
+              <tr>
+                <td colspan="3">送料（骨髄別送）</td>
+                <td class="text-right">¥6,000</td>
+              </tr>
+            <% else %>
+              <!-- 骨髄のみ または 他の商品のみ -->
+              <tr>
+                <td colspan="3">送料<%= has_bone_marrow_product && @purchase_items.length == 1 ? "" : "" %></td>
+                <td class="text-right">¥<%= number_with_delimiter(shipping_fee) %></td>
+              </tr>
+            <% end %>
+          <% end %>
+          <% if admin_fee > 0 %>
+          <tr>
+            <td colspan="3">事務手数料</td>
+            <td class="text-right">¥<%= number_with_delimiter(admin_fee) %></td>
+          </tr>
+          <% end %>
+          <% 
+            # 税抜き小計
+            product_total = @purchase_items.sum { |item| item.unit_price * item.quantity }
+            subtotal_before_tax = product_total + shipping_fee + admin_fee
+            tax_amount = @purchase_invoice&.tax_amount || (subtotal_before_tax * 0.1).to_i
+          %>
+          <tr>
+            <td colspan="3">小計（税抜）</td>
+            <td class="text-right">¥<%= number_with_delimiter(subtotal_before_tax) %></td>
+          </tr>
+          <tr>
+            <td colspan="3">消費税（10%）</td>
+            <td class="text-right">¥<%= number_with_delimiter(tax_amount) %></td>
+          </tr>
           <tr class="total-row">
             <td colspan="3">合計金額</td>
-            <td class="text-right">¥<%= number_with_delimiter(@total_amount) %></td>
+            <td class="text-right">¥<%= number_with_delimiter(subtotal_before_tax + tax_amount) %></td>
           </tr>
         </tfoot>
       </table>
@@ -150,7 +202,14 @@
         </tr>
         <tr>
           <td style="border: none; padding: 8px 0;"><strong>振込金額:</strong></td>
-          <td style="border: none; padding: 8px 0; color: #007bff; font-weight: bold; font-size: 1.2em;">¥<%= number_with_delimiter(@total_amount) %></td>
+          <td style="border: none; padding: 8px 0; color: #007bff; font-weight: bold; font-size: 1.2em;">
+            ¥<%= number_with_delimiter(
+              (@purchase_items.sum { |item| item.unit_price * item.quantity }) + 
+              (@purchase_invoice&.shipping_fee || 0) + 
+              (@purchase_invoice&.admin_fee || 0) + 
+              (@purchase_invoice&.tax_amount || ((@purchase_items.sum { |item| item.unit_price * item.quantity } + (@purchase_invoice&.shipping_fee || 0) + (@purchase_invoice&.admin_fee || 0)) * 0.1).to_i)
+            ) %>
+          </td>
         </tr>
       </table>
     </div>

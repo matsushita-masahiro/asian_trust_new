@@ -1132,4 +1132,85 @@ if products.any?
   puts "   - Supporter's salon/clinic: 2 users purchasing"
 end
 
+# 全てのPurchaseに対してpurchase_invoiceを作成（status = 1: SENT）
+puts "📄 Creating purchase invoices for all purchases..."
+
+Purchase.includes(:purchase_items, :user).find_each do |purchase|
+  next if purchase.purchase_invoice.present? # 既に存在する場合はスキップ
+  
+  # 請求書番号を生成
+  invoice_number = PurchaseInvoice.generate_invoice_number
+  
+  # 請求書を作成（status = 1: SENT）
+  purchase_invoice = purchase.create_purchase_invoice!(
+    invoice_number: invoice_number,
+    invoice_date: purchase.purchased_at.to_date,
+    due_date: purchase.purchased_at.to_date + 1.week,
+    total_amount: purchase.total_price,
+    status: 1,  # SENT
+    sent_at: purchase.purchased_at
+  )
+  
+  puts "  Created invoice #{invoice_number} for purchase #{purchase.id}"
+end
+
+puts "✅ Created purchase invoices for all purchases with status = 1 (SENT)"
+
+# 全てのPurchaseに送料を設定
+puts "🚚 Setting shipping fees for all purchases..."
+
+Purchase.includes(:purchase_items, :shipping_fees).find_each do |purchase|
+  next if purchase.shipping_fees.exists? # 既に送料が設定されている場合はスキップ
+  
+  # 購入商品に基づいて送料を自動設定
+  shipping_types_used = []
+  
+  purchase.purchase_items.includes(:product).each do |item|
+    product = item.product
+    shipping_type = product.shipping_type
+    
+    # 同じ送料タイプが既に追加されていない場合のみ追加
+    unless shipping_types_used.include?(shipping_type)
+      purchase.shipping_fees.create!(
+        shipping_type: shipping_type,
+        amount: product.shipping_fee_amount
+      )
+      shipping_types_used << shipping_type
+      puts "  Added #{shipping_type} shipping (¥#{product.shipping_fee_amount}) to purchase #{purchase.id}"
+    end
+  end
+end
+
+# InvoiceRecipientデータを作成（user_id = 1で株式会社アジアビジネストラスト）
+puts "🏢 Creating InvoiceRecipient data..."
+
+# user_id = 1のユーザー（アジアビジネストラスト）を取得
+abt_user = User.find_by(id: 1)
+
+if abt_user
+  # 既存のInvoiceRecipientがあれば削除
+  InvoiceRecipient.where(user_id: 1).destroy_all
+  
+  # 新しいInvoiceRecipientを作成
+  InvoiceRecipient.create!(
+    user_id: 1,
+    name: "株式会社アジアビジネストラスト",
+    email: "abt1@asia-b-t.com",
+    postal_code: "104-0061",
+    address: "東京都中央区銀座4丁目8-1銀座穂月ビル３階",
+    tel: "03-5904-8148",
+    representative_name: "代表取締役　道端泰代",
+    bank_name: "楽天銀行",
+    bank_branch_name: "第三営業支店",
+    bank_account_type: "普通",
+    bank_account_number: "7247552",
+    bank_account_name: "株式会社アジアビジネストラスト"
+  )
+  
+  puts "✅ Created InvoiceRecipient for 株式会社アジアビジネストラスト (user_id: 1)"
+else
+  puts "⚠️  User with id: 1 not found. Skipping InvoiceRecipient creation."
+end
+
+puts "✅ Set shipping fees for all purchases"
 puts "✅ Seeding completed!"

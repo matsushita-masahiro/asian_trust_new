@@ -84,7 +84,7 @@
                   <% 
                     # 金額計算
                     product_amount = @purchase.total_price
-                    shipping_fee = @purchase.purchase_invoice&.shipping_fee || @purchase.total_shipping_fees
+                    shipping_fee = @purchase.total_shipping_fees
                     admin_fee = @purchase.purchase_invoice&.admin_fee || 0
                     
                     if @purchase.purchase_invoice&.total_with_tax.present? && @purchase.purchase_invoice.total_with_tax > 0

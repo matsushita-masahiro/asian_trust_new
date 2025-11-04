@@ -1,0 +1,98 @@
+<div class="header">
+  <div class="title">請求書</div>
+  <div>請求書番号: <%= purchase_invoice.invoice_number %></div>
+  <div>発行日: <%= purchase_invoice.invoice_date.strftime('%Y年%m月%d日') %></div>
+</div>
+
+<div class="customer-info">
+  <h3>お客様情報</h3>
+  <p>
+    <%= purchase_invoice.user.display_name %> 様<br>
+    <% if purchase_invoice.user.addresses.any? %>
+      <%= purchase_invoice.user.addresses.first.full_address %>
+    <% end %>
+  </p>
+</div>
+
+<div class="invoice-info">
+  <h3>請求内容</h3>
+  <p>
+    請求日: <%= purchase_invoice.invoice_date.strftime('%Y年%m月%d日') %><br>
+    支払期限: <%= purchase_invoice.due_date.strftime('%Y年%m月%d日') %>
+  </p>
+</div>
+
+<table class="items-table">
+  <thead>
+    <tr>
+      <th>商品名</th>
+      <th class="text-center">数量</th>
+      <th class="text-right">単価</th>
+      <th class="text-right">金額</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% purchase_invoice.purchase_items.each do |item| %>
+      <tr>
+        <td><%= item.product.name %></td>
+        <td class="text-center"><%= item.quantity %></td>
+        <td class="text-right">¥<%= number_with_delimiter(item.seller_price || item.unit_price) %></td>
+        <td class="text-right">¥<%= number_with_delimiter(item.quantity * (item.seller_price || item.unit_price)) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<div class="total-section">
+  <% 
+    subtotal = purchase_invoice.total_amount || purchase_invoice.purchase.total_price
+    shipping_fee = purchase_invoice.shipping_fee || purchase_invoice.purchase.total_shipping_fees
+    admin_fee = purchase_invoice.admin_fee || 0
+    subtotal_before_tax = subtotal + shipping_fee + admin_fee
+    tax_amount = purchase_invoice.tax_amount || (subtotal_before_tax * 0.1).round
+    total_with_tax = purchase_invoice.total_with_tax || (subtotal_before_tax + tax_amount)
+  %>
+  
+  <p>商品代金: ¥<%= number_with_delimiter(subtotal) %></p>
+  <% if shipping_fee > 0 %>
+    <% 
+      # 骨髄幹細胞上清液（product.id = 1）が含まれているかチェック
+      has_bone_marrow_product = purchase_invoice.purchase.purchase_items.any? { |item| item.product_id == 1 }
+      has_other_products = purchase_invoice.purchase.purchase_items.any? { |item| item.product_id != 1 }
+    %>
+    <% if has_bone_marrow_product && has_other_products %>
+      <!-- 骨髄 + 他の商品：2行表示 -->
+      <p>送料: ¥6,000</p>
+      <p>送料（骨髄別送）: ¥6,000</p>
+    <% else %>
+      <!-- 骨髄のみ または 他の商品のみ -->
+      <p>送料: ¥<%= number_with_delimiter(shipping_fee) %></p>
+    <% end %>
+  <% end %>
+  <% if admin_fee > 0 %>
+    <p>事務手数料: ¥<%= number_with_delimiter(admin_fee) %></p>
+  <% end %>
+  <p>消費税(10%): ¥<%= number_with_delimiter(tax_amount) %></p>
+  <hr>
+  <p><strong>合計金額: ¥<%= number_with_delimiter(total_with_tax) %></strong></p>
+</div>
+
+<% if bank_info %>
+  <div class="bank-info">
+    <h3>お振込先</h3>
+    <p>
+      銀行名: <%= bank_info.bank_name %><br>
+      支店名: <%= bank_info.branch_name %><br>
+      口座種別: <%= bank_info.account_type %><br>
+      口座番号: <%= bank_info.account_number %><br>
+      口座名義: <%= bank_info.account_holder %>
+    </p>
+  </div>
+<% end %>
+
+<% if purchase_invoice.notes.present? %>
+  <div class="notes">
+    <h3>備考</h3>
+    <p><%= simple_format(purchase_invoice.notes) %></p>
+  </div>
+<% end %>

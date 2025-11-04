@@ -13,6 +13,14 @@ class Admin::PurchasesController < Admin::BaseController
     # ステータスでフィルタリング
     if params[:status] == 'pending'
       @purchases = @purchases.where(status: 'built')
+    elsif params[:status] == 'payment_confirmation'
+      # 入金確認待ち（purchase_invoice.status = 2）の購入履歴のみ表示
+      @purchases = @purchases.joins(:purchase_invoice)
+                            .where(purchase_invoices: { status: PurchaseInvoice::PAYMENT_CONFIRMATION_REQUEST })
+    elsif params[:invoice_status].present?
+      # purchase_invoice.statusでフィルタリング
+      @purchases = @purchases.joins(:purchase_invoice)
+                            .where(purchase_invoices: { status: params[:invoice_status] })
     end
     
     # 統計情報（税込み金額で計算）
@@ -70,6 +78,11 @@ class Admin::PurchasesController < Admin::BaseController
     # 複数商品の購入詳細画面
     # purchase_itemsを再読み込みして最新の値を取得
     @purchase.reload
+    
+    # 送料が設定されていない場合は自動設定
+    if @purchase.shipping_fees.empty?
+      @purchase.create_shipping_fees!
+    end
   end
 
   def edit
@@ -77,6 +90,11 @@ class Admin::PurchasesController < Admin::BaseController
     if @purchase.purchase_items.count > 1
       redirect_to admin_purchase_path(@purchase)
       return
+    end
+    
+    # 送料が設定されていない場合は自動設定
+    if @purchase.shipping_fees.empty?
+      @purchase.create_shipping_fees!
     end
     
     # 編集画面で必要な情報を準備
@@ -153,13 +171,18 @@ class Admin::PurchasesController < Admin::BaseController
     if @purchase.built?
       @purchase.update!(status: 'paid')
       
+      # purchase_invoiceのステータスを確実に3（PAID）に更新
+      if @purchase.purchase_invoice.present?
+        @purchase.purchase_invoice.update!(status: 3, confirmed_at: Time.current)
+      end
+      
       # 購入月を取得してリダイレクト先に含める
       purchase_month = @purchase.purchased_at.strftime('%Y-%m')
       
       # 入金確認メールを送信
       begin
         OrderMailer.payment_confirmed(@purchase).deliver_now
-        redirect_to admin_purchases_path(month: purchase_month), notice: '入金確認が完了しました。ステータスを「支払済み」に変更し、お客様にメールを送信しました。'
+        redirect_to admin_purchases_path(month: purchase_month), notice: '入金確認が完了しました。ステータスを「支払済み」に変更しました。'
       rescue => e
         Rails.logger.error "メール送信エラー: #{e.message}"
         redirect_to admin_purchases_path(month: purchase_month), notice: '入金確認が完了しました。ステータスを「支払済み」に変更しましたが、メール送信に失敗しました。'

@@ -24,18 +24,19 @@
               未確認請求書有（<%= unconfirmed_invoices_count %>）
             <% end %>
           <% end %>
+          <% if @payment_confirmation_count > 0 %>
+            <%= link_to admin_purchases_path(status: 'payment_confirmation'), class: "alert alert-info text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer; background-color: #e3f2fd; border-color: #2196f3;" do %>
+              <i class="fas fa-credit-card"></i>
+              入金確認待: <strong><%= @payment_confirmation_count %>件</strong>
+            <% end %>
+          <% end %>
           <% if @pending_payments_count > 0 %>
             <%= link_to admin_purchases_path(status: 'pending'), class: "alert alert-warning text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
               <i class="fas fa-exclamation-triangle"></i>
               未入金注文: <strong><%= @pending_payments_count %>件</strong>
             <% end %>
           <% end %>
-          <% if @advisor_pre_count > 0 %>
-            <%= link_to admin_users_path(level: 'アドバイザー認定前'), class: "alert alert-info text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
-              <i class="fas fa-user-clock"></i>
-              アドバイザー認定前: <strong><%= @advisor_pre_count %>名</strong>
-            <% end %>
-          <% end %>
+
           <div class="text-muted">
             <%= Time.current.strftime("%Y/%m/%d") %> (<%= %w[日 月 火 水 木 金 土][Time.current.wday] %>)
           </div>

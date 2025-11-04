@@ -1,0 +1,114 @@
+<div class="header">
+  <div class="title">領収書</div>
+  <div>領収書番号: <%= @purchase_invoice.invoice_number %>-R</div>
+  <div>発行日: <%= @purchase_invoice.receipt_sent_at&.strftime('%Y年%m月%d日') || Date.current.strftime('%Y年%m月%d日') %></div>
+</div>
+
+<div class="customer-info">
+  <h3>お客様情報</h3>
+  <p>
+    <%= @purchase_invoice.user.display_name %> 様<br>
+    <% if @purchase_invoice.user.addresses.any? %>
+      <% address = @purchase_invoice.user.addresses.first %>
+      <% if address.postal_code.present? %>
+        〒<%= address.postal_code %><br>
+      <% end %>
+      <%= address.address %>
+    <% end %>
+  </p>
+</div>
+
+<div class="receipt-amount">
+  <% 
+    subtotal = (@purchase_invoice.total_amount || @purchase_invoice.purchase.total_price).to_i
+    shipping_fee = (@purchase_invoice.shipping_fee || @purchase_invoice.purchase.total_shipping_fees).to_i
+    admin_fee = (@purchase_invoice.admin_fee || 0).to_i
+    subtotal_before_tax = subtotal + shipping_fee + admin_fee
+    tax_amount = (@purchase_invoice.tax_amount || (subtotal_before_tax * 0.1).round).to_i
+    total_with_tax = (@purchase_invoice.total_with_tax || (subtotal_before_tax + tax_amount)).to_i
+  %>
+  
+  <h3>領収金額</h3>
+  <p style="font-size: 18px; font-weight: bold; text-align: center; border: 2px solid #000; padding: 15px;">
+    金 ¥<%= number_with_delimiter(total_with_tax) %> 也
+  </p>
+</div>
+
+<div class="receipt-details">
+  <h3>内訳</h3>
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th>商品名</th>
+        <th style="text-align: right;">数量</th>
+        <th style="text-align: right;">単価</th>
+        <th style="text-align: right;">金額</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @purchase_invoice.purchase_items.each do |item| %>
+        <tr>
+          <td><%= item.product.name %></td>
+          <td style="text-align: right;"><%= item.quantity %></td>
+          <td style="text-align: right;">¥<%= number_with_delimiter((item.seller_price || item.unit_price).to_i) %></td>
+          <td style="text-align: right;">¥<%= number_with_delimiter((item.quantity * (item.seller_price || item.unit_price)).to_i) %></td>
+        </tr>
+      <% end %>
+      
+      <% if shipping_fee > 0 %>
+        <tr>
+          <td>送料</td>
+          <td style="text-align: right;">-</td>
+          <td style="text-align: right;">-</td>
+          <td style="text-align: right;">¥<%= number_with_delimiter(shipping_fee) %></td>
+        </tr>
+      <% end %>
+      
+      <% if admin_fee > 0 %>
+        <tr>
+          <td>事務手数料</td>
+          <td style="text-align: right;">-</td>
+          <td style="text-align: right;">-</td>
+          <td style="text-align: right;">¥<%= number_with_delimiter(admin_fee) %></td>
+        </tr>
+      <% end %>
+      
+      <tr style="border-top: 2px solid #000;">
+        <td colspan="3" style="text-align: right; font-weight: bold;">小計（税抜）</td>
+        <td style="text-align: right; font-weight: bold;">¥<%= number_with_delimiter(subtotal_before_tax) %></td>
+      </tr>
+      
+      <tr>
+        <td colspan="3" style="text-align: right; font-weight: bold;">消費税(10%)</td>
+        <td style="text-align: right; font-weight: bold;">¥<%= number_with_delimiter(tax_amount) %></td>
+      </tr>
+      
+      <tr style="border-top: 2px solid #000; background-color: #f0f0f0;">
+        <td colspan="3" style="text-align: right; font-weight: bold; font-size: 16px;">合計金額</td>
+        <td style="text-align: right; font-weight: bold; font-size: 16px;">¥<%= number_with_delimiter(total_with_tax) %></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="receipt-purpose">
+  <h3>但し書き</h3>
+  <p>商品代金として</p>
+</div>
+
+<div class="issuer-info" style="margin-top: 40px; text-align: right;">
+  <h3>発行者</h3>
+  <p>
+    <% if @invoice_recipient %>
+      <%= @invoice_recipient.name %><br>
+      <%= @invoice_recipient.address %><br>
+      <% if @invoice_recipient.tel.present? %>
+        TEL: <%= @invoice_recipient.tel %>
+      <% end %>
+    <% else %>
+      株式会社アジアビジネストラスト<br>
+      〒000-0000 東京都○○区○○<br>
+      TEL: 000-0000-0000
+    <% end %>
+  </p>
+</div>

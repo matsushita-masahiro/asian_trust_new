@@ -18,14 +18,15 @@
               <%= link_to "予約・注文", orders_path, class: "nav-link" %>
             </li>
           <% end %>
-          <% if user_signed_in? && !current_user.admin? && current_user.level.value != 8 && current_user.level&.name != 'アドバイザー認定前' %>
-            <li class="nav-item">
-              <%= link_to "請求書管理", invoices_path, class: "nav-link" %>
-            </li>
-          <% end %>
           <% if user_signed_in? && !current_user.admin? && current_user.bonus_eligible? %>
-            <li class="nav-item">
-              <%= link_to "インセンティブ", incentives_path, class: "nav-link" %>
+            <li class="nav-item custom-dropdown">
+              <a class="nav-link custom-dropdown-toggle" href="#" id="incentiveDropdown" role="button">
+                インセンティブ <i class="fas fa-chevron-down ms-1"></i>
+              </a>
+              <ul class="custom-dropdown-menu" id="incentiveDropdownMenu">
+                <li><%= link_to "インセンティブ", incentives_path, class: "custom-dropdown-item" %></li>
+                <li><%= link_to "請求書管理", invoices_path, class: "custom-dropdown-item" %></li>
+              </ul>
             </li>
           <% end %>
           <% if user_signed_in? && !current_user.admin? && current_user.referrals.any? %>
@@ -78,44 +79,72 @@
 <script>
 // カスタムドロップダウンの制御
 function initializeCustomDropdown() {
-  const dropdownToggle = document.getElementById('mypageDropdown');
-  const dropdownMenu = document.getElementById('mypageDropdownMenu');
+  // マイページドロップダウン
+  const mypageToggle = document.getElementById('mypageDropdown');
+  const mypageMenu = document.getElementById('mypageDropdownMenu');
   
-  if (!dropdownToggle || !dropdownMenu) return;
+  // インセンティブドロップダウン
+  const incentiveToggle = document.getElementById('incentiveDropdown');
+  const incentiveMenu = document.getElementById('incentiveDropdownMenu');
   
-  // クリックイベントでドロップダウンを切り替え
-  dropdownToggle.addEventListener('click', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
+  // ドロップダウンの初期化関数
+  function setupDropdown(toggle, menu) {
+    if (!toggle || !menu) return;
     
-    const isShown = dropdownMenu.classList.contains('show');
-    
-    // 他のドロップダウンを閉じる
-    document.querySelectorAll('.custom-dropdown-menu.show').forEach(menu => {
-      if (menu !== dropdownMenu) {
+    // クリックイベントでドロップダウンを切り替え
+    toggle.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const isShown = menu.classList.contains('show');
+      
+      // 他のドロップダウンを閉じる
+      document.querySelectorAll('.custom-dropdown-menu.show').forEach(otherMenu => {
+        if (otherMenu !== menu) {
+          otherMenu.classList.remove('show');
+        }
+      });
+      
+      // 現在のドロップダウンを切り替え
+      if (isShown) {
         menu.classList.remove('show');
+      } else {
+        menu.classList.add('show');
       }
     });
-    
-    // 現在のドロップダウンを切り替え
-    if (isShown) {
-      dropdownMenu.classList.remove('show');
-    } else {
-      dropdownMenu.classList.add('show');
-    }
-  });
+  }
+  
+  // 各ドロップダウンを初期化
+  setupDropdown(mypageToggle, mypageMenu);
+  setupDropdown(incentiveToggle, incentiveMenu);
   
   // 外側をクリックしたらドロップダウンを閉じる
   document.addEventListener('click', function(e) {
-    if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
-      dropdownMenu.classList.remove('show');
+    const allToggles = [mypageToggle, incentiveToggle].filter(Boolean);
+    const allMenus = [mypageMenu, incentiveMenu].filter(Boolean);
+    
+    let clickedInsideAnyDropdown = false;
+    
+    allToggles.forEach((toggle, index) => {
+      const menu = allMenus[index];
+      if (toggle && menu && (toggle.contains(e.target) || menu.contains(e.target))) {
+        clickedInsideAnyDropdown = true;
+      }
+    });
+    
+    if (!clickedInsideAnyDropdown) {
+      allMenus.forEach(menu => {
+        if (menu) menu.classList.remove('show');
+      });
     }
   });
   
   // ESCキーでドロップダウンを閉じる
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-      dropdownMenu.classList.remove('show');
+      document.querySelectorAll('.custom-dropdown-menu.show').forEach(menu => {
+        menu.classList.remove('show');
+      });
     }
   });
 }

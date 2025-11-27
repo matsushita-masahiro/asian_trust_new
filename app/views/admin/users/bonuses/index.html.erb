@@ -128,7 +128,7 @@
                     <th class="text-end text-nowrap">合計（円）</th>
                     <th class="text-end text-nowrap">インセン（円）</th>
 
-                    <th class="text-nowrap">電話番号</th>
+                    <th class="text-nowrap">支払状況</th>
 
                     <th class="text-nowrap">購入日</th>
                   </tr>
@@ -221,9 +221,20 @@
                           <%= number_with_delimiter(item_bonus) %>
                         </td>
 
-                        <!-- 電話番号（同じ購入IDの場合は非表示） -->
+                        <!-- 支払状況（同じ購入IDの場合は非表示） -->
                         <td class="text-nowrap">
-                          <%= is_first_item ? (purchase.user&.phone || "-") : "" %>
+                          <% if is_first_item %>
+                            <% case purchase.status %>
+                            <% when 'built' %>
+                              <span class="badge bg-warning text-dark">未払い</span>
+                            <% when 'paid' %>
+                              <span class="badge bg-success">支払済み</span>
+                            <% when 'reserved' %>
+                              <span class="badge bg-info">予約完了</span>
+                            <% else %>
+                              <span class="badge bg-secondary"><%= purchase.status %></span>
+                            <% end %>
+                          <% end %>
                         </td>
 
                         <!-- 購入日（同じ購入IDの場合は非表示） -->
@@ -234,11 +245,18 @@
                     <% end %>
                   <% end %>
 
-                  <!-- 合計行 -->
+                  <!-- 合計行1: 売上合計と支払済みインセンティブ -->
                   <tr class="table-primary fw-bold">
-                    <td colspan="7" class="text-end text-nowrap">合計</td>
+                    <td colspan="7" class="text-end text-nowrap">売上合計・支払済み</td>
                     <td class="text-end text-primary text-nowrap"><%= number_with_delimiter(total_sum) %></td>
-                    <td class="text-end text-success text-nowrap"><%= number_with_delimiter(@total_bonus) %></td>
+                    <td class="text-end text-success text-nowrap"><%= number_with_delimiter(@paid_bonus) %></td>
+                    <td colspan="2"></td>
+                  </tr>
+                  <!-- 合計行2: 未払いインセンティブ -->
+                  <tr class="table-warning fw-bold">
+                    <td colspan="7" class="text-end text-nowrap">未払い分</td>
+                    <td class="text-end text-nowrap">-</td>
+                    <td class="text-end text-warning text-nowrap"><%= number_with_delimiter(@unpaid_bonus) %></td>
                     <td colspan="2"></td>
                   </tr>
                 </tbody>
@@ -256,107 +274,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  /* コンパクトな固定ヘッダーエリア */
-  .sticky-header {
-    position: fixed !important;
-    top: 60px !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 9999 !important;
-    background: white !important;
-    border-bottom: 2px solid #dee2e6 !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-    width: 100% !important;
-    height: 80px !important; /* 固定の高さを設定 */
-  }
-  
-  /* メインコンテンツエリアのマージン調整 */
-  .sticky-header + .container-fluid {
-    margin-top: 80px !important; /* ヘッダーの高さに合わせて調整 */
-  }
-  
-  /* カード内のコンテンツ - コンパクト化 */
-  .sticky-header .card {
-    border: none !important;
-    box-shadow: none !important;
-    height: 100% !important;
-  }
-  
-  .sticky-header .card-body {
-    background: white !important;
-    padding: 0.75rem 1rem !important; /* パディングを縮小 */
-    height: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  
-  /* アイコンとテキストのサイズ調整 */
-  .sticky-header h4 {
-    font-size: 1.1rem !important;
-    margin-bottom: 0 !important;
-  }
-  
-  .sticky-header small {
-    font-size: 0.75rem !important;
-  }
-  
-  .sticky-header .fa-user-tie {
-    font-size: 1.2rem !important;
-  }
-  
-  /* フォーム要素のコンパクト化 */
-  .sticky-header .form-control-sm {
-    font-size: 0.8rem !important;
-    padding: 0.25rem 0.5rem !important;
-  }
-  
-  .sticky-header .input-group-text {
-    padding: 0.25rem 0.5rem !important;
-  }
-  
-  .sticky-header .btn-sm {
-    font-size: 0.75rem !important;
-    padding: 0.25rem 0.5rem !important;
-  }
-  
-  /* 改行防止 */
-  .sticky-header .flex-nowrap {
-    flex-wrap: nowrap !important;
-  }
-  
-  .sticky-header .text-nowrap {
-    white-space: nowrap !important;
-  }
-  
-  .sticky-header .flex-shrink-0 {
-    flex-shrink: 0 !important;
-  }
-  
-  /* レスポンシブ対応 */
-  @media (max-width: 768px) {
-    .sticky-header {
-      top: 50px !important;
-      height: 70px !important;
-    }
-    
-    .sticky-header + .container-fluid {
-      margin-top: 70px !important;
-    }
-    
-    .sticky-header .card-body {
-      padding: 0.5rem !important;
-    }
-    
-    .sticky-header h4 {
-      font-size: 1rem !important;
-    }
-  }
-  
-  /* 統計情報カードの通常表示 */
-  .row.mb-5 .card {
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-</style>

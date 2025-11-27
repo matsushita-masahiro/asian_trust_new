@@ -8,6 +8,9 @@ class PurchaseItem < ApplicationRecord
   validates :unit_price, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :seller_price, presence: true, numericality: { greater_than_or_equal_to: 0 }
 
+  # コールバック：WOTT商品購入時に昇格チェック
+  after_commit :check_wott_upgrade_for_purchase, on: :create
+
   # 💰 合計金額（単価 × 数量）
   def total_price
     unit_price * quantity
@@ -30,4 +33,13 @@ class PurchaseItem < ApplicationRecord
 
   # 委譲メソッド
   delegate :user, :buyer, :purchased_at, to: :purchase
+
+  private
+
+  def check_wott_upgrade_for_purchase
+    # WOTT商品の場合のみ昇格チェックを実行
+    if product.category == 'wott'
+      purchase.send(:check_wott_level_upgrade)
+    end
+  end
 end

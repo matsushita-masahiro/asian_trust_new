@@ -1,0 +1,15 @@
+// 管理ダッシュボードのスタイル
+
+.admin-dashboard-container {
+  padding-top: 100px;
+}
+
+.system-status-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.system-status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}

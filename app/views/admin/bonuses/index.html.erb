@@ -97,7 +97,7 @@
                         <span class="text-primary fw-bold">¥<%= number_with_delimiter(user.total_sales_with_descendants(@selected_month)) %></span>
                       </td>
                       <td>
-                        <%= link_to "詳細", admin_incentive_path(user, target_month: @selected_month), class: "btn btn-sm btn-outline-primary" %>
+                        <%= link_to "詳細", breakdown_admin_incentive_path(user, target_month: @selected_month), class: "btn btn-sm btn-outline-primary" %>
                       </td>
                     </tr>
                   <% end %>
@@ -116,67 +116,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  /* スマホ対応のレスポンシブCSS */
-  @media (max-width: 768px) {
-    /* ヘッダー部分をスマホ用に調整 */
-    .d-flex.justify-content-between.align-items-center {
-      flex-direction: column !important;
-      align-items: flex-start !important;
-    }
-    
-    .d-flex.align-items-center {
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      width: 100%;
-    }
-    
-    .d-flex.align-items-center h4 {
-      margin-bottom: 1rem !important;
-      margin-right: 0 !important;
-    }
-    
-    .d-flex.align-items-center form {
-      width: 100%;
-      flex-direction: column !important;
-      align-items: flex-start !important;
-    }
-    
-    .d-flex.align-items-center form label {
-      margin-bottom: 0.5rem !important;
-      margin-right: 0 !important;
-    }
-    
-    .d-flex.align-items-center form input[type="month"] {
-      width: 100% !important;
-      max-width: 300px;
-    }
-    
-    /* 統計カードのスマホ対応 */
-    .col-md-6 {
-      margin-bottom: 1rem;
-    }
-    
-    /* テーブルのスマホ対応 */
-    .table-responsive {
-      font-size: 0.875rem;
-    }
-    
-    .table th, .table td {
-      padding: 0.5rem 0.25rem;
-      white-space: nowrap;
-    }
-    
-    /* バッジのサイズ調整 */
-    .badge {
-      font-size: 0.75rem;
-    }
-    
-    /* ボタンのサイズ調整 */
-    .btn-sm {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.5rem;
-    }
-  }
-</style>

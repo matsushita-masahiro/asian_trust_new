@@ -1,0 +1,134 @@
+// インセンティブ明細ページのスタイル
+
+/* コンパクトな固定ヘッダーエリア */
+.sticky-header {
+  position: fixed !important;
+  top: 60px !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  background: white !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  width: 100% !important;
+  height: 80px !important;
+}
+
+.sticky-header + .container-fluid {
+  margin-top: 80px !important;
+}
+
+.sticky-header .card {
+  border: none !important;
+  box-shadow: none !important;
+  height: 100% !important;
+}
+
+.sticky-header .card-body {
+  background: white !important;
+  padding: 0.75rem 1rem !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.sticky-header h4 {
+  font-size: 1.1rem !important;
+  margin-bottom: 0 !important;
+}
+
+.sticky-header small {
+  font-size: 0.75rem !important;
+}
+
+.sticky-header .form-control-sm {
+  font-size: 0.8rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+.sticky-header .input-group-text {
+  padding: 0.25rem 0.5rem !important;
+}
+
+.sticky-header .btn-sm {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+.incentive-summary-card .summary-value {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.table th {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  font-size: 0.9rem;
+}
+
+// show.html.erb - 追加スタイル
+.sticky-header small {
+  white-space: nowrap !important;
+}
+
+.sticky-header .fa-user-tie {
+  font-size: 1.2rem !important;
+}
+
+/* 戻るボタンのスタイル */
+.sticky-header .btn-outline-secondary {
+  border-color: #6c757d !important;
+  color: #6c757d !important;
+  font-size: 0.75rem !important;
+}
+
+.sticky-header .btn-outline-secondary:hover {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: white !important;
+}
+
+/* 改行防止 */
+.sticky-header .flex-nowrap {
+  flex-wrap: nowrap !important;
+}
+
+.sticky-header .text-nowrap {
+  white-space: nowrap !important;
+}
+
+.sticky-header .flex-shrink-0 {
+  flex-shrink: 0 !important;
+}
+
+/* 右側のボタンとフォームの配置 */
+.sticky-header .gap-2 {
+  gap: 0.5rem !important;
+}
+
+.sticky-header .d-flex.gap-2 > * {
+  flex-shrink: 0 !important;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .sticky-header {
+    top: 50px !important;
+    height: 70px !important;
+  }
+
+  .sticky-header + .container-fluid {
+    margin-top: 70px !important;
+  }
+
+  .sticky-header .card-body {
+    padding: 0.5rem !important;
+  }
+
+  .sticky-header h4 {
+    font-size: 1rem !important;
+  }
+}

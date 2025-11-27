@@ -1,0 +1,58 @@
+// レベル変更申請ページのスタイル
+
+// index.html.erb
+.status-summary {
+  padding: 1rem;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.status-summary:hover {
+  background-color: #f8f9fa;
+}
+
+.level-change {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .level-change {
+    font-size: 0.8rem;
+  }
+}
+
+// show.html.erb
+.level-change-display {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.reason-text {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  border-left: 4px solid #007bff;
+}
+
+@media (max-width: 768px) {
+  .level-change-display {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .level-change-display .fas {
+    margin: 0.5rem 0;
+    transform: rotate(90deg);
+  }
+}

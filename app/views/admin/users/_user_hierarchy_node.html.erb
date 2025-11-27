@@ -3,34 +3,22 @@
     <div class="user-node">
       <div class="user-name">
         <%= user.name.present? ? user.name : user.email %>
+        
+        <% # 幹細胞レベル（アドバイザー側）を先に表示 %>
         <% if user.level %>
-          <% 
-            badge_class = case user.level.name
-            when 'アジアビジネストラスト'
-              'bg-danger'
-            when '総代理店'
-              'bg-warning text-dark'
-            when '代理店'
-              'bg-primary'
-            when 'アドバイザー'
-              'bg-success'
-            when 'アドバイザー認定前'
-              'bg-info'
-            when 'サポーター'
-              'bg-dark'
-            when 'サロン'
-              'bg-secondary'
-            when 'クリニック'
-              'bg-light text-dark'
-            when 'お客様'
-              'bg-muted text-white'
-            else
-              'bg-secondary'
-            end
-          %>
-          <span class="badge <%= badge_class %> ms-2"><%= user.level.name %></span>
+          <span class="badge <%= level_badge_class(user.level.name) %> ms-2" style="font-size: 0.5rem; padding: 0.2rem 0.4rem;">
+            <i class="fas fa-user-tie me-1"></i><%= user.level.name %>（幹細胞）
+          </span>
         <% end %>
-        <span class="badge bg-info ms-1">ID: <%= user.id %></span>
+        
+        <% # WOTTレベル（お客様側）を後に表示 %>
+        <% if user.wott_level %>
+          <span class="badge <%= wott_level_badge_class(user.wott_level.name) %> ms-1" style="font-size: 0.5rem; padding: 0.2rem 0.4rem; opacity: 0.85;">
+            <i class="fas fa-shopping-cart me-1"></i><%= user.wott_level.name %>（WOTT）
+          </span>
+        <% end %>
+        
+        <span class="badge bg-info ms-1" style="font-size: 0.45rem; padding: 0.2rem 0.4rem;">ID: <%= user.id %></span>
       </div>
       
       <div class="user-stats">

@@ -185,66 +185,6 @@
 
 </div>
 
-<style>
-  .z-index-sticky {
-    z-index: 1030;
-  }
-  
-  .month-selector-wrapper {
-    padding: 1rem 0;
-    border-bottom: 1px solid #dee2e6;
-    margin-bottom: 1rem;
-  }
-  
-  .table th {
-    font-weight: 600;
-    font-size: 0.9rem;
-  }
-  
-  .table td {
-    font-size: 0.9rem;
-  }
-  
-  .table-hover tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.05);
-  }
-  
-  /* レスポンシブ対応 */
-  @media (max-width: 768px) {
-    .d-flex.justify-content-between {
-      flex-direction: column;
-      align-items: flex-start !important;
-    }
-    
-    .d-flex.justify-content-between > div:first-child {
-      margin-bottom: 0.5rem;
-    }
-    
-    .d-flex.gap-2 {
-      flex-direction: column;
-      width: 100%;
-    }
-    
-    .d-flex.gap-2 .btn {
-      width: 100%;
-      margin-bottom: 0.25rem;
-    }
-    
-    .table-responsive {
-      font-size: 0.8rem;
-    }
-    
-    .container {
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
-    }
-    
-    .month-selector-wrapper {
-      padding: 0.5rem 0;
-    }
-  }
-</style>
-
 <script>
 function reserveClinic(purchaseId) {
   if (confirm('クリニック予約を行いますか？\n予約が完了すると、ステータスが「予約完了」に変更されます。')) {

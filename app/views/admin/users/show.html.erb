@@ -108,6 +108,30 @@
               </td>
             </tr>
             <tr>
+              <th>トータル販売実績:</th>
+              <td>
+                <span class="fs-6 fw-bold total-sales-volume">
+                  <%= @user.total_purchase_volume_cc.to_i %>cc
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <th>WOTT購入実績:</th>
+              <td>
+                <span class="fs-6 fw-bold wott-purchase-count">
+                  <%= @user.total_wott_purchases %>台
+                </span>
+                <% if @user.total_wott_purchases > 0 %>
+                  <% recommended_level = @user.recommended_wott_level %>
+                  <% if recommended_level && @user.wott_level_id != recommended_level.id %>
+                    <span class="badge bg-warning text-dark ms-2">
+                      <i class="fas fa-arrow-up me-1"></i><%= recommended_level.name %>への昇格可能
+                    </span>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
               <th>登録住所:</th>
               <td class="address-cell">
                 <div id="registration-address-display">
@@ -125,9 +149,6 @@
                         <small class="text-muted">〒<%= @invoice_base.postal_code %></small><br>
                       <% end %>
                       <span class="address-text"><%= @invoice_base.address %></span>
-                      <small class="text-warning d-block mt-1">
-                        <i class="fas fa-exclamation-triangle me-1"></i>旧形式の住所データ
-                      </small>
                     </div>
                   <% else %>
                     <span class="text-muted">未登録</span>
@@ -251,226 +272,6 @@
       </div>
     </div>
   </div>
-
-  <!-- 統計情報カード用のカスタムスタイル -->
-  <style>
-    .stats-card {
-      transition: all 0.3s ease;
-      border: none;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    .stats-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-    }
-    
-    .clickable-card {
-      cursor: pointer;
-    }
-    
-    .clickable-card:hover {
-      transform: translateY(-8px) !important;
-      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3) !important;
-    }
-    
-    .stats-icon {
-      opacity: 0.8;
-    }
-    
-    .stats-number {
-      font-weight: 700;
-      margin: 0;
-    }
-    
-    .stats-label {
-      font-weight: 500;
-      opacity: 0.9;
-    }
-    
-    /* レベル別統計のスタイル */
-    .level-stats-list {
-      font-size: 0.9rem;
-    }
-    
-    .level-stat-item {
-      display: flex;
-      align-items: center;
-      padding: 0.4rem 0;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    
-    .level-stat-item:last-child {
-      border-bottom: none;
-    }
-    
-    .level-stat-item .level-name {
-      flex: 1;
-      margin-left: 0.5rem;
-      font-size: 0.85rem;
-    }
-    
-    .level-stat-item .level-count {
-      font-weight: 600;
-      min-width: 40px;
-      text-align: right;
-      font-size: 0.9rem;
-    }
-    
-    .financial-item {
-      margin-bottom: 1rem;
-    }
-    
-    .financial-item:last-child {
-      margin-bottom: 0;
-    }
-    
-    /* レベル変更申請表示のスタイル */
-    .level-change-application {
-      background-color: #fff3cd;
-      border: 1px solid #ffeaa7;
-      border-radius: 0.375rem;
-      padding: 0.75rem;
-    }
-    
-    .level-change-text {
-      font-weight: 500;
-      color: #856404;
-    }
-    
-    .application-details {
-      margin-top: 0.5rem;
-      padding-top: 0.5rem;
-      border-top: 1px solid #ffeaa7;
-    }
-    
-    /* 基本情報テーブルのスタイル */
-    .table-borderless td {
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      word-break: break-all;
-      hyphens: auto;
-    }
-    
-    /* 住所専用スタイル */
-    .address-cell {
-      max-width: 1px !important;
-      width: 1px !important;
-    }
-    
-    .address-content {
-      word-wrap: break-word !important;
-      overflow-wrap: break-word !important;
-      word-break: break-all !important;
-      white-space: normal !important;
-      line-height: 1.4;
-    }
-    
-    .address-text {
-      display: block;
-      word-wrap: break-word !important;
-      overflow-wrap: break-word !important;
-      word-break: break-all !important;
-      white-space: normal !important;
-    }
-    
-    /* 下位ユーザーの購入履歴行のスタイル */
-    .descendant-purchase-row {
-      background-color: #f8f9fa !important;
-    }
-    
-    .descendant-purchase-row:hover {
-      background-color: #e9ecef !important;
-    }
-    
-    /* レスポンシブ対応 */
-    @media (max-width: 768px) {
-      /* ヘッダーの上部余白を小さくする */
-      .mobile-header {
-        margin-top: 20px !important;
-      }
-      
-      .stats-card {
-        margin-bottom: 1rem;
-      }
-      
-      .stats-number {
-        font-size: 1.5rem !important;
-      }
-      
-      .stats-icon i {
-        font-size: 1.5rem !important;
-      }
-      
-      .level-stats-section, .financial-stats-section {
-        margin-bottom: 1.5rem;
-      }
-      
-      .level-stat-item {
-        padding: 0.3rem 0;
-      }
-      
-      .level-stat-item .level-name {
-        font-size: 0.8rem;
-      }
-      
-      .level-stat-item .level-count {
-        font-size: 0.85rem;
-        min-width: 35px;
-      }
-      
-      /* 基本情報テーブルのモバイル対応 */
-      .table-borderless th {
-        width: 35% !important;
-        font-size: 0.85rem;
-        padding: 0.5rem 0.25rem;
-        vertical-align: top;
-      }
-      
-      .table-borderless td {
-        width: 65% !important;
-        font-size: 0.85rem;
-        padding: 0.5rem 0.25rem;
-        word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
-        word-break: break-all !important;
-        hyphens: auto !important;
-        max-width: 0;
-      }
-      
-      /* メールアドレスと住所の特別な処理 */
-      .table-borderless td.text-break {
-        line-height: 1.4;
-        white-space: normal !important;
-      }
-      
-      /* 住所セルの強制改行 */
-      .address-cell {
-        max-width: 0 !important;
-        width: 65% !important;
-        overflow: hidden !important;
-      }
-      
-      .address-content {
-        word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-        line-height: 1.3 !important;
-        font-size: 0.8rem !important;
-      }
-      
-      .address-text {
-        display: block !important;
-        word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
-        word-break: break-all !important;
-        white-space: normal !important;
-      }
-    }
-  </style>
-
-
 
   <!-- 購入履歴 -->
   <div class="row mb-4">

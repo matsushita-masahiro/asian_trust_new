@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top custom-navbar" data-turbo-permanent>
   <div class="container-fluid">
-    <%= link_to root_path, class: "navbar-brand d-flex align-items-center" do %>
+    <%= link_to root_path, class: "navbar-brand align-items-center" do %>
       <%= image_tag "abt_logo.png", alt: "ABT Logo", class: "navbar-logo me-3" %>
       <%= ENV['APRICATION_NAME'] %>
     <% end %>
@@ -29,7 +29,7 @@
               </ul>
             </li>
           <% end %>
-          <% if user_signed_in? && !current_user.admin? && current_user.referrals.any? %>
+          <% if user_signed_in? && !current_user.admin? && current_user.referrals.any? && !['サロン', 'クリニック'].include?(current_user.level&.name) %>
             <li class="nav-item">
               <%= link_to "階層図", hierarchy_path, class: "nav-link" %>
             </li>
@@ -47,7 +47,7 @@
               <% unless current_user.admin? || current_user.level&.name == 'アドバイザー認定前' %>
                 <li><%= link_to "購入履歴", my_history_purchases_path, class: "custom-dropdown-item" %></li>
               <% end %>
-              <% if current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
+              <% if current_user&.level&.value && [1, 2, 3].include?(current_user.level.value) %>
                 <li><%= link_to "紹介機能", new_referral_invitation_path, class: "custom-dropdown-item" %></li>
               <% end %>
             </ul>
@@ -91,8 +91,12 @@ function initializeCustomDropdown() {
   function setupDropdown(toggle, menu) {
     if (!toggle || !menu) return;
     
+    // 既存のイベントリスナーを削除
+    const newToggle = toggle.cloneNode(true);
+    toggle.parentNode.replaceChild(newToggle, toggle);
+    
     // クリックイベントでドロップダウンを切り替え
-    toggle.addEventListener('click', function(e) {
+    newToggle.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       
@@ -112,15 +116,17 @@ function initializeCustomDropdown() {
         menu.classList.add('show');
       }
     });
+    
+    return newToggle;
   }
   
   // 各ドロップダウンを初期化
-  setupDropdown(mypageToggle, mypageMenu);
-  setupDropdown(incentiveToggle, incentiveMenu);
+  const newMypageToggle = setupDropdown(mypageToggle, mypageMenu, 'Mypage');
+  const newIncentiveToggle = setupDropdown(incentiveToggle, incentiveMenu, 'Incentive');
   
   // 外側をクリックしたらドロップダウンを閉じる
   document.addEventListener('click', function(e) {
-    const allToggles = [mypageToggle, incentiveToggle].filter(Boolean);
+    const allToggles = [newMypageToggle, newIncentiveToggle].filter(Boolean);
     const allMenus = [mypageMenu, incentiveMenu].filter(Boolean);
     
     let clickedInsideAnyDropdown = false;
@@ -149,8 +155,19 @@ function initializeCustomDropdown() {
   });
 }
 
-// Turbo対応の初期化
-document.addEventListener('DOMContentLoaded', initializeCustomDropdown);
-document.addEventListener('turbo:load', initializeCustomDropdown);
-document.addEventListener('turbo:render', initializeCustomDropdown);
+// より確実な初期化
+function ensureDropdownInitialization() {
+  // 少し遅延させて確実に要素が存在することを確認
+  setTimeout(() => {
+    initializeCustomDropdown();
+  }, 100);
+}
+
+// 複数のイベントで初期化を試行
+document.addEventListener('DOMContentLoaded', ensureDropdownInitialization);
+document.addEventListener('turbo:load', ensureDropdownInitialization);
+document.addEventListener('turbo:render', ensureDropdownInitialization);
+
+// ページが完全に読み込まれた後にも実行
+window.addEventListener('load', ensureDropdownInitialization);
 </script>

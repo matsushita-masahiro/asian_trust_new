@@ -19,11 +19,11 @@ class SalesController < ApplicationController
     # ✅ 対象ユーザーとその下位の全ID
     user_ids = [@user.id] + @user.descendant_ids
 
-    # ✅ 該当月の購入データを取得（N+1防止のincludes）
+    # ✅ 該当月の購入データを取得（N+1防止のincludes）- status='paid'のみ対象
     @purchases = Purchase
                    .includes(purchase_items: :product, user: [])
                    .where(user_id: user_ids)
-                   .where(purchased_at: start_date..end_date)
+                   .where(purchased_at: start_date..end_date, status: 'paid')
                    .order(purchased_at: :desc)
 
     # ✅ 合計金額と合計ボーナス（購入者単価×数量で計算）
@@ -33,29 +33,7 @@ class SalesController < ApplicationController
     @total_bonus = 0
     @purchases.each do |purchase|
       purchase.purchase_items.each do |item|
-        if item.product.category == 'wott'
-          # WOTT商品の場合：購入者自身のインセンティブを計算
-          if purchase.user.has_wott_level?
-            wott_level = purchase.user.wott_level
-            incentive_record = item.product.product_prices.find_by(wott_level: wott_level)
-            if incentive_record&.price
-              incentive_unit = (item.product.base_price || 0) - incentive_record.price
-              item_bonus = incentive_unit > 0 ? incentive_unit * item.quantity : 0
-            else
-              item_bonus = 0
-            end
-          else
-            item_bonus = 0
-          end
-        else
-          # 通常商品の場合
-          if purchase.user == @user
-            item_bonus = 0  # 自己購入インセンティブは廃止
-          else
-            item_bonus = @user.bonus_for_purchase_item(item)
-          end
-        end
-        @total_bonus += item_bonus
+        @total_bonus += @user.bonus_for_purchase_item(item)
       end
     end
     
@@ -82,11 +60,11 @@ class SalesController < ApplicationController
     # ✅ 対象ユーザーとその下位の全ID
     user_ids = [@user.id] + @user.descendant_ids
 
-    # ✅ 該当月の購入データを取得（N+1防止のincludes）
+    # ✅ 該当月の購入データを取得（N+1防止のincludes）- status='paid'のみ対象
     @purchases = Purchase
                    .includes(purchase_items: :product, user: [])
                    .where(user_id: user_ids)
-                   .where(purchased_at: start_date..end_date)
+                   .where(purchased_at: start_date..end_date, status: 'paid')
                    .order(purchased_at: :desc)
 
     # ✅ 合計金額と合計ボーナス
@@ -96,29 +74,7 @@ class SalesController < ApplicationController
     @total_bonus = 0
     @purchases.each do |purchase|
       purchase.purchase_items.each do |item|
-        if item.product.category == 'wott'
-          # WOTT商品の場合：購入者自身のインセンティブを計算
-          if purchase.user.has_wott_level?
-            wott_level = purchase.user.wott_level
-            incentive_record = item.product.product_prices.find_by(wott_level: wott_level)
-            if incentive_record&.price
-              incentive_unit = (item.product.base_price || 0) - incentive_record.price
-              item_bonus = incentive_unit > 0 ? incentive_unit * item.quantity : 0
-            else
-              item_bonus = 0
-            end
-          else
-            item_bonus = 0
-          end
-        else
-          # 通常商品の場合
-          if purchase.user == @user
-            item_bonus = 0  # 自己購入インセンティブは廃止
-          else
-            item_bonus = @user.bonus_for_purchase_item(item)
-          end
-        end
-        @total_bonus += item_bonus
+        @total_bonus += @user.bonus_for_purchase_item(item)
       end
     end
   end

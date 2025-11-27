@@ -3,8 +3,19 @@
     <div class="user-node">
       <div class="user-name">
         <%= hierarchy_data[:user].name %>
+        
+        <% # 幹細胞レベル（アドバイザー側）を先に表示 %>
         <% if hierarchy_data[:user].level %>
-          <span class="badge bg-secondary ms-2"><%= hierarchy_data[:user].level.name %></span>
+          <span class="badge <%= level_badge_class(hierarchy_data[:user].level.name) %> ms-2" style="font-size: 0.5rem; padding: 0.2rem 0.4rem;">
+            <i class="fas fa-user-tie me-1"></i><%= hierarchy_data[:user].level.name %>（幹細胞）
+          </span>
+        <% end %>
+        
+        <% # WOTTレベル（お客様側）を後に表示 %>
+        <% if hierarchy_data[:user].wott_level %>
+          <span class="badge <%= wott_level_badge_class(hierarchy_data[:user].wott_level.name) %> ms-1" style="font-size: 0.5rem; padding: 0.2rem 0.4rem; opacity: 0.85;">
+            <i class="fas fa-shopping-cart me-1"></i><%= hierarchy_data[:user].wott_level.name %>（WOTT）
+          </span>
         <% end %>
       </div>
       

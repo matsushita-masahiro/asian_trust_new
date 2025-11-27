@@ -10,7 +10,7 @@
     }
     
     body {
-      font-family: 'Times New Roman', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho Pro', 'MS PMincho', serif;
+      font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'MS Gothic', sans-serif;
       font-size: 12px;
       line-height: 1.5;
       margin: 0;
@@ -135,7 +135,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 10px;
-      font-family: 'Times New Roman', 'Yu Mincho', 'YuMincho', 'Hiragino Mincho Pro', 'MS PMincho', serif;
+      font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'MS Gothic', sans-serif;
       page-break-inside: auto;
     }
     
@@ -223,20 +223,20 @@
     subtotal = local_assigns[:subtotal] || 0
     tax = local_assigns[:tax] || 0
     
-    # 会社情報と銀行情報を直接ローカル変数から取得
-    company_name = local_assigns[:company_name] || "株式会社アジアビジネストラスト"
-    company_address = local_assigns[:company_address] || "〒104-0061 東京都中央区銀座4丁目6-1 銀座医科ビル3階"
-    company_postal_code = local_assigns[:company_postal_code] || "〒104-0061"
-    company_tel = local_assigns[:company_tel] || "TEL:03-5904-8148"
-    company_email = local_assigns[:company_email] || "Email: abt1@asia-b-t.com"
-    company_footer = local_assigns[:company_footer] || "アジアビジネストラスト 事務局"
-    registration_number = local_assigns[:registration_number] || "T4210001009156"
+    # 会社情報と銀行情報を環境変数から取得（ローカル変数が優先）
+    company_name = local_assigns[:company_name] || ENV['COMPANY_NAME'] || "株式会社アジアビジネストラスト"
+    company_address = local_assigns[:company_address] || "〒#{ENV['COMPANY_POSTAL_CODE'] || '104-0061'} #{ENV['COMPANY_ADDRESS'] || '東京都中央区銀座4丁目8-1'} #{ENV['COMPANY_BUILDING'] || '銀座穂月ビル３階'}"
+    company_postal_code = local_assigns[:company_postal_code] || "〒#{ENV['COMPANY_POSTAL_CODE'] || '104-0061'}"
+    company_tel = local_assigns[:company_tel] || "TEL:#{ENV['COMPANY_TEL'] || '03-5904-8148'}"
+    company_email = local_assigns[:company_email] || "Email: #{ENV['COMPANY_EMAIL'] || 'abt1@asia-b-t.com'}"
+    company_footer = local_assigns[:company_footer] || ENV['COMPANY_FOOTER'] || "アジアビジネストラスト 事務局"
+    registration_number = local_assigns[:registration_number] || ENV['COMPANY_REGISTRATION_NUMBER'] || "T4210001009156"
     
-    bank_name = local_assigns[:bank_name] || "楽天銀行"
-    bank_branch = local_assigns[:bank_branch] || "第二営業支店"
-    bank_branch_code = local_assigns[:bank_branch_code] || "252"
-    bank_account_type = local_assigns[:bank_account_type] || "普通預金"
-    bank_account_number = local_assigns[:bank_account_number] || "7747552"
+    bank_name = local_assigns[:bank_name] || ENV['BANK_NAME'] || "楽天銀行"
+    bank_branch = local_assigns[:bank_branch] || ENV['BANK_BRANCH'] || "第三営業支店"
+    bank_branch_code = local_assigns[:bank_branch_code] || ENV['BANK_BRANCH_CODE'] || "252"
+    bank_account_type = local_assigns[:bank_account_type] || ENV['BANK_ACCOUNT_TYPE'] || "普通預金"
+    bank_account_number = local_assigns[:bank_account_number] || ENV['BANK_ACCOUNT_NUMBER'] || "7247552"
     bank_account_name = local_assigns[:bank_account_name] || company_name
   %>
 
@@ -393,9 +393,9 @@
           <td colspan="3" style="text-align: center;">消費税（10%）</td>
           <td class="number">¥<%= number_with_delimiter(tax) %></td>
         </tr>
-        <tr style="background-color: #d3d3d3; color: white; font-weight: bold; page-break-inside: avoid;">
-          <td colspan="3" style="text-align: center; background-color: #d3d3d3; color: white;">合計</td>
-          <td class="number" style="background-color: #d3d3d3;">¥<%= number_with_delimiter(total_with_tax) %></td>
+        <tr style="background-color: #f0f0f0; color: #000; font-weight: bold; page-break-inside: avoid;">
+          <td colspan="3" style="text-align: center; background-color: #f0f0f0; color: #000;">合計</td>
+          <td class="number" style="background-color: #f0f0f0; color: #000;">¥<%= number_with_delimiter(total_with_tax) %></td>
         </tr>
       </tbody>
     </table>

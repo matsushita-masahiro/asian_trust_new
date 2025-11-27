@@ -141,7 +141,7 @@ class OrdersController < ApplicationController
         invoice_date: Date.current,
         due_date: purchase.purchased_at.to_date + 1.week,
         total_amount: purchase.total_price,
-        status: PurchaseInvoice::DRAFT,
+        status: PurchaseInvoice::SENT,
         notes: "商品購入に関する請求書"
       )
       

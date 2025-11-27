@@ -1,4 +1,4 @@
-<div class="container mt-4">
+<div class="container mt-4 mb-4">
   <div class="row justify-content-center">
     <div class="col-md-10">
       <div class="card">
@@ -295,7 +295,7 @@
 
             <!-- 送信ボタン -->
             <div class="d-flex justify-content-between">
-              <%= link_to "戻る", :back, class: "btn btn-outline-secondary" %>
+              <%= link_to "戻る", :back, class: "btn btn-outline-secondary", style: "line-height: 34px;" %>
               <%= f.submit "進む", class: "btn btn-primary btn-lg px-5" %>
             </div>
           <% end %>
@@ -346,22 +346,3 @@ document.addEventListener('turbo:frame-load', initializeTreatmentToggle);
 document.addEventListener('turbo:render', initializeTreatmentToggle);
 </script>
 
-<style>
-.bg-info {
-  background-color: #a8d8ea !important;
-  color: #333 !important;
-}
-
-.form-check-label {
-  cursor: pointer;
-}
-
-.form-check-input:checked {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
-}
-
-#stem-cell-section {
-  display: none;
-}
-</style>

@@ -1,0 +1,18 @@
+// 請求書ステータスページのスタイル
+
+.receipt-preview {
+  font-family: "Noto Sans JP", sans-serif;
+  line-height: 1.6;
+}
+
+.receipt-preview h2 {
+  border-bottom: 2px solid #333;
+  padding-bottom: 10px;
+}
+
+@media print {
+  .receipt-preview {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}

@@ -155,6 +155,39 @@
               </div>
             </div>
 
+            <!-- WOTTレベル変更 -->
+            <div class="col-12">
+              <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                  <h6 class="card-title mb-0">
+                    <i class="fas fa-arrow-up me-2"></i>
+                    WOTTレベル変更
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <%= f.label :wott_level_id, "WOTTレベル", class: "form-label" %>
+                      <%= f.select :wott_level_id, 
+                            options_from_collection_for_select(WottLevel.order(:value), :id, :name, @user.wott_level_id), 
+                            { prompt: "WOTTレベルを選択してください" }, 
+                            { class: "form-select", id: "user_wott_level_id" } %>
+                      <div class="form-text">
+                        現在の購入実績: <%= @user.total_wott_purchases %>台
+                        <% if @user.recommended_wott_level %>
+                          <br>
+                          <span class="text-success">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <%= @user.recommended_wott_level.name %>への昇格が可能です
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="col-12">
               <%= f.label :referred_by_id, "紹介者", class: "form-label" %>
               <%= f.select :referred_by_id, 
@@ -414,15 +447,35 @@
             <div class="col-12">
               <div class="d-flex justify-content-center align-items-center p-2 border rounded">
                 <div class="me-3">
-                  <i class="fas fa-star text-success"></i>
+                  <i class="fas fa-star text-warning"></i>
                 </div>
                 <div class="text-center">
                   <small class="text-muted d-block">会員レベル</small>
                   <% if @user.level %>
-                    <span class="badge bg-info fs-6"><%= @user.level.name %></span>
+                    <span class="badge bg-warning text-dark fs-6"><%= @user.level.name %></span>
                   <% else %>
                     <span class="text-muted">未設定</span>
                   <% end %>
+                </div>
+              </div>
+            </div>
+
+            <!-- WOTTレベル -->
+            <div class="col-12">
+              <div class="d-flex justify-content-center align-items-center p-2 border rounded">
+                <div class="me-3">
+                  <i class="fas fa-trophy text-info"></i>
+                </div>
+                <div class="text-center">
+                  <small class="text-muted d-block">WOTTレベル</small>
+                  <% if @user.wott_level %>
+                    <span class="badge bg-info text-white fs-6"><%= @user.wott_level.name %></span>
+                  <% else %>
+                    <span class="text-muted">未設定</span>
+                  <% end %>
+                  <div class="mt-1">
+                    <small class="text-muted">購入実績: <%= @user.total_wott_purchases %>台</small>
+                  </div>
                 </div>
               </div>
             </div>

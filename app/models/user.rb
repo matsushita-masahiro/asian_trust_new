@@ -47,6 +47,9 @@ class User < ApplicationRecord
     cart || create_cart
   end
   
+  # WOTTレベル昇格申請
+  has_many :wott_level_upgrade_requests, dependent: :destroy
+  
   # レベル履歴
   has_many :user_level_histories, dependent: :destroy
   has_many :changed_level_histories, class_name: 'UserLevelHistory', foreign_key: 'changed_by_id'
@@ -128,7 +131,7 @@ class User < ApplicationRecord
   def own_monthly_sales_total(month_str)
     # 新しい構造：purchase_itemsから合計を計算（seller_priceベース）
     Purchase.joins(:purchase_items)
-            .where(user: self)
+            .where(user: self, status: 'paid')
             .in_month_tokyo(month_str)
             .sum('purchase_items.seller_price * purchase_items.quantity')
   end
@@ -141,7 +144,7 @@ class User < ApplicationRecord
   
   def all_descendants_monthly_sales_total(month_str)
     Purchase.joins(:purchase_items)
-            .where(user_id: descendant_ids)
+            .where(user_id: descendant_ids, status: 'paid')
             .in_month_tokyo(month_str)
             .sum('purchase_items.seller_price * purchase_items.quantity')
   end
@@ -177,6 +180,11 @@ class User < ApplicationRecord
   def bonus_eligible?
     BONUS_ELIGIBLE_LEVELS.include?(level&.name)
   end
+  
+  # プロモートチーム（WOTTインセンティブ対象）かどうか
+  def is_promote_team?
+    wott_level&.name.in?(['総代理店', '代理店', 'サポーター'])
+  end
 
   def bonus_in_month(month_str = nil)
     return 0 unless bonus_eligible?
@@ -199,8 +207,10 @@ class User < ApplicationRecord
     to_date   = Date.strptime(month_str, "%Y-%m").end_of_month.end_of_day
 
     details = {
-      own_sales: 0,           # 自分の販売によるインセンティブ
-      descendant_sales: 0,    # 子孫の販売による階層差額
+      sl: 0,                  # 幹細胞培養上清液のインセンティブ
+      wott: 0,                # WOTTのインセンティブ
+      ms: 0,                  # MANNERSOUNDのインセンティブ
+      ag: 0,                  # エアガンのインセンティブ
       purchase_count: 0,      # 対象購入件数
       level_changes: []       # 期間中のレベル変更履歴
     }
@@ -225,22 +235,43 @@ class User < ApplicationRecord
     # 通常商品の自己購入インセンティブは廃止
     # ただし、WOTT商品の自己購入インセンティブは有効
     my_purchase_items = PurchaseItem.joins(:purchase)
-                                   .where(purchases: { user_id: id, purchased_at: from_date..to_date })
+                                   .where(purchases: { user_id: id, purchased_at: from_date..to_date, status: ['paid', 'reserved'] })
                                    .includes(:product, purchase: :user)
 
     my_purchase_items.each do |item|
       product = item.product
+      category = product.respond_to?(:category) ? product.category : 'sl'
       
-      # categoryカラムが存在する場合のみWOTT商品チェックを行う
-      if product.respond_to?(:category) && product.category == 'wott'
-        # WOTT商品の場合：自己購入でのみインセンティブ発生
-        if has_wott_level?
-          wott_level_obj = wott_level
-          incentive_record = product.product_prices.find_by(wott_level: wott_level_obj)
-          if incentive_record&.price
-            incentive_unit = (product.base_price || 0) - incentive_record.price
-            item_incentive = incentive_unit > 0 ? incentive_unit * item.quantity : 0
-            details[:own_sales] += item_incentive
+      # WOTT商品の場合
+      if category == 'wott'
+        # プロモートチーム（総代理店、代理店、サポーター）のみインセンティブ対象
+        purchase_date = item.purchase.purchased_at
+        wott_level_at_purchase = wott_level_at(purchase_date)
+        
+        if wott_level_at_purchase && ['総代理店', '代理店', 'サポーター'].include?(wott_level_at_purchase.name)
+          incentive_record = product.product_prices.find_by(wott_level: wott_level_at_purchase)
+          if incentive_record&.incentive_rate && product.base_price
+            # base_price × incentive_rate でインセンティブ計算
+            incentive_unit = (product.base_price * incentive_record.incentive_rate).to_i
+            item_incentive = incentive_unit * item.quantity
+            details[:wott] += item_incentive
+            details[:purchase_count] += 1 if item_incentive > 0
+          end
+        end
+      # MANNERSOUND商品の場合
+      elsif category == 'ms'
+        # 会員レベル（上清液のレベル）を使用
+        purchase_date = item.purchase.purchased_at
+        user_level_at_purchase = level_at(purchase_date)
+        
+        # プロモートチーム（総代理店、代理店、アドバイザー）のみインセンティブ対象
+        if user_level_at_purchase && ['総代理店', '代理店', 'アドバイザー'].include?(user_level_at_purchase.name)
+          incentive_record = product.product_prices.find_by(level: user_level_at_purchase)
+          if incentive_record&.incentive_rate && product.base_price
+            # base_price × incentive_rate でインセンティブ計算
+            incentive_unit = (product.base_price * incentive_record.incentive_rate).to_i
+            item_incentive = incentive_unit * item.quantity
+            details[:ms] += item_incentive
             details[:purchase_count] += 1 if item_incentive > 0
           end
         end
@@ -254,7 +285,7 @@ class User < ApplicationRecord
     
     if descendant_user_ids.any?
       descendant_purchase_items = PurchaseItem.joins(:purchase)
-                                             .where(purchases: { user_id: descendant_user_ids, purchased_at: from_date..to_date })
+                                             .where(purchases: { user_id: descendant_user_ids, purchased_at: from_date..to_date, status: ['paid', 'reserved'] })
                                              .includes(:product, purchase: :user)
 
       descendant_purchase_items.each do |item|
@@ -262,10 +293,51 @@ class User < ApplicationRecord
         purchase_date = purchase.purchased_at
         purchase_user = purchase.user
         product = item.product
+        category = product.respond_to?(:category) ? product.category : 'sl'
         
-        # WOTT商品の場合：他人の購入ではインセンティブなし（自己購入のみ）
-        # categoryカラムが存在する場合のみチェック
-        next if product.respond_to?(:category) && product.category == 'wott'
+        # WOTT商品の場合：直下位のお客様・クリニック・サロンの購入のみインセンティブ対象
+        if category == 'wott'
+          # 購入時点のWOTTレベルを取得
+          wott_level_at_purchase = wott_level_at(purchase_date)
+          
+          # プロモートチームのみ対象
+          if wott_level_at_purchase && ['総代理店', '代理店', 'サポーター'].include?(wott_level_at_purchase.name)
+            # 直下位（referred_by_id == self.id）かつ、お客様・クリニック・サロンの場合のみ
+            if purchase_user.referred_by_id == id && ['お客様', 'クリニック', 'サロン'].include?(purchase_user.level&.name)
+              incentive_record = product.product_prices.find_by(wott_level: wott_level_at_purchase)
+              if incentive_record&.incentive_rate && product.base_price
+                # base_price × incentive_rate でインセンティブ計算
+                incentive_unit = (product.base_price * incentive_record.incentive_rate).to_i
+                item_incentive = incentive_unit * item.quantity
+                details[:wott] += item_incentive
+                details[:purchase_count] += 1 if item_incentive > 0
+              end
+            end
+          end
+          next # WOTT商品は通常の階層差額計算をスキップ
+        end
+        
+        # MANNERSOUND商品の場合：直下位のお客様・クリニック・サロンの購入のみインセンティブ対象
+        if category == 'ms'
+          # 購入時点の会員レベルを取得
+          user_level_at_purchase = level_at(purchase_date)
+          
+          # プロモートチームのみ対象
+          if user_level_at_purchase && ['総代理店', '代理店', 'アドバイザー'].include?(user_level_at_purchase.name)
+            # 直下位（referred_by_id == self.id）かつ、お客様・クリニック・サロンの場合のみ
+            if purchase_user.referred_by_id == id && ['お客様', 'クリニック', 'サロン'].include?(purchase_user.level&.name)
+              incentive_record = product.product_prices.find_by(level: user_level_at_purchase)
+              if incentive_record&.incentive_rate && product.base_price
+                # base_price × incentive_rate でインセンティブ計算
+                incentive_unit = (product.base_price * incentive_record.incentive_rate).to_i
+                item_incentive = incentive_unit * item.quantity
+                details[:ms] += item_incentive
+                details[:purchase_count] += 1 if item_incentive > 0
+              end
+            end
+          end
+          next # MANNERSOUND商品は通常の階層差額計算をスキップ
+        end
         
         my_level_at_purchase = level_at(purchase_date)
         
@@ -300,15 +372,14 @@ class User < ApplicationRecord
         if eligible_user_price > my_price
           diff = eligible_user_price - my_price
           item_bonus = diff * item.quantity
-          details[:descendant_sales] += item_bonus
+          # カテゴリー毎に加算
+          details[category.to_sym] += item_bonus
           details[:purchase_count] += 1
         end
       end
     end
 
-
-
-    total_incentive = details[:own_sales] + details[:descendant_sales]
+    total_incentive = details[:sl] + details[:wott] + details[:ms] + details[:ag]
 
     {
       total: total_incentive,
@@ -403,21 +474,70 @@ class User < ApplicationRecord
 
     # WOTT商品の場合は特別処理
     if product.respond_to?(:category) && product.category == 'wott'
-      # WOTT商品は自己購入でのみインセンティブが発生
-      return 0 if purchase_user != self
-      
-      # 自己購入の場合：base_price - product_pricesのpriceでインセンティブ単価を計算
-      if has_wott_level?
-        wott_level_at_purchase = wott_level  # 現在のWOTTレベルを使用（履歴対応は後で実装可能）
-        incentive_record = product.product_prices.find_by(wott_level: wott_level_at_purchase)
-        if incentive_record&.price
-          # base_price - product_pricesのprice = インセンティブ単価
-          incentive_unit = (product.base_price || 0) - incentive_record.price
-          return incentive_unit > 0 ? incentive_unit : 0
-        else
-          return 0
+      # 自己購入の場合
+      if purchase_user == self
+        # 購入時点のWOTTレベルを取得
+        wott_level_at_purchase = wott_level_at(purchase_date)
+        
+        # プロモートチーム（総代理店、代理店、サポーター）のみインセンティブ対象
+        if wott_level_at_purchase && ['総代理店', '代理店', 'サポーター'].include?(wott_level_at_purchase.name)
+          incentive_record = product.product_prices.find_by(wott_level: wott_level_at_purchase)
+          if incentive_record&.incentive_rate && product.base_price
+            # base_price × incentive_rate でインセンティブ単価を計算
+            incentive_unit = (product.base_price * incentive_record.incentive_rate).to_i
+            return incentive_unit
+          end
         end
+        return 0
       else
+        # 他人の購入の場合：直下位のお客様・クリニック・サロンのみインセンティブ対象
+        wott_level_at_purchase = wott_level_at(purchase_date)
+        
+        if wott_level_at_purchase && ['総代理店', '代理店', 'サポーター'].include?(wott_level_at_purchase.name)
+          if purchase_user.referred_by_id == id && ['お客様', 'クリニック', 'サロン'].include?(purchase_user.level&.name)
+            incentive_record = product.product_prices.find_by(wott_level: wott_level_at_purchase)
+            if incentive_record&.incentive_rate && product.base_price
+              # base_price × incentive_rate でインセンティブ単価を計算
+              incentive_unit = (product.base_price * incentive_record.incentive_rate).to_i
+              return incentive_unit
+            end
+          end
+        end
+        return 0
+      end
+    end
+
+    # MANNERSOUND商品の場合は特別処理
+    if product.respond_to?(:category) && product.category == 'ms'
+      # 自己購入の場合
+      if purchase_user == self
+        # 購入時点の会員レベルを取得
+        user_level_at_purchase = level_at(purchase_date)
+        
+        # プロモートチーム（総代理店、代理店、アドバイザー）のみインセンティブ対象
+        if user_level_at_purchase && ['総代理店', '代理店', 'アドバイザー'].include?(user_level_at_purchase.name)
+          incentive_record = product.product_prices.find_by(level: user_level_at_purchase)
+          if incentive_record&.incentive_rate && product.base_price
+            # base_price × incentive_rate でインセンティブ単価を計算
+            incentive_unit = (product.base_price * incentive_record.incentive_rate).to_i
+            return incentive_unit
+          end
+        end
+        return 0
+      else
+        # 他人の購入の場合：直下位のお客様・クリニック・サロンのみインセンティブ対象
+        user_level_at_purchase = level_at(purchase_date)
+        
+        if user_level_at_purchase && ['総代理店', '代理店', 'アドバイザー'].include?(user_level_at_purchase.name)
+          if purchase_user.referred_by_id == id && ['お客様', 'クリニック', 'サロン'].include?(purchase_user.level&.name)
+            incentive_record = product.product_prices.find_by(level: user_level_at_purchase)
+            if incentive_record&.incentive_rate && product.base_price
+              # base_price × incentive_rate でインセンティブ単価を計算
+              incentive_unit = (product.base_price * incentive_record.incentive_rate).to_i
+              return incentive_unit
+            end
+          end
+        end
         return 0
       end
     end
@@ -492,7 +612,7 @@ class User < ApplicationRecord
     
     if descendant_user_ids.any?
       descendant_purchase_items = PurchaseItem.joins(:purchase)
-                                             .where(purchases: { user_id: descendant_user_ids, purchased_at: range })
+                                             .where(purchases: { user_id: descendant_user_ids, purchased_at: range, status: ['paid', 'reserved'] })
                                              .includes(:product, purchase: :user)
 
       descendant_purchase_items.each do |item|
@@ -592,6 +712,12 @@ class User < ApplicationRecord
     history = user_level_histories.effective_at(datetime).order(:effective_from).last
     history&.level || level
   end
+  
+  # 指定日時でのWOTTレベルを取得
+  def wott_level_at(datetime)
+    history = user_level_histories.effective_at(datetime).order(:effective_from).last
+    history&.wott_level || wott_level
+  end
 
   # 指定日時での商品価格を取得
   def product_price_at(product, datetime)
@@ -599,9 +725,9 @@ class User < ApplicationRecord
     product.product_prices.find_by(level_id: level_at_time.id)&.price || 0
   end
 
-  # レベル変更時の履歴更新
-  def update_level_history(new_level_id, change_reason, changed_by_user, ip_address = nil)
-    return false if level_id == new_level_id
+  # レベル変更時の履歴更新（WOTTレベルも含む）
+  def update_level_history(new_level_id, change_reason, changed_by_user, ip_address = nil, new_wott_level_id = nil)
+    return false if level_id == new_level_id && (new_wott_level_id.nil? || wott_level_id == new_wott_level_id)
 
     transaction do
       # 現在の履歴を終了
@@ -614,6 +740,8 @@ class User < ApplicationRecord
       user_level_histories.create!(
         level_id: new_level_id,
         previous_level_id: level_id,
+        wott_level_id: new_wott_level_id || wott_level_id,
+        previous_wott_level_id: wott_level_id,
         effective_from: Time.current,
         change_reason: change_reason,
         changed_by: changed_by_user,
@@ -621,7 +749,9 @@ class User < ApplicationRecord
       )
 
       # ユーザーの現在レベルを更新
-      update!(level_id: new_level_id)
+      update_attributes = { level_id: new_level_id }
+      update_attributes[:wott_level_id] = new_wott_level_id if new_wott_level_id
+      update!(update_attributes)
     end
 
     true
@@ -725,6 +855,25 @@ class User < ApplicationRecord
     total_purchase_volume_cc
   end
 
+  # WOTT商品の累計購入台数を取得
+  def total_wott_purchases
+    purchases.joins(purchase_items: :product)
+             .where(products: { category: 'wott' })
+             .sum('purchase_items.quantity')
+  end
+
+  # WOTT購入台数に基づく推奨レベルを取得
+  def recommended_wott_level
+    total = total_wott_purchases
+    if total >= 5
+      Level.find_by(name: '総代理店')
+    elsif total >= 1
+      Level.find_by(name: '代理店')
+    else
+      Level.find_by(name: 'サポーター')
+    end
+  end
+
   private
 
   def check_level_hierarchy
@@ -733,7 +882,6 @@ class User < ApplicationRecord
       errors.add(:level, "紹介者より上のレベルには設定できません")
     end
   end
-
 
   def generate_referral_token
     self.referral_token = generate_unique_token
@@ -751,10 +899,5 @@ class User < ApplicationRecord
     # 紹介者が存在し、かつお客様レベル（value: 8）の場合
     referrer.present? && level&.value == 8
   end
-
-
-  
-
-
 
 end

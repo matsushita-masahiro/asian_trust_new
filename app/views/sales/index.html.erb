@@ -43,28 +43,8 @@
               <% purchase.purchase_items.each_with_index do |item, index| %>
                 <% 
                   # 各アイテムに対するボーナスを個別計算
-                  if item.product.category == 'wott'
-                    # WOTT商品の場合：購入者自身のインセンティブを表示
-                    if purchase.user.has_wott_level?
-                      wott_level = purchase.user.wott_level
-                      incentive_record = item.product.product_prices.find_by(wott_level: wott_level)
-                      if incentive_record&.price
-                        incentive_unit = (item.product.base_price || 0) - incentive_record.price
-                        item_bonus = incentive_unit > 0 ? incentive_unit * item.quantity : 0
-                      else
-                        item_bonus = 0
-                      end
-                    else
-                      item_bonus = 0
-                    end
-                  else
-                    # 通常商品の場合
-                    if purchase.user == @user
-                      item_bonus = 0  # 自己購入インセンティブは廃止
-                    else
-                      item_bonus = @user.bonus_for_purchase_item(item)
-                    end
-                  end
+                  # @userの視点でインセンティブを計算
+                  item_bonus = @user.bonus_for_purchase_item(item)
                 %>
                 <tr>
                   <% if index == 0 %>
@@ -93,7 +73,13 @@
                   <td class="text-end"><%= number_with_delimiter(item.seller_price) %></td>
                   <td class="text-end"><%= item.quantity %></td>
                   <td class="text-end text-danger fw-bold"><%= number_with_delimiter(item.seller_price * item.quantity) %></td>
-                  <td class="text-end text-info fw-bold"><%= number_with_delimiter(@user.incentive_unit_price_for_item(item)) %></td>
+                  <td class="text-end text-info fw-bold">
+                    <% 
+                      # インセンティブ単価を計算
+                      incentive_unit = item_bonus > 0 ? (item_bonus.to_f / item.quantity).round : 0
+                    %>
+                    <%= number_with_delimiter(incentive_unit) %>
+                  </td>
                   <td class="text-end text-success fw-bold"><%= number_with_delimiter(item_bonus) %></td>
                   <% if index == 0 %>
                     <td rowspan="<%= purchase.purchase_items.count %>"><%= purchase.purchased_at&.strftime("%Y/%m/%d") %></td>

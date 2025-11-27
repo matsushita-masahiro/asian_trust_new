@@ -5,14 +5,17 @@ class Admin::PurchasesController < Admin::BaseController
   def index
     @selected_month = params[:month] || Time.current.strftime('%Y-%m')
     
-    # 月別の購入履歴を取得
-    @purchases = Purchase.includes(:user, purchase_items: :product)
+    # 月別の購入履歴を取得（purchase_invoiceも含める）
+    @purchases = Purchase.includes(:user, :purchase_invoice, purchase_items: :product)
                         .in_month_tokyo(@selected_month)
                         .order(purchased_at: :desc)
     
     # ステータスでフィルタリング
     if params[:status] == 'pending'
-      @purchases = @purchases.where(status: 'built')
+      @purchases = @purchases.joins(:purchase_invoice)
+                            .where(status: 'built')
+      # プルダウン表示用にinvoice_statusを設定
+      @selected_invoice_status = PurchaseInvoice::SENT
     elsif params[:status] == 'payment_confirmation'
       # 入金確認待ち（purchase_invoice.status = 2）の購入履歴のみ表示
       @purchases = @purchases.joins(:purchase_invoice)

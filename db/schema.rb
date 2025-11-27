@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_31_162058) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_064035) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -340,12 +340,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_31_162058) do
     t.string "ip_address", limit: 45
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "wott_level_id"
+    t.integer "previous_wott_level_id"
     t.index ["changed_by_id"], name: "index_user_level_histories_on_changed_by_id"
     t.index ["created_at"], name: "index_user_level_histories_on_created_at"
     t.index ["level_id"], name: "index_user_level_histories_on_level_id"
     t.index ["previous_level_id"], name: "index_user_level_histories_on_previous_level_id"
+    t.index ["previous_wott_level_id"], name: "index_user_level_histories_on_previous_wott_level_id"
     t.index ["user_id", "effective_from", "effective_to"], name: "idx_user_level_histories_effective_dates"
     t.index ["user_id"], name: "index_user_level_histories_on_user_id"
+    t.index ["wott_level_id"], name: "index_user_level_histories_on_wott_level_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -389,6 +393,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_31_162058) do
     t.index ["status"], name: "index_users_on_status"
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
     t.index ["wott_level_id"], name: "index_users_on_wott_level_id"
+  end
+
+  create_table "wott_level_upgrade_requests", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "current_wott_level_id"
+    t.integer "requested_wott_level_id"
+    t.string "status", default: "pending", null: false
+    t.text "admin_notes"
+    t.integer "processed_by_id"
+    t.datetime "processed_at"
+    t.integer "purchase_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["purchase_id"], name: "index_wott_level_upgrade_requests_on_purchase_id"
+    t.index ["status"], name: "index_wott_level_upgrade_requests_on_status"
+    t.index ["user_id"], name: "index_wott_level_upgrade_requests_on_user_id"
   end
 
   create_table "wott_levels", force: :cascade do |t|
@@ -435,6 +455,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_31_162058) do
   add_foreign_key "user_level_histories", "levels", column: "previous_level_id"
   add_foreign_key "user_level_histories", "users"
   add_foreign_key "user_level_histories", "users", column: "changed_by_id"
+  add_foreign_key "user_level_histories", "wott_levels"
+  add_foreign_key "user_level_histories", "wott_levels", column: "previous_wott_level_id"
   add_foreign_key "users", "levels"
   add_foreign_key "users", "wott_levels"
+  add_foreign_key "wott_level_upgrade_requests", "purchases"
+  add_foreign_key "wott_level_upgrade_requests", "users"
 end

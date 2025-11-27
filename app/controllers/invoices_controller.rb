@@ -16,24 +16,54 @@ class InvoicesController < ApplicationController
     @invoice = current_user.invoices.build
     @invoice_recipients = InvoiceRecipient.all
     
-    # デフォルト値を設定
-    @invoice.invoice_date = Date.current
-    
-    # 支払期限：インセンティブ対象月の翌月月末日
-    target_month_date = Date.strptime(@selected_month, "%Y-%m")
-    @invoice.due_date = target_month_date.next_month.end_of_month
-    
     # 該当月の設定（パラメータから取得、なければ今月）
     @selected_month = params[:month].presence || Date.current.strftime("%Y-%m")
     @selected_month_start = Date.strptime(@selected_month, "%Y-%m").beginning_of_month
     @selected_month_end = Date.strptime(@selected_month, "%Y-%m").end_of_month
     
+    # デフォルト値を設定
+    @invoice.invoice_date = Date.current
+    
+    # 支払期限：請求書作成日（今日）の月末
+    @invoice.due_date = Date.current.end_of_month
+    
+    # 該当月が終了しているかチェック
+    @month_ended = @selected_month_end.end_of_day < Time.current
+    
     # 該当月のボーナス合計額を計算
-    @total_bonus = current_user.bonus_in_month(@selected_month)
+    # 未来の月の場合は月末までではなく現在日時までで計算
+    calculation_end_date = if @selected_month_end > Date.current
+                             Date.current.end_of_day
+                           else
+                             @selected_month_end.end_of_day
+                           end
+    
+    # 新しいIncentiveCalculationServiceを使用
+    service = IncentiveCalculationService.new(current_user, @selected_month_start, calculation_end_date)
+    detailed_incentives = service.calculate_detailed_incentives
+    
+    # デバッグ情報
+    Rails.logger.info "=== Invoice Issue Debug ==="
+    Rails.logger.info "detailed_incentives keys: #{detailed_incentives.keys}"
+    Rails.logger.info "summary: #{detailed_incentives[:summary]}"
+    Rails.logger.info "total_incentive from summary: #{detailed_incentives.dig(:summary, :total_incentive)}"
+    
+    # 合計インセンティブを取得（summaryキーがない場合は購入明細から計算）
+    @total_bonus = if detailed_incentives[:summary]
+                     detailed_incentives.dig(:summary, :total_incentive) || 0
+                   else
+                     # 購入明細から合計を計算
+                     purchase_details = detailed_incentives.dig(:details, :purchase_details) || []
+                     purchase_details.sum { |d| d[:total_incentive] || 0 }
+                   end
+    
+    Rails.logger.info "total_bonus: #{@total_bonus}"
+    Rails.logger.info "=== End Invoice Issue Debug ==="
+    
     @invoice.total_amount = @total_bonus.to_i
     
     # ボーナス内訳を取得
-    @bonus_details = get_bonus_details(@selected_month_start, @selected_month_end)
+    @bonus_details = get_bonus_details_from_service(detailed_incentives)
     
     # デバッグ情報
     Rails.logger.info "=== Invoice Issue Debug ==="
@@ -117,6 +147,16 @@ class InvoicesController < ApplicationController
   end
 
   def create
+    # 対象月のチェック
+    target_month = params[:invoice][:target_month] || Date.current.strftime("%Y-%m")
+    target_month_end = Date.strptime(target_month, "%Y-%m").end_of_month
+    
+    # 該当月が終了していない場合はエラー
+    unless target_month_end.end_of_day < Time.current
+      flash[:alert] = "請求書は該当月の最終日24時以降に作成できます。選択された月（#{Date.strptime(target_month, '%Y-%m').strftime('%Y年%m月')}）はまだ終了していません。"
+      redirect_to issue_invoices_path(month: target_month) and return
+    end
+    
     @invoice = current_user.invoices.build(invoice_params)
     @invoice.status = Invoice::DRAFT  # 作成時は下書き状態
     
@@ -336,6 +376,29 @@ class InvoicesController < ApplicationController
     params.require(:invoice_base).permit(:company_name, :postal_code, :address, :department, :email, :notes, :bank_name, :bank_branch_name, :bank_account_type, :bank_account_number, :bank_account_name)
   end
 
+  def get_bonus_details_from_service(detailed_incentives)
+    details = []
+    
+    # IncentiveCalculationServiceから取得した詳細情報を変換
+    purchase_details = detailed_incentives.dig(:details, :purchase_details) || []
+    
+    purchase_details.each do |detail|
+      details << {
+        type: detail[:category] == 'own_sales' ? '自己販売' : '下位販売',
+        user_name: detail[:purchaser_display_name],
+        product_name: detail[:product_name],
+        quantity: detail[:quantity],
+        unit_bonus: detail[:incentive_unit_price],
+        total_bonus: detail[:total_incentive],
+        purchased_at: detail[:purchase_date],
+        purchase_id: detail[:purchase_id]
+      }
+    end
+    
+    # 購入日順でソート
+    details.sort_by { |d| d[:purchased_at] }
+  end
+  
   def get_bonus_details(start_date, end_date)
     details = []
     

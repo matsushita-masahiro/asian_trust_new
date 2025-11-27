@@ -1,0 +1,110 @@
+// トップページ専用のスタイル
+// .top-page-containerが存在するページにのみ適用
+
+.top-page-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  picture {
+    width: 100%;
+    height: 100%;
+    display: flex;
+  }
+}
+
+.top-page-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+// トップページ専用のスタイルをスコープ化
+body:has(.top-page-container) {
+  padding-top: 0 !important;
+
+  .container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* navbarを透明にして画像の上に重ねる */
+  .custom-navbar {
+    background: rgba(44, 62, 80, 0.9) !important;
+    position: absolute !important;
+    top: 0 !important;
+    width: 100% !important;
+    z-index: 1000 !important;
+  }
+
+  /* フッターを表示し、画像の直下に配置 */
+  footer {
+    position: relative !important;
+    z-index: 10 !important;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1400px) {
+  .top-page-container {
+    overflow: hidden !important;
+  }
+
+  .top-page-image {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  body:has(.top-page-container) {
+    padding-top: 0 !important;
+  }
+
+  .top-page-container {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    overflow: hidden;
+  }
+
+  .top-page-image {
+    object-fit: cover;
+    object-position: center center;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+}
+
+@media (max-width: 390px) {
+  .top-page-image {
+    object-fit: contain;
+    object-position: 47% center;
+  }
+}

@@ -56,8 +56,12 @@ class IncentivesController < ApplicationController
     @detailed_incentives = calculate_detailed_incentives(@target_user)
     @incentive_summary = calculate_incentive_summary_for_user(@target_user)
     
-    # ユーザーの商品単価情報を取得
-    @user_product_prices = get_user_product_prices(@target_user)
+    # 対象月の開始時点でのレベルを取得（表示用）
+    @display_level = @target_user.level_at(@start_date)
+    @display_wott_level = @target_user.wott_level_at(@start_date)
+    
+    # ユーザーの商品単価情報を取得（対象月のレベルを使用）
+    @user_product_prices = get_user_product_prices(@target_user, @display_level)
   end
   
   def hierarchy
@@ -130,13 +134,13 @@ class IncentivesController < ApplicationController
     end
     
     # 月全体の期間を設定（過去月の場合は月末まで、当月の場合は今日まで）
-    @start_date = @target_date.beginning_of_month
+    @start_date = @target_date.beginning_of_month.beginning_of_day
     if @target_date.strftime("%Y-%m") == Date.current.strftime("%Y-%m")
-      # 当月の場合は今日まで
-      @end_date = Date.current
+      # 当月の場合は今日の終わりまで
+      @end_date = Date.current.end_of_day
     else
       # 過去月の場合は月末まで
-      @end_date = @target_date.end_of_month
+      @end_date = @target_date.end_of_month.end_of_day
     end
     
     @month_str = @target_month
@@ -207,10 +211,11 @@ class IncentivesController < ApplicationController
     redirect_to incentives_path
   end
   
-  def get_user_product_prices(user)
+  def get_user_product_prices(user, level = nil)
     # アクティブな商品のみを取得
     products = Product.active.order(:id)
-    user_level = user.level
+    # レベルが指定されていない場合は現在のレベルを使用
+    user_level = level || user.level
     
     products.map do |product|
       product_price = ProductPrice.find_by(product: product, level: user_level)

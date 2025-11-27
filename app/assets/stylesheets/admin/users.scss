@@ -1,5 +1,10 @@
 // Admin Users Edit Page Styles
 
+// index.html.erb - コンテナの上部余白
+.admin-users-container {
+  padding-top: 80px;
+}
+
 // Timeline styles for level history
 .timeline {
   position: relative;
@@ -88,4 +93,467 @@
       margin-right: 0 !important;
     }
   }
+}
+
+// show.html.erb - 統計情報カード用のカスタムスタイル
+.total-sales-volume {
+  color: #9400d3;
+}
+
+.wott-purchase-count {
+  color: #ff6b6b;
+}
+
+.stats-card {
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.clickable-card {
+  cursor: pointer;
+}
+
+.clickable-card:hover {
+  transform: translateY(-8px) !important;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.stats-icon {
+  opacity: 0.8;
+}
+
+.stats-number {
+  font-weight: 700;
+  margin: 0;
+}
+
+.stats-label {
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+/* レベル別統計のスタイル */
+.level-stats-list {
+  font-size: 0.9rem;
+}
+
+.level-stat-item {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.level-stat-item:last-child {
+  border-bottom: none;
+}
+
+.level-stat-item .level-name {
+  flex: 1;
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.level-stat-item .level-count {
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.financial-item {
+  margin-bottom: 1rem;
+}
+
+.financial-item:last-child {
+  margin-bottom: 0;
+}
+
+/* レベル変更申請表示のスタイル */
+.level-change-application {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.level-change-text {
+  font-weight: 500;
+  color: #856404;
+}
+
+.application-details {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #ffeaa7;
+}
+
+/* 基本情報テーブルのスタイル */
+.table-borderless td {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  hyphens: auto;
+}
+
+/* 住所専用スタイル */
+.address-cell {
+  max-width: 1px !important;
+  width: 1px !important;
+}
+
+.address-content {
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: break-all !important;
+  white-space: normal !important;
+  line-height: 1.4;
+}
+
+.address-text {
+  display: block;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: break-all !important;
+  white-space: normal !important;
+}
+
+/* 下位ユーザーの購入履歴行のスタイル */
+.descendant-purchase-row {
+  background-color: #f8f9fa !important;
+}
+
+.descendant-purchase-row:hover {
+  background-color: #e9ecef !important;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  /* ヘッダーの上部余白を小さくする */
+  .mobile-header {
+    margin-top: 20px !important;
+  }
+
+  .stats-card {
+    margin-bottom: 1rem;
+  }
+
+  .stats-number {
+    font-size: 1.5rem !important;
+  }
+
+  .stats-icon i {
+    font-size: 1.5rem !important;
+  }
+
+  .level-stats-section,
+  .financial-stats-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .level-stat-item {
+    padding: 0.3rem 0;
+  }
+
+  .level-stat-item .level-name {
+    font-size: 0.8rem;
+  }
+
+  .level-stat-item .level-count {
+    font-size: 0.85rem;
+    min-width: 35px;
+  }
+
+  /* 基本情報テーブルのモバイル対応 */
+  .table-borderless th {
+    width: 35% !important;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.25rem;
+    vertical-align: top;
+  }
+
+  .table-borderless td {
+    width: 65% !important;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.25rem;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-all !important;
+    hyphens: auto !important;
+    max-width: 0;
+  }
+
+  /* メールアドレスと住所の特別な処理 */
+  .table-borderless td.text-break {
+    line-height: 1.4;
+    white-space: normal !important;
+  }
+
+  /* 住所セルの強制改行 */
+  .address-cell {
+    max-width: 0 !important;
+    width: 65% !important;
+    overflow: hidden !important;
+  }
+
+  .address-content {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-all !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
+    font-size: 0.8rem !important;
+  }
+
+  .address-text {
+    display: block !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-all !important;
+    white-space: normal !important;
+  }
+}
+
+
+// all_users.html.erb - 階層表示
+.hierarchy-container-vertical {
+  font-family: "Courier New", monospace;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  overflow: auto;
+  min-height: 400px;
+}
+
+.hierarchy-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.hierarchy-row.level-0 {
+  margin-bottom: 30px;
+}
+
+.user-node {
+  padding: 10px 15px;
+  background: white;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  width: 280px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.children-container {
+  margin-left: 30px;
+  flex: 1;
+  position: relative;
+}
+
+.children-container::before {
+  content: "";
+  position: absolute;
+  left: -15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #dee2e6;
+}
+
+.children-container .hierarchy-row::before {
+  content: "";
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  width: 15px;
+  height: 2px;
+  background-color: #dee2e6;
+}
+
+.user-name {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.user-stats {
+  font-size: 11px;
+  color: #6c757d;
+}
+
+.user-stats .row {
+  margin: 0;
+}
+
+.user-stats .col-6 {
+  padding: 2px 4px;
+}
+
+/* レベル別の色分け */
+.level-0 .user-node {
+  border-left-color: #dc3545;
+}
+.level-1 .user-node {
+  border-left-color: #fd7e14;
+}
+.level-2 .user-node {
+  border-left-color: #ffc107;
+}
+.level-3 .user-node {
+  border-left-color: #28a745;
+}
+.level-4 .user-node {
+  border-left-color: #20c997;
+}
+.level-5 .user-node {
+  border-left-color: #17a2b8;
+}
+.level-6 .user-node {
+  border-left-color: #6f42c1;
+}
+.level-7 .user-node {
+  border-left-color: #e83e8c;
+}
+
+/* リンクスタイル */
+.user-node-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: all 0.2s ease;
+}
+
+.user-node-link:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
+.user-node-link:hover .user-node {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.user-node-link .user-node {
+  transition: all 0.2s ease;
+}
+
+.sales-positive {
+  color: #28a745;
+  font-weight: bold;
+}
+.sales-zero {
+  color: #6c757d;
+}
+.bonus-positive {
+  color: #17a2b8;
+  font-weight: bold;
+}
+.bonus-zero {
+  color: #6c757d;
+}
+
+/* カスタムレベルバッジの色 */
+.bg-muted {
+  background-color: #6c757d !important;
+}
+
+/* レベルバッジのスタイル調整 */
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 4px 8px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .user-node {
+    width: 250px;
+  }
+
+  .children-container {
+    margin-left: 20px;
+  }
+
+  .hierarchy-row {
+    flex-direction: column;
+  }
+
+  .children-container {
+    margin-left: 0;
+    margin-top: 15px;
+  }
+
+  .children-container::before {
+    display: none;
+  }
+
+  .children-container .hierarchy-row::before {
+    display: none;
+  }
+}
+
+// index.html.erb - テーブルスタイル
+.fixed-column {
+  min-width: 220px;
+}
+
+.month-selector-field {
+  width: 150px;
+}
+
+.fixed-table td,
+.scroll-table td {
+  height: 60px;
+  vertical-align: middle;
+  padding: 12px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fixed-table th,
+.scroll-table th {
+  height: 50px;
+  vertical-align: middle;
+  padding: 12px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// テーブルカラムの幅設定
+.agency-name-col {
+  width: 220px;
+}
+.sales-col,
+.total-sales-col,
+.incentive-col {
+  min-width: 120px;
+}
+.date-col {
+  min-width: 100px;
+}
+.action-col {
+  min-width: 80px;
+}
+
+.clickable-name {
+  cursor: pointer;
+  color: #0d6efd;
+  text-decoration: none;
+}
+.clickable-name:hover {
+  text-decoration: underline;
+  color: #0a58ca;
 }

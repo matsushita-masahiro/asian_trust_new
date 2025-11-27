@@ -3,6 +3,8 @@ class UserLevelHistory < ApplicationRecord
   belongs_to :level
   belongs_to :previous_level, class_name: 'Level', optional: true
   belongs_to :changed_by, class_name: 'User'
+  belongs_to :wott_level, optional: true
+  belongs_to :previous_wott_level, class_name: 'WottLevel', optional: true
 
   validates :effective_from, presence: true
   validates :user_id, presence: true

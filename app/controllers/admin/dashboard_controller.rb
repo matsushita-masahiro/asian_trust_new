@@ -14,6 +14,9 @@ class Admin::DashboardController < Admin::BaseController
     
     # 入金確認待ちの購入請求書件数を取得（status = 2: PAYMENT_CONFIRMATION_REQUEST）
     @payment_confirmation_count = PurchaseInvoice.where(status: PurchaseInvoice::PAYMENT_CONFIRMATION_REQUEST).count
+    
+    # WOTTレベル昇格申請の承認待ち件数を取得
+    @wott_upgrade_requests_count = WottLevelUpgradeRequest.pending.count
   end
 
   private

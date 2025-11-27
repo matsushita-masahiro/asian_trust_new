@@ -1,4 +1,4 @@
-<div class="container-fluid" style="padding-top: 100px;">
+<div class="container-fluid admin-dashboard-container" style="padding-top: 100px;">
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
@@ -15,6 +15,12 @@
             <%= link_to advisor_pre_list_admin_users_path, class: "alert alert-success text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
               <i class="fas fa-user-graduate"></i>
               アドバイザー認定前: <strong><%= @advisor_pre_count %>名</strong>
+            <% end %>
+          <% end %>
+          <% if @wott_upgrade_requests_count > 0 %>
+            <%= link_to admin_wott_level_upgrade_requests_path, class: "alert alert-warning text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
+              <i class="fas fa-level-up-alt"></i>
+              WOTTレベル昇格申請: <strong><%= @wott_upgrade_requests_count %>件</strong>
             <% end %>
           <% end %>
           <% unconfirmed_invoices_count = Invoice.where(status: Invoice::SENT).count %>
@@ -306,15 +312,3 @@ function showSystemHealthDetails() {
   document.getElementById('systemHealthDetails').innerHTML = html;
 }
 </script>
-
-<style>
-.system-status-card {
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.system-status-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-</style>

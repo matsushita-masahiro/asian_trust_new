@@ -47,7 +47,7 @@
         <div class="card-header">
           <h5 class="card-title mb-0">
             <i class="fas fa-users me-2"></i>
-            あなたの下位ユーザー構造図
+            下位ユーザー構造図
           </h5>
         </div>
         <div class="card-body">
@@ -58,9 +58,19 @@
                 <div class="user-node current-user">
                   <div class="user-name">
                     <%= current_user.display_name %>
-                    <span class="badge bg-primary ms-2">あなた</span>
+                    
+                    <% # 幹細胞レベル（アドバイザー側）を先に表示 %>
                     <% if current_user.level %>
-                      <span class="badge bg-secondary ms-2"><%= current_user.level.name %></span>
+                      <span class="badge <%= level_badge_class(current_user.level.name) %> ms-2" style="font-size: 0.5rem; padding: 0.2rem 0.4rem;">
+                        <i class="fas fa-user-tie me-1"></i><%= current_user.level.name %>（幹細胞）
+                      </span>
+                    <% end %>
+                    
+                    <% # WOTTレベル（お客様側）を後に表示 %>
+                    <% if current_user.wott_level %>
+                      <span class="badge <%= wott_level_badge_class(current_user.wott_level.name) %> ms-1" style="font-size: 0.5rem; padding: 0.2rem 0.4rem; opacity: 0.85;">
+                        <i class="fas fa-shopping-cart me-1"></i><%= current_user.wott_level.name %>（WOTT）
+                      </span>
                     <% end %>
                   </div>
                   <div class="user-stats">
@@ -99,143 +109,6 @@
   </div>
 </div>
 
-<style>
-  .hierarchy-container-vertical {
-    font-family: 'Courier New', monospace;
-    padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    overflow: auto;
-    min-height: 400px;
-  }
-  
-  .hierarchy-row {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 15px;
-    position: relative;
-  }
-  
-  .hierarchy-row.level-0 {
-    margin-bottom: 30px;
-  }
-  
-  .user-node {
-    padding: 10px 15px;
-    background: white;
-    border-radius: 8px;
-    border-left: 4px solid #007bff;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    width: 280px;
-    position: relative;
-    flex-shrink: 0;
-  }
-  
-  .user-node.current-user {
-    border-left-color: #28a745;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    font-weight: bold;
-  }
-  
-  .children-container {
-    margin-left: 30px;
-    flex: 1;
-    position: relative;
-  }
-  
-  .children-container::before {
-    content: '';
-    position: absolute;
-    left: -15px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background-color: #dee2e6;
-  }
-  
-  .children-container .hierarchy-row::before {
-    content: '';
-    position: absolute;
-    left: -15px;
-    top: 50%;
-    width: 15px;
-    height: 2px;
-    background-color: #dee2e6;
-  }
-  
-  .user-name {
-    font-weight: bold;
-    color: #2c3e50;
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
-  
-  .user-stats {
-    font-size: 11px;
-    color: #6c757d;
-  }
-  
-  /* レベル別の色分け */
-  .level-0 .user-node { border-left-color: #28a745; }
-  .level-1 .user-node { border-left-color: #fd7e14; }
-  .level-2 .user-node { border-left-color: #ffc107; }
-  .level-3 .user-node { border-left-color: #17a2b8; }
-  .level-4 .user-node { border-left-color: #20c997; }
-  .level-5 .user-node { border-left-color: #6f42c1; }
-  .level-6 .user-node { border-left-color: #e83e8c; }
-  .level-7 .user-node { border-left-color: #dc3545; }
-  
-  /* リンクスタイル */
-  .user-node-link {
-    text-decoration: none;
-    color: inherit;
-    display: block;
-    transition: all 0.2s ease;
-  }
-  
-  .user-node-link:hover {
-    text-decoration: none;
-    color: inherit;
-  }
-  
-  .user-node-link:hover .user-node {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    cursor: pointer;
-  }
-  
-  .user-node-link .user-node {
-    transition: all 0.2s ease;
-  }
-  
-  /* レスポンシブ対応 */
-  @media (max-width: 768px) {
-    .user-node {
-      width: 250px;
-    }
-    
-    .children-container {
-      margin-left: 20px;
-    }
-    
-    .hierarchy-row {
-      flex-direction: column;
-    }
-    
-    .children-container {
-      margin-left: 0;
-      margin-top: 15px;
-    }
-    
-    .children-container::before {
-      display: none;
-    }
-    
-    .children-container .hierarchy-row::before {
-      display: none;
-    }
-  }
-</style>
 
 <% content_for :javascript do %>
 <script>

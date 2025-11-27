@@ -735,9 +735,23 @@ else
     ]
     
     months.each_with_index do |month_data, month_idx|
+      # 11月分はいろんなステータス、それ以前はpaid
+      purchase_status = if month_data[:month] == "2025-11"
+                          # インデックスに基づいて決定的にステータスを割り当て
+                          case month_idx % 3
+                          when 0 then 'built'
+                          when 1 then 'paid'
+                          when 2 then 'reserved'
+                          end
+                        else
+                          'paid'
+                        end
+      puts "  Creating purchase for #{month_data[:month]} with status: #{purchase_status}"
+      
       purchase = Purchase.create!(
         user_id: special_agent_1.id,        # 購入者
-        purchased_at: "#{month_data[:month]}-#{format('%02d', month_data[:day])} 10:00:00"
+        purchased_at: "#{month_data[:month]}-#{format('%02d', month_data[:day])} 10:00:00",
+        status: purchase_status
       )
       
       # 複数商品を購入
@@ -766,9 +780,21 @@ else
               else
                 10 + i + month_idx
               end
+        # 11月分はいろんなステータス、それ以前はpaid
+        purchase_status = if month_data[:month] == "2025-11"
+                            case (i + month_idx) % 3
+                            when 0 then 'built'
+                            when 1 then 'paid'
+                            when 2 then 'reserved'
+                            end
+                          else
+                            'paid'
+                          end
+        
         purchase = Purchase.create!(
           user_id: agent.id,        # 購入者
-          purchased_at: "#{month_data[:month]}-#{format('%02d', day)} 14:00:00"
+          purchased_at: "#{month_data[:month]}-#{format('%02d', day)} 14:00:00",
+          status: purchase_status
         )
         
         # 複数商品を購入
@@ -800,9 +826,21 @@ else
       ]
       
       purchase_dates.each_with_index do |purchase_data, idx|
+        # 11月分はいろんなステータス、それ以前はpaid
+        purchase_status = if purchase_data[:date].start_with?("2025-11")
+                            case idx % 3
+                            when 0 then 'built'
+                            when 1 then 'paid'
+                            when 2 then 'reserved'
+                            end
+                          else
+                            'paid'
+                          end
+        
         purchase = Purchase.create!(
           user_id: nakamura.id,
-          purchased_at: "#{purchase_data[:date]} 16:00:00"
+          purchased_at: "#{purchase_data[:date]} 16:00:00",
+          status: purchase_status
         )
         
         # 日によって異なる商品を購入
@@ -824,9 +862,21 @@ else
       # 9月、10月、11月に購入
       purchase_dates = ["2025-09-20", "2025-10-15", "2025-11-02"]
       purchase_dates.each_with_index do |date, date_idx|
+        # 11月分はいろんなステータス、それ以前はpaid
+        purchase_status = if date.start_with?("2025-11")
+                            case (i + date_idx) % 3
+                            when 0 then 'built'
+                            when 1 then 'paid'
+                            when 2 then 'reserved'
+                            end
+                          else
+                            'paid'
+                          end
+        
         purchase = Purchase.create!(
           user_id: advisor.id,
-          purchased_at: "#{date} 16:00:00"
+          purchased_at: "#{date} 16:00:00",
+          status: purchase_status
         )
         
         # 複数商品を購入
@@ -852,9 +902,21 @@ else
       # 9月、10月、11月に購入
       purchase_dates = ["2025-09-25", "2025-10-12", "2025-11-01"]
       purchase_dates.each_with_index do |date, date_idx|
+        # 11月分はいろんなステータス、それ以前はpaid
+        purchase_status = if date.start_with?("2025-11")
+                            case (i + date_idx) % 3
+                            when 0 then 'built'
+                            when 1 then 'paid'
+                            when 2 then 'reserved'
+                            end
+                          else
+                            'paid'
+                          end
+        
         purchase = Purchase.create!(
           user_id: supporter.id,
-          purchased_at: "#{date} 18:00:00"
+          purchased_at: "#{date} 18:00:00",
+          status: purchase_status
         )
         
         # 複数商品を購入
@@ -968,27 +1030,8 @@ advisors.each_with_index do |advisor, i|
   end
 end
 
-# 4. サロン・クリニックの直接お客様（各サロン・クリニックに1名）
-salons_and_clinics = User.joins(:level).where(levels: { value: [6, 7] }) # クリニック(6)とサロン(7)のみ
-salons_and_clinics.first(20).each_with_index do |salon_clinic, i|
-  customer_name = customer_names[customer_index]
-  customer = User.create!(
-    id: user_id_seq,
-    name: customer_name,
-    email: "salon_customer#{i + 1}@example.com",
-    password: "111111",
-    phone: generate_unique_phone("050-#{1000 + i}-#{1111 + i}", used_phones),
-    level_id: levels["お客様"].id,
-    wott_level_id: wott_levels["お客様"].id,
-    referred_by_id: salon_clinic.id,
-    lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
-    confirmed_at: Time.current
-  )
-  user_id_seq += 1
-  lstep_id_seq += 1
-  customers << customer
-  customer_index += 1
-end
+# 4. サロン・クリニックの直接お客様は作成しない（紹介機能が使えないため）
+# サロン・クリニックは紹介できないため、下位ユーザーは作成しない
 
 puts "✅ Created #{customers.count} customers across all levels"
 
@@ -1003,10 +1046,22 @@ if products.any?
   special_customers.first(3).each_with_index do |customer, i|
     # 9月、10月、11月に購入
     purchase_dates = ["2025-09-#{format('%02d', 5 + i)}", "2025-10-#{format('%02d', 3 + i)}", "2025-11-01"]
-    purchase_dates.each do |date|
+    purchase_dates.each_with_index do |date, date_idx|
+      # 11月分はいろんなステータス、それ以前はpaid
+      purchase_status = if date.start_with?("2025-11")
+                          case date_idx % 3
+                          when 0 then 'built'
+                          when 1 then 'paid'
+                          when 2 then 'reserved'
+                          end
+                        else
+                          'paid'
+                        end
+      
       purchase = Purchase.create!(
         user_id: customer.id,
-        purchased_at: "#{date} 12:00:00"
+        purchased_at: "#{date} 12:00:00",
+        status: purchase_status
       )
       
       # 顧客ごとに異なる商品を購入
@@ -1027,7 +1082,8 @@ if products.any?
     # 10月のみ購入
     purchase = Purchase.create!(
       user_id: customer.id,
-      purchased_at: "2025-10-#{format('%02d', 8 + i)} 14:00:00"
+      purchased_at: "2025-10-#{format('%02d', 8 + i)} 14:00:00",
+      status: 'paid'
     )
     
     # 顧客ごとに異なる商品を購入
@@ -1050,7 +1106,8 @@ if products.any?
     # 10月に1回購入
     purchase = Purchase.create!(
       user_id: customer.id,
-      purchased_at: "2025-10-#{format('%02d', 5 + i)} 16:00:00"
+      purchased_at: "2025-10-#{format('%02d', 5 + i)} 16:00:00",
+      status: 'paid'
     )
     
     # 顧客ごとに異なる商品を購入
@@ -1074,7 +1131,8 @@ if products.any?
     # 10月に1回購入
     purchase = Purchase.create!(
       user_id: customer.id,
-      purchased_at: "2025-10-10 18:00:00"
+      purchased_at: "2025-10-10 18:00:00",
+      status: 'paid'
     )
     
     # 顧客ごとに異なる商品を購入
@@ -1096,7 +1154,8 @@ if products.any?
     # 美香サロンの購入（臍帯幹細胞のみ）
     purchase_salon = Purchase.create!(
       user_id: aoki_salon.id,
-      purchased_at: "2025-10-14 15:00:00"
+      purchased_at: "2025-10-14 15:00:00",
+      status: 'paid'
     )
     
     PurchaseItem.create!(
@@ -1110,7 +1169,8 @@ if products.any?
     # 美香クリニックの購入（歯髄幹細胞のみ）
     purchase_clinic = Purchase.create!(
       user_id: aoki_clinic.id,
-      purchased_at: "2025-10-15 15:00:00"
+      purchased_at: "2025-10-15 15:00:00",
+      status: 'paid'
     )
     
     PurchaseItem.create!(
@@ -1132,7 +1192,7 @@ if products.any?
   puts "   - Supporter's salon/clinic: 2 users purchasing"
 end
 
-# 全てのPurchaseに対してpurchase_invoiceを作成（status = 1: SENT）
+# 全てのPurchaseに対してpurchase_invoiceを作成
 puts "📄 Creating purchase invoices for all purchases..."
 
 Purchase.includes(:purchase_items, :user).find_each do |purchase|
@@ -1141,20 +1201,39 @@ Purchase.includes(:purchase_items, :user).find_each do |purchase|
   # 請求書番号を生成
   invoice_number = PurchaseInvoice.generate_invoice_number
   
-  # 請求書を作成（status = 1: SENT）
+  # 購入ステータスに応じて請求書ステータスを設定
+  # built: status = 0 (DRAFT), sent_at = nil
+  # reserved: status = 1 (SENT), sent_at = 購入日時
+  # paid: status = 2 (CONFIRMED), sent_at = 購入日時
+  invoice_status = case purchase.status
+                   when 'built' then 0
+                   when 'reserved' then 1
+                   when 'paid' then 2
+                   else 0
+                   end
+  invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
+  
+  # 請求書を作成
   purchase_invoice = purchase.create_purchase_invoice!(
     invoice_number: invoice_number,
     invoice_date: purchase.purchased_at.to_date,
     due_date: purchase.purchased_at.to_date + 1.week,
     total_amount: purchase.total_price,
-    status: 1,  # SENT
-    sent_at: purchase.purchased_at
+    status: invoice_status,
+    sent_at: invoice_sent_at,
+    confirmed_at: (invoice_status == 2 ? purchase.purchased_at : nil)
   )
   
-  puts "  Created invoice #{invoice_number} for purchase #{purchase.id}"
+  status_label = case invoice_status
+                 when 0 then "DRAFT"
+                 when 1 then "SENT"
+                 when 2 then "CONFIRMED"
+                 else "UNKNOWN"
+                 end
+  puts "  Created invoice #{invoice_number} for purchase #{purchase.id} (status: #{status_label})"
 end
 
-puts "✅ Created purchase invoices for all purchases with status = 1 (SENT)"
+puts "✅ Created purchase invoices for all purchases (built→DRAFT, reserved→SENT, paid→CONFIRMED)"
 
 # 全てのPurchaseに送料を設定
 puts "🚚 Setting shipping fees for all purchases..."
@@ -1212,5 +1291,428 @@ else
   puts "⚠️  User with id: 1 not found. Skipping InvoiceRecipient creation."
 end
 
+# WOTT商品の購入履歴を作成
+puts "🔧 Creating WOTT product purchase data..."
+
+wott_product = Product.find_by(id: 6) # WOTT Device
+if wott_product
+  # === (1) プロモートチーム本人の購入 ===
+  
+  # 田中美咲（総代理店、WOTTレベル：代理店）のWOTT自己購入
+  tanaka = User.find_by(name: "田中美咲")
+  if tanaka && tanaka.wott_level && ['総代理店', '代理店', 'サポーター'].include?(tanaka.wott_level.name)
+    purchase = Purchase.create!(
+      user_id: tanaka.id,
+      purchased_at: "2025-10-15 10:00:00",
+      status: 'paid'
+    )
+    
+    wott_price = ProductPrice.find_by(product: wott_product, wott_level: tanaka.wott_level)&.price || wott_product.base_price
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: wott_product,
+      quantity: 1,
+      unit_price: wott_product.base_price,
+      seller_price: wott_price
+    )
+    
+    puts "  Created WOTT self-purchase for #{tanaka.name} (WOTTレベル: #{tanaka.wott_level.name}, 価格: ¥#{wott_price})"
+  end
+  
+  # 鈴木愛美（代理店、WOTTレベル：サポーター）のWOTT自己購入
+  suzuki = User.find_by(name: "鈴木愛美")
+  if suzuki && suzuki.wott_level && ['総代理店', '代理店', 'サポーター'].include?(suzuki.wott_level.name)
+    purchase = Purchase.create!(
+      user_id: suzuki.id,
+      purchased_at: "2025-11-02 14:00:00",
+      status: 'paid'  # 鈴木愛美のWOTT購入は支払済み
+    )
+    
+    wott_price = ProductPrice.find_by(product: wott_product, wott_level: suzuki.wott_level)&.price || wott_product.base_price
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: wott_product,
+      quantity: 1,
+      unit_price: wott_product.base_price,
+      seller_price: wott_price
+    )
+    
+    puts "  Created WOTT self-purchase for #{suzuki.name} (WOTTレベル: #{suzuki.wott_level.name}, 価格: ¥#{wott_price})"
+  end
+  
+  # 青木美香（サポーター、WOTTレベル：お客様→サポーターに変更必要）
+  # seeds.rbで青木美香のWOTTレベルをサポーターに設定されているか確認
+  aoki = User.find_by(name: "青木美香")
+  if aoki && aoki.wott_level && ['総代理店', '代理店', 'サポーター'].include?(aoki.wott_level.name)
+    purchase = Purchase.create!(
+      user_id: aoki.id,
+      purchased_at: "2025-11-04 11:00:00",
+      status: 'reserved'  # 青木美香のWOTT購入は予約完了
+    )
+    
+    wott_price = ProductPrice.find_by(product: wott_product, wott_level: aoki.wott_level)&.price || wott_product.base_price
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: wott_product,
+      quantity: 1,
+      unit_price: wott_product.base_price,
+      seller_price: wott_price
+    )
+    
+    puts "  Created WOTT self-purchase for #{aoki.name} (WOTTレベル: #{aoki.wott_level.name}, 価格: ¥#{wott_price})"
+  end
+  
+  # === (2) 直下位のお客様・クリニック・サロンの購入 ===
+  
+  # 田中美咲の直下のお客様（山田太郎）がWOTT購入
+  yamada = User.find_by(name: "山田太郎")
+  if yamada && yamada.referred_by_id == tanaka.id && yamada.level&.name == 'お客様'
+    purchase = Purchase.create!(
+      user_id: yamada.id,
+      purchased_at: "2025-10-20 15:00:00",
+      status: 'paid'
+    )
+    
+    # お客様はWOTTレベルのお客様価格で購入
+    customer_wott_level = WottLevel.find_by(name: 'お客様')
+    wott_price = ProductPrice.find_by(product: wott_product, wott_level: customer_wott_level)&.price || wott_product.base_price
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: wott_product,
+      quantity: 1,
+      unit_price: wott_product.base_price,
+      seller_price: wott_price
+    )
+    
+    puts "  Created WOTT purchase for #{yamada.name} (お客様, 紹介者: #{tanaka.name})"
+  end
+  
+  # 鈴木愛美の直下のサロン（美容サロン花音）がWOTT購入
+  salon = User.find_by(name: "美容サロン花音")
+  if salon && salon.referred_by_id && salon.level&.name == 'サロン'
+    referrer = User.find(salon.referred_by_id)
+    # 紹介者がプロモートチームの場合のみ
+    if referrer && referrer.wott_level && ['総代理店', '代理店', 'サポーター'].include?(referrer.wott_level.name)
+      purchase = Purchase.create!(
+        user_id: salon.id,
+        purchased_at: "2025-11-03 10:00:00",
+        status: 'built'  # サロンのWOTT購入は未払い
+      )
+      
+      # サロンはWOTTレベルのサロン価格で購入
+      salon_wott_level = WottLevel.find_by(name: 'サロン')
+      wott_price = ProductPrice.find_by(product: wott_product, wott_level: salon_wott_level)&.price || wott_product.base_price
+      
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: wott_product,
+        quantity: 1,
+        unit_price: wott_product.base_price,
+        seller_price: wott_price
+      )
+      
+      puts "  Created WOTT purchase for #{salon.name} (サロン, 紹介者: #{referrer.name})"
+    end
+  end
+  
+  # 田中美咲の直下のクリニック（銀座中央クリニック）がWOTT購入
+  clinic = User.find_by(name: "銀座中央クリニック")
+  if clinic && clinic.referred_by_id == tanaka.id && clinic.level&.name == 'クリニック'
+    purchase = Purchase.create!(
+      user_id: clinic.id,
+      purchased_at: "2025-11-05 14:00:00",
+      status: 'paid'  # クリニックのWOTT購入は支払済み
+    )
+    
+    # クリニックはWOTTレベルのクリニック価格で購入
+    clinic_wott_level = WottLevel.find_by(name: 'クリニック')
+    wott_price = ProductPrice.find_by(product: wott_product, wott_level: clinic_wott_level)&.price || wott_product.base_price
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: wott_product,
+      quantity: 1,
+      unit_price: wott_product.base_price,
+      seller_price: wott_price
+    )
+    
+    puts "  Created WOTT purchase for #{clinic.name} (クリニック, 紹介者: #{tanaka.name})"
+  end
+  
+  puts "✅ Created WOTT product purchase data (self-purchases + direct referral purchases)"
+else
+  puts "⚠️  WOTT product (ID: 6) not found. Skipping WOTT purchase data creation."
+end
+
+# 新しく作成されたWOTT購入に対してもpurchase_invoiceと送料を設定
+puts "📄 Creating invoices and shipping fees for WOTT purchases..."
+
+Purchase.includes(:purchase_invoice, :shipping_fees).where(purchase_invoice: nil).find_each do |purchase|
+  # 請求書を作成
+  invoice_number = PurchaseInvoice.generate_invoice_number
+  
+  # 購入ステータスに応じて請求書ステータスを設定
+  invoice_status = case purchase.status
+                   when 'built' then 0
+                   when 'reserved' then 1
+                   when 'paid' then 2
+                   else 0
+                   end
+  invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
+  
+  purchase.create_purchase_invoice!(
+    invoice_number: invoice_number,
+    invoice_date: purchase.purchased_at.to_date,
+    due_date: purchase.purchased_at.to_date + 1.week,
+    total_amount: purchase.total_price,
+    status: invoice_status,
+    sent_at: invoice_sent_at,
+    confirmed_at: (invoice_status == 2 ? purchase.purchased_at : nil)
+  )
+  
+  # 送料を設定
+  purchase.purchase_items.includes(:product).each do |item|
+    product = item.product
+    unless purchase.shipping_fees.where(shipping_type: product.shipping_type).exists?
+      purchase.shipping_fees.create!(
+        shipping_type: product.shipping_type,
+        amount: product.shipping_fee_amount
+      )
+    end
+  end
+  
+  status_label = case invoice_status
+                 when 0 then "DRAFT"
+                 when 1 then "SENT"
+                 when 2 then "CONFIRMED"
+                 else "UNKNOWN"
+                 end
+  puts "  Created invoice and shipping for purchase #{purchase.id} (status: #{status_label})"
+end
+
+# MANNERSOUND商品の購入履歴を作成
+puts "🎵 Creating MANNERSOUND product purchase data..."
+
+mannersound_products = Product.where(id: 7..14) # MANNERSOUND商品（ID: 7-14）
+if mannersound_products.any?
+  # 田中美咲（総代理店）のMANNERSOUND購入
+  tanaka = User.find_by(name: "田中美咲")
+  if tanaka
+    # 2025年10月に複数のMANNERSOUND商品を購入
+    purchase = Purchase.create!(
+      user_id: tanaka.id,
+      purchased_at: "2025-10-20 11:00:00",
+      status: 'paid'
+    )
+    
+    # MANNERSOUND MINI（ID: 7）を2個購入
+    ms_mini = mannersound_products.find_by(id: 7)
+    if ms_mini
+      ms_price = ProductPrice.find_by(product: ms_mini, level: tanaka.level)&.price || ms_mini.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_mini,
+        quantity: 2,
+        unit_price: ms_mini.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND MINI purchase for #{tanaka.name} (数量: 2)"
+    end
+    
+    # MANNERSOUND STANDARD（ID: 8）を1個購入
+    ms_standard = mannersound_products.find_by(id: 8)
+    if ms_standard
+      ms_price = ProductPrice.find_by(product: ms_standard, level: tanaka.level)&.price || ms_standard.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_standard,
+        quantity: 1,
+        unit_price: ms_standard.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND STANDARD purchase for #{tanaka.name} (数量: 1)"
+    end
+  end
+  
+  # 鈴木愛美（代理店）のMANNERSOUND購入
+  suzuki = User.find_by(name: "鈴木愛美")
+  if suzuki
+    # 2025年11月に購入
+    purchase = Purchase.create!(
+      user_id: suzuki.id,
+      purchased_at: "2025-11-05 14:30:00",
+      status: 'reserved'  # 鈴木愛美のMANNERSOUND購入は予約完了
+    )
+    
+    # MANNERSOUND MINI（ID: 7）を3個購入
+    ms_mini = mannersound_products.find_by(id: 7)
+    if ms_mini
+      ms_price = ProductPrice.find_by(product: ms_mini, level: suzuki.level)&.price || ms_mini.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_mini,
+        quantity: 3,
+        unit_price: ms_mini.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND MINI purchase for #{suzuki.name} (数量: 3)"
+    end
+  end
+  
+  # 中村結衣（アドバイザー）のMANNERSOUND購入
+  nakamura = User.find_by(name: "中村結衣")
+  if nakamura
+    # 2025年11月に購入
+    purchase = Purchase.create!(
+      user_id: nakamura.id,
+      purchased_at: "2025-11-08 10:00:00",
+      status: 'built'  # 中村結衣のMANNERSOUND購入は未払い
+    )
+    
+    # MANNERSOUND STANDARD（ID: 8）を1個購入
+    ms_standard = mannersound_products.find_by(id: 8)
+    if ms_standard
+      ms_price = ProductPrice.find_by(product: ms_standard, level: nakamura.level)&.price || ms_standard.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_standard,
+        quantity: 1,
+        unit_price: ms_standard.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND STANDARD purchase for #{nakamura.name} (数量: 1)"
+    end
+  end
+  
+  # 美香サロン（サロン）のMANNERSOUND購入
+  aoki_salon = User.find_by(name: "美香サロン")
+  if aoki_salon
+    # 2025年11月に購入
+    purchase = Purchase.create!(
+      user_id: aoki_salon.id,
+      purchased_at: "2025-11-10 15:00:00",
+      status: 'paid'  # 美香サロンのMANNERSOUND購入は支払済み
+    )
+    
+    # MANNERSOUND MINI（ID: 7）を5個購入
+    ms_mini = mannersound_products.find_by(id: 7)
+    if ms_mini
+      ms_price = ProductPrice.find_by(product: ms_mini, level: aoki_salon.level)&.price || ms_mini.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_mini,
+        quantity: 5,
+        unit_price: ms_mini.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND MINI purchase for #{aoki_salon.name} (数量: 5)"
+    end
+  end
+  
+  # 銀座中央クリニック（クリニック）のMANNERSOUND購入
+  ginza_clinic = User.find_by(name: "銀座中央クリニック")
+  if ginza_clinic
+    # 2025年11月に購入
+    purchase = Purchase.create!(
+      user_id: ginza_clinic.id,
+      purchased_at: "2025-11-11 09:00:00",
+      status: 'reserved'  # 銀座中央クリニックのMANNERSOUND購入は予約完了
+    )
+    
+    # MANNERSOUND STANDARD（ID: 8）を2個購入
+    ms_standard = mannersound_products.find_by(id: 8)
+    if ms_standard
+      ms_price = ProductPrice.find_by(product: ms_standard, level: ginza_clinic.level)&.price || ms_standard.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_standard,
+        quantity: 2,
+        unit_price: ms_standard.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND STANDARD purchase for #{ginza_clinic.name} (数量: 2)"
+    end
+  end
+  
+  puts "✅ Created MANNERSOUND product purchase data"
+  
+  # 新しく作成されたMANNERSOUND購入に対してもpurchase_invoiceと送料を設定
+  puts "📄 Creating invoices and shipping fees for MANNERSOUND purchases..."
+  
+  Purchase.includes(:purchase_invoice, :shipping_fees).where(purchase_invoice: nil).find_each do |purchase|
+    # 請求書を作成
+    invoice_number = PurchaseInvoice.generate_invoice_number
+    
+    # 購入ステータスに応じて請求書ステータスを設定
+    invoice_status = case purchase.status
+                     when 'built' then 0
+                     when 'reserved' then 1
+                     when 'paid' then 2
+                     else 0
+                     end
+    invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
+    
+    purchase.create_purchase_invoice!(
+      invoice_number: invoice_number,
+      invoice_date: purchase.purchased_at.to_date,
+      due_date: purchase.purchased_at.to_date + 1.week,
+      total_amount: purchase.total_price,
+      status: invoice_status,
+      sent_at: invoice_sent_at,
+      confirmed_at: (invoice_status == 2 ? purchase.purchased_at : nil)
+    )
+    
+    # 送料を設定
+    purchase.purchase_items.includes(:product).each do |item|
+      product = item.product
+      unless purchase.shipping_fees.where(shipping_type: product.shipping_type).exists?
+        purchase.shipping_fees.create!(
+          shipping_type: product.shipping_type,
+          amount: product.shipping_fee_amount
+        )
+      end
+    end
+    
+    status_label = case invoice_status
+                   when 0 then "DRAFT"
+                   when 1 then "SENT"
+                   when 2 then "CONFIRMED"
+                   else "UNKNOWN"
+                   end
+    puts "  Created invoice and shipping for purchase #{purchase.id} (status: #{status_label})"
+  end
+else
+  puts "⚠️  MANNERSOUND products (ID: 7-14) not found. Skipping MANNERSOUND purchase data creation."
+end
+
+# すべてのユーザーに対して初期レベル履歴を作成
+puts "📋 Creating initial user level histories..."
+
+User.find_each do |user|
+  if user.user_level_histories.empty?
+    # 初期履歴を作成
+    user.user_level_histories.create!(
+      level_id: user.level_id,
+      previous_level_id: nil,
+      wott_level_id: user.wott_level_id,
+      previous_wott_level_id: nil,
+      effective_from: user.created_at || Time.current,
+      change_reason: "初期レベル設定",
+      changed_by_id: 1  # アジアビジネストラストのID
+    )
+  else
+    # 既存の履歴にWOTTレベルを追加（wott_level_idがnilの場合のみ）
+    user.user_level_histories.where(wott_level_id: nil).update_all(
+      wott_level_id: user.wott_level_id,
+      previous_wott_level_id: user.wott_level_id
+    )
+  end
+end
+
+puts "✅ Created initial user level histories for all users"
 puts "✅ Set shipping fees for all purchases"
 puts "✅ Seeding completed!"

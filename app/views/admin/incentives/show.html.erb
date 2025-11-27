@@ -1,6 +1,6 @@
 <!-- 固定ヘッダーセクション -->
 <div class="sticky-header">
-  <div class="container-fluid">
+  <div class="container-fluid" style="padding-top: 10px;">
     <div class="row">
       <div class="col-12">
         <div class="card border shadow-sm bg-white">
@@ -23,7 +23,7 @@
                 </div>
               </div>
               <div class="col-md-6">
-                <div class="d-flex align-items-center justify-content-end" style="gap: 0.5rem;">
+                <div class="d-flex align-items-center justify-content-end incentive-header-controls">
                   <!-- 対象月選択 -->
                   <div class="flex-shrink-0">
                     <% 
@@ -35,7 +35,7 @@
                     %>
                     <%= form_with url: form_url, method: :get, local: true, class: "d-flex align-items-center", id: "month-form" do |f| %>
                       <label class="form-label me-2 mb-0 text-dark small text-nowrap">対象月:</label>
-                      <div class="input-group" style="width: 160px;">
+                      <div class="input-group incentive-month-input">
                         <span class="input-group-text bg-white border-0 p-1">
                           <i class="fas fa-calendar-alt text-muted"></i>
                         </span>
@@ -73,7 +73,7 @@
 </div>
 
 <!-- メインコンテンツエリア -->
-<div class="container-fluid" style="padding-top: 20px;">
+<div class="container-fluid incentive-main-content">
 
   <% if @target_user.level&.value&.in?([4, 5, 7]) %>
     <!-- お客様（レベル4,5,6）の場合の表示 -->
@@ -224,123 +224,3 @@
     </div>
   <% end %>
 </div>
-<style>
-  /* コンパクトな固定ヘッダーエリア */
-  .sticky-header {
-    position: fixed !important;
-    top: 60px !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 9999 !important;
-    background: white !important;
-    border-bottom: 2px solid #dee2e6 !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-    width: 100% !important;
-    height: 80px !important; /* 固定の高さを設定 */
-  }
-  
-  /* メインコンテンツエリアのマージン調整 */
-  .sticky-header + .container-fluid {
-    margin-top: 80px !important; /* ヘッダーの高さに合わせて調整 */
-  }
-  
-  /* カード内のコンテンツ - コンパクト化 */
-  .sticky-header .card {
-    border: none !important;
-    box-shadow: none !important;
-    height: 100% !important;
-  }
-  
-  .sticky-header .card-body {
-    background: white !important;
-    padding: 0.75rem 1rem !important; /* パディングを縮小 */
-    height: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  
-  /* アイコンとテキストのサイズ調整 */
-  .sticky-header h4 {
-    font-size: 1.1rem !important;
-    margin-bottom: 0 !important;
-  }
-  
-  .sticky-header small {
-    font-size: 0.75rem !important;
-    white-space: nowrap !important;
-  }
-  
-  .sticky-header .fa-user-tie {
-    font-size: 1.2rem !important;
-  }
-  
-  /* フォーム要素のコンパクト化 */
-  .sticky-header .form-control-sm {
-    font-size: 0.8rem !important;
-    padding: 0.25rem 0.5rem !important;
-  }
-  
-  .sticky-header .input-group-text {
-    padding: 0.25rem 0.5rem !important;
-  }
-  
-  .sticky-header .btn-sm {
-    font-size: 0.75rem !important;
-    padding: 0.25rem 0.5rem !important;
-  }
-  
-  /* 戻るボタンのスタイル */
-  .sticky-header .btn-outline-secondary {
-    border-color: #6c757d !important;
-    color: #6c757d !important;
-    font-size: 0.75rem !important;
-  }
-  
-  .sticky-header .btn-outline-secondary:hover {
-    background-color: #6c757d !important;
-    border-color: #6c757d !important;
-    color: white !important;
-  }
-  
-  /* 改行防止 */
-  .sticky-header .flex-nowrap {
-    flex-wrap: nowrap !important;
-  }
-  
-  .sticky-header .text-nowrap {
-    white-space: nowrap !important;
-  }
-  
-  .sticky-header .flex-shrink-0 {
-    flex-shrink: 0 !important;
-  }
-  
-  /* 右側のボタンとフォームの配置 */
-  .sticky-header .gap-2 {
-    gap: 0.5rem !important;
-  }
-  
-  .sticky-header .d-flex.gap-2 > * {
-    flex-shrink: 0 !important;
-  }
-  
-  /* レスポンシブ対応 */
-  @media (max-width: 768px) {
-    .sticky-header {
-      top: 50px !important;
-      height: 70px !important;
-    }
-    
-    .sticky-header + .container-fluid {
-      margin-top: 70px !important;
-    }
-    
-    .sticky-header .card-body {
-      padding: 0.5rem !important;
-    }
-    
-    .sticky-header h4 {
-      font-size: 1rem !important;
-    }
-  }
-</style>

@@ -5,6 +5,14 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
+nav.navbar.custom-navbar .container-fluid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
 /* トップページでも確実にスタイルを適用 */
 body .custom-navbar,
 html body .custom-navbar {
@@ -22,6 +30,10 @@ html body .navbar-brand {
     letter-spacing: 0.5px !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
     color: #ffffff !important;
+    flex: 0 0 auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
 }
 
 .navbar-brand:hover,
@@ -155,12 +167,29 @@ body .custom-dropdown-toggle:focus {
 
 /* レスポンシブ対応 */
 @media (max-width: 991.98px) {
+    .navbar-collapse {
+        background-color: #2c3e50;
+        padding: 1rem;
+        margin-top: 0.5rem;
+        border-radius: 0.375rem;
+    }
+
+    .navbar-nav {
+        width: 100%;
+    }
+
+    .nav-item {
+        width: 100%;
+        text-align: left;
+    }
+
     .custom-dropdown-menu {
         position: static;
         box-shadow: none;
         border: none;
         background-color: #495057;
         border-radius: 0;
+        width: 100%;
         /* スマホでも初期状態は非表示 */
         max-height: 0;
         overflow: hidden;
@@ -181,6 +210,7 @@ body .custom-dropdown-toggle:focus {
 
     .custom-dropdown-item {
         color: #ffffff;
+        padding-left: 2rem;
     }
 
     .custom-dropdown-item:hover {
@@ -193,6 +223,7 @@ body .custom-dropdown-toggle:focus {
 /* ナビゲーショントグラー */
 .navbar-toggler {
     border-color: rgba(255, 255, 255, 0.3);
+    margin-left: auto;
 }
 
 .navbar-toggler:focus {
@@ -201,4 +232,28 @@ body .custom-dropdown-toggle:focus {
 
 .navbar-toggler-icon {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* モバイルでのナビゲーションバー調整 */
+@media (max-width: 991.98px) {
+    nav.navbar.custom-navbar .container-fluid {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+    
+    .custom-navbar .navbar-brand,
+    nav.custom-navbar .navbar-brand,
+    .navbar.custom-navbar .navbar-brand {
+        flex: 0 0 auto !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+    }
+    
+    .custom-navbar .navbar-toggler {
+        margin-left: auto;
+    }
 }

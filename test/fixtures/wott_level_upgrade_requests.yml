@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  current_wott_level_id: 1
+  requested_wott_level_id: 1
+  status: MyString
+  admin_notes: MyText
+  processed_by_id: 1
+  processed_at: 2025-11-11 15:40:35
+
+two:
+  user: two
+  current_wott_level_id: 1
+  requested_wott_level_id: 1
+  status: MyString
+  admin_notes: MyText
+  processed_by_id: 1
+  processed_at: 2025-11-11 15:40:35

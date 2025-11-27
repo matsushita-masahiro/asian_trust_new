@@ -34,6 +34,9 @@ class Purchase < ApplicationRecord
   # コールバック：購入ステータスがpaidになった時にpurchase_invoiceのステータスも更新
   after_update :update_purchase_invoice_status, if: :saved_change_to_status?
   
+  # コールバック：WOTT購入時にサポーターの昇格申請を作成（トランザクション完了後）
+  after_commit :check_wott_level_upgrade, on: :create
+  
 
 
   # 💰 合計金額（全アイテムの合計）- seller_priceベース
@@ -198,6 +201,55 @@ class Purchase < ApplicationRecord
     purchases.sum { |purchase| 
       purchase.purchase_items.sum { |item| item.quantity * item.seller_price } 
     }
+  end
+
+  # WOTT購入時のレベル昇格チェック
+  def check_wott_level_upgrade
+    # WOTT商品が含まれているかチェック
+    wott_items = purchase_items.joins(:product).where(products: { category: 'wott' })
+    return unless wott_items.exists?
+
+    # 購入者がサポーターレベルかチェック
+    supporter_level = Level.find_by(name: 'サポーター')
+    return unless user.wott_level_id == supporter_level&.id
+
+    # ユーザーのWOTT購入累計台数を計算
+    total_wott_quantity = user.purchases
+                              .joins(purchase_items: :product)
+                              .where(products: { category: 'wott' })
+                              .sum('purchase_items.quantity')
+
+    # 累計台数に応じた昇格レベルを決定
+    # 5台以上: 総代理店
+    # 1台以上: 代理店
+    requested_level = if total_wott_quantity >= 5
+                       Level.find_by(name: '総代理店')
+                     elsif total_wott_quantity >= 1
+                       Level.find_by(name: '代理店')
+                     else
+                       nil
+                     end
+
+    return unless requested_level
+
+    # 既に同じレベルへの昇格申請が存在しないかチェック
+    existing_request = WottLevelUpgradeRequest.pending.find_by(
+      user_id: user.id,
+      requested_wott_level_id: requested_level.id
+    )
+    return if existing_request
+
+    # 既に同じレベル以上の場合はスキップ
+    return if user.wott_level_id && user.wott_level.value <= requested_level.value
+
+    # 昇格申請を作成
+    WottLevelUpgradeRequest.create!(
+      user: user,
+      current_wott_level_id: user.wott_level_id,
+      requested_wott_level_id: requested_level.id,
+      purchase: self,
+      status: 'pending'
+    )
   end
 
 end

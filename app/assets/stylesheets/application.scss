@@ -10,16 +10,76 @@
 @use "inquiries";
 @use "incentives";
 @use "admin";
-@use "admin/purchases";
-@use "admin/users";
+@use "admin/purchases" as admin-purchases;
+@use "admin/users" as admin-users;
+@use "admin/incentive" as admin-incentive;
+@use "admin/dashboard" as admin-dashboard;
+@use "admin/clinic_reservation" as admin-clinic-reservation;
+@use "admin/user_bonus" as admin-user-bonus;
+@use "admin/level_change_application" as admin-level-change;
+@use "admin/system_health" as admin-system-health;
+@use "admin/products" as admin-products;
+@use "admin/bonuses" as admin-bonuses;
+@use "admin/invoice_status" as admin-invoice-status;
+@use "users";
+@use "orders";
+@use "carts";
+@use "invoices";
+@use "referrals";
+@use "clinic_reservations";
+@use "payments";
+@use "home";
+@use "hierarchy";
+@use "purchase_invoices";
 @use "header";
 @use "postal_code_auto_fill";
 
+/* 全体のフォント設定 */
 body {
-  font-family: "メイリオ", "Meiryo", sans-serif !important;
+  padding-top: 70px; /* ナビゲーションバーの高さ分のパディング */
+  font-family: "Inter", "メイリオ", "Meiryo", sans-serif !important;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* 見出しフォント */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Poppins", "Inter", "メイリオ", "Meiryo", sans-serif !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ボタンフォント */
+.btn {
+  font-family: "Inter", "メイリオ", "Meiryo", sans-serif !important;
   font-weight: 500;
-  line-height: 1.8;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.2px;
+}
+
+/* カードタイトル */
+.card-title {
+  font-family: "Poppins", "Inter", "メイリオ", "Meiryo", sans-serif !important;
+  font-weight: 600;
+}
+
+/* テーブルヘッダー */
+.table th {
+  font-family: "Inter", "メイリオ", "Meiryo", sans-serif !important;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* ナビゲーション要素の確実な表示 */
+.navbar-nav .nav-link,
+.custom-dropdown-toggle {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 section {

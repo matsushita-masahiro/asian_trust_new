@@ -154,7 +154,9 @@ class Admin::UsersController < Admin::BaseController
 
   def edit
     @levels = Level.where.not(name: 'アジアビジネストラスト').order(:value)
-    @users = User.where.not(id: @user.id).order(:name, :email)
+    # 紹介者として選択できるのは、現在のユーザーの祖先（上位ユーザー）のみ
+    ancestor_ids = @user.ancestors.map(&:id)
+    @users = User.where(id: ancestor_ids).order(:name, :email)
     @level_histories = @user.user_level_histories.includes(:level, :changed_by).recent.limit(10)
     
     # 申請中のレベル変更情報を取得
@@ -198,9 +200,17 @@ class Admin::UsersController < Admin::BaseController
         redirect_to edit_admin_user_path(@user)
       end
     else
-      # 通常の更新処理
+      # 通常の更新処理（WOTTレベル変更を含む）
       if @user.update(user_params)
-        redirect_to admin_user_path(@user), notice: 'ユーザー情報が更新されました。'
+        # WOTTレベル変更があった場合のメッセージ
+        wott_level_changed = params[:user][:wott_level_id].present? && 
+                            params[:user][:wott_level_id].to_i != @user.wott_level_id_was
+        
+        if wott_level_changed
+          redirect_to admin_user_path(@user), notice: 'WOTTレベルが更新されました。'
+        else
+          redirect_to admin_user_path(@user), notice: 'ユーザー情報が更新されました。'
+        end
       else
         session[:form_params] = params.to_unsafe_h
         redirect_to edit_admin_user_path(@user)
@@ -283,7 +293,7 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def user_params
-    params.require(:user).permit(:name, :email, :lstep_user_id, :level_id, :referred_by_id)
+    params.require(:user).permit(:name, :email, :lstep_user_id, :level_id, :referred_by_id, :wott_level_id)
   end
 
   def validate_level_change_application

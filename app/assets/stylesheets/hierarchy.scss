@@ -1,0 +1,153 @@
+// 階層図ページのスタイル
+
+.hierarchy-container-vertical {
+  font-family: "Courier New", monospace;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  overflow: auto;
+  min-height: 400px;
+}
+
+.hierarchy-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.hierarchy-row.level-0 {
+  margin-bottom: 30px;
+}
+
+.user-node {
+  padding: 10px 15px;
+  background: white;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  width: 280px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-node.current-user {
+  border-left-color: #28a745;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  font-weight: bold;
+}
+
+.children-container {
+  margin-left: 30px;
+  flex: 1;
+  position: relative;
+}
+
+.children-container::before {
+  content: "";
+  position: absolute;
+  left: -15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #dee2e6;
+}
+
+.children-container .hierarchy-row::before {
+  content: "";
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  width: 15px;
+  height: 2px;
+  background-color: #dee2e6;
+}
+
+.user-name {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.user-stats {
+  font-size: 11px;
+  color: #6c757d;
+}
+
+/* レベル別の色分け */
+.level-0 .user-node {
+  border-left-color: #28a745;
+}
+.level-1 .user-node {
+  border-left-color: #fd7e14;
+}
+.level-2 .user-node {
+  border-left-color: #ffc107;
+}
+.level-3 .user-node {
+  border-left-color: #17a2b8;
+}
+.level-4 .user-node {
+  border-left-color: #20c997;
+}
+.level-5 .user-node {
+  border-left-color: #6f42c1;
+}
+.level-6 .user-node {
+  border-left-color: #e83e8c;
+}
+.level-7 .user-node {
+  border-left-color: #dc3545;
+}
+
+/* リンクスタイル */
+.user-node-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: all 0.2s ease;
+}
+
+.user-node-link:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
+.user-node-link:hover .user-node {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.user-node-link .user-node {
+  transition: all 0.2s ease;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .user-node {
+    width: 250px;
+  }
+
+  .children-container {
+    margin-left: 20px;
+  }
+
+  .hierarchy-row {
+    flex-direction: column;
+  }
+
+  .children-container {
+    margin-left: 0;
+    margin-top: 15px;
+  }
+
+  .children-container::before {
+    display: none;
+  }
+
+  .children-container .hierarchy-row::before {
+    display: none;
+  }
+}

@@ -100,17 +100,17 @@ class InvoicePdfService
         
         Rails.logger.info "InvoicePdfService: Direct S3 upload completed to #{bucket_name}"
         
-        # Active Storageのblobを作成
-        blob = ActiveStorage::Blob.create!(
-          key: key,
+        # Active Storageのblobを作成（identify: falseで検証をスキップ）
+        blob = ActiveStorage::Blob.create_and_upload!(
+          io: StringIO.new(pdf_content),
           filename: filename,
           content_type: 'application/pdf',
-          byte_size: pdf_content.bytesize,
-          checksum: Digest::MD5.base64digest(pdf_content),
-          service_name: 's3_invoices'
+          service_name: 's3_invoices',
+          identify: false
         )
         
-        # Invoiceに添付
+        # Invoiceに添付（既存の添付を削除してから新しいものを添付）
+        @invoice.pdf_file.purge if @invoice.pdf_file.attached?
         @invoice.pdf_file.attach(blob)
         
         Rails.logger.info "InvoicePdfService: PDF uploaded to invoices bucket successfully: #{filename}"

@@ -141,6 +141,14 @@ Rails.application.routes.draw do
         patch :certify  # アドバイザーに認定
       end
     end
+    
+    # WOTTレベル昇格申請管理
+    resources :wott_level_upgrade_requests, only: [:index, :show] do
+      member do
+        post :approve  # 承認
+        post :reject   # 却下
+      end
+    end
   end
 
   # インセンティブ機能

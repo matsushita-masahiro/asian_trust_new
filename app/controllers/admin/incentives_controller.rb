@@ -49,8 +49,22 @@ class Admin::IncentivesController < Admin::BaseController
     service = IncentiveCalculationService.new(@target_user, @start_date, @end_date)
     @detailed_incentives = service.calculate_detailed_incentives
     
+    # デバッグログ
+    Rails.logger.debug "=== Breakdown Debug ==="
+    Rails.logger.debug "User: #{@target_user.name}"
+    Rails.logger.debug "Period: #{@start_date} to #{@end_date}"
+    Rails.logger.debug "Total Incentive: #{@detailed_incentives[:total]}"
+    Rails.logger.debug "Purchase Details Count: #{@detailed_incentives.dig(:details, :purchase_details)&.count}"
+    @detailed_incentives.dig(:details, :purchase_details)&.each do |d|
+      Rails.logger.debug "  - #{d[:product_name]} (#{d[:product_category]}): ¥#{d[:total_incentive]}"
+    end
+    
     # ユーザーの商品単価情報を取得
     @user_product_prices = get_user_product_prices(@target_user)
+    
+    # 対象月の開始時点でのレベルを取得（表示用）
+    @display_level = @target_user.level_at(@start_date)
+    @display_wott_level = @target_user.wott_level_at(@start_date)
   end
   
   private
@@ -78,9 +92,9 @@ class Admin::IncentivesController < Admin::BaseController
     
     @start_date = @target_date.beginning_of_month
     if @target_date.strftime("%Y-%m") == Date.current.strftime("%Y-%m")
-      @end_date = Date.current
+      @end_date = Date.current.end_of_day
     else
-      @end_date = @target_date.end_of_month
+      @end_date = @target_date.end_of_month.end_of_day
     end
     
     @month_str = @target_month

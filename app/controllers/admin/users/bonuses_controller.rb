@@ -32,6 +32,21 @@ class Admin::Users::BonusesController < Admin::BaseController
       incentive_data = @user.monthly_incentive_with_details(@selected_month)
       @total_bonus = incentive_data[:total] || 0
       
+      # 支払済みと未払いのインセンティブを分けて計算
+      @paid_bonus = 0
+      @unpaid_bonus = 0
+      
+      @purchases_with_descendants.each do |purchase|
+        purchase.purchase_items.each do |item|
+          item_bonus = @user.bonus_for_purchase_item(item)
+          if purchase.status == 'paid'
+            @paid_bonus += item_bonus
+          else
+            @unpaid_bonus += item_bonus
+          end
+        end
+      end
+      
       # 直接紹介者
       @referrals = @user.referrals
       
@@ -44,6 +59,8 @@ class Admin::Users::BonusesController < Admin::BaseController
       @purchases_with_descendants = Purchase.none
       @total_sales_amount = 0
       @total_bonus = 0
+      @paid_bonus = 0
+      @unpaid_bonus = 0
       @referrals = User.none
       
       flash.now[:error] = "データの取得中にエラーが発生しました。"

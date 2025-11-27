@@ -13,7 +13,7 @@
             <% end %>
           <% end %>
           
-          <% if @user == current_user && current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
+          <% if @user == current_user && current_user&.level&.value && [1, 2, 3].include?(current_user.level.value) %>
             <%= link_to new_referral_invitation_path, class: "btn btn-primary me-2" do %>
               <i class="fas fa-user-plus me-1"></i>紹介機能
             <% end %>
@@ -119,6 +119,22 @@
                 </span>
               </td>
             </tr>
+            <tr>
+              <th>WOTT購入実績:</th>
+              <td>
+                <span class="fs-6 fw-bold" style="color: #ff6b6b;">
+                  <%= @user.total_wott_purchases %>台
+                </span>
+                <% if @user.total_wott_purchases > 0 %>
+                  <% recommended_level = @user.recommended_wott_level %>
+                  <% if recommended_level && @user.wott_level_id != recommended_level.id %>
+                    <span class="badge bg-warning text-dark ms-2">
+                      <i class="fas fa-arrow-up me-1"></i><%= recommended_level.name %>への昇格可能
+                    </span>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
 
           </table>
         </div>
@@ -184,8 +200,8 @@
     <% end %>
   </div>
 
-  <!-- 紹介URL・QRコード（自分のアカウントのみ表示） -->
-  <% if @user == current_user && current_user&.level&.value && ![4, 5, 7].include?(current_user.level.value) %>
+  <!-- 紹介URL・QRコード（総代理店、代理店、アドバイザーのみ表示） -->
+  <% if @user == current_user && current_user&.level&.value && [1, 2, 3].include?(current_user.level.value) %>
     <div class="row mb-4">
       <div class="col-12">
         <div class="card">
@@ -556,9 +572,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Bootstrap JavaScript CDN (fallback) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<style>
-.email-edit-form {
-  display: none;
-}
-</style>

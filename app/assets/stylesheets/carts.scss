@@ -1,0 +1,105 @@
+// カートページのスタイル
+
+/* 住所選択カードのスタイル */
+.address-option {
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.address-option:hover {
+  border-color: #0d6efd;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.address-option .form-check-input:checked ~ .form-check-label .card-body,
+.address-option:has(.form-check-input:checked) {
+  border-color: #0d6efd;
+  background-color: #f8f9ff;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+}
+
+.address-option .form-check-input:checked ~ .form-check-label h6 {
+  color: #0d6efd !important;
+}
+
+.address-option .form-check-label {
+  cursor: pointer;
+  padding: 0;
+}
+
+.address-option .form-check {
+  margin-bottom: 0;
+}
+
+.address-option .form-check-input {
+  margin-top: 0.5rem;
+  transform: scale(1.2);
+}
+
+/* 選択された住所の表示エリア */
+#selected-address-display,
+#multi-selected-address-display {
+  border-left: 4px solid #198754;
+  background-color: #f8fff9;
+}
+
+/* 住所未登録時のメッセージ */
+.alert-danger {
+  border-left: 4px solid #dc3545;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .address-option .form-check-input {
+    transform: scale(1.4);
+    margin-top: 0.75rem;
+  }
+
+  .address-option h6 {
+    font-size: 1rem;
+  }
+
+  .address-option .small {
+    font-size: 0.875rem;
+  }
+}
+
+/* アクセシビリティ改善 */
+.address-option:focus-within {
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* 既存のdelivery-optionスタイルも保持 */
+.delivery-option .btn-check:checked + .btn-outline-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.delivery-option .btn-check:checked + .btn-outline-info {
+  background-color: #0dcaf0;
+  border-color: #0dcaf0;
+  color: white;
+}
+
+.delivery-option .btn-check:checked + .btn-outline-success {
+  background-color: #198754;
+  border-color: #198754;
+  color: white;
+}
+
+.delivery-option .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.delivery-option .btn {
+  transition: all 0.2s ease;
+}

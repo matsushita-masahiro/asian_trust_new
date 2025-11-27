@@ -35,7 +35,26 @@
             <div class="card-body">
               <h6 class="text-muted">ユーザー情報</h6>
               <p><strong>名前:</strong> <%= @target_user.name %></p>
-              <p><strong>レベル:</strong> <span class="badge bg-secondary"><%= @target_user.level_label %></span></p>
+              <p>
+                <strong>レベル:</strong> 
+                <span class="badge bg-secondary"><%= @display_level&.name || @target_user.level_label %></span>
+                <% if @target_user.level && @display_level && @target_user.level.id != @display_level.id %>
+                  <i class="fas fa-arrow-right mx-2"></i>
+                  <span class="badge bg-success"><%= @target_user.level.name %></span>
+                  <small class="text-muted">(現在)</small>
+                <% end %>
+              </p>
+              <% if @display_wott_level %>
+                <p>
+                  <strong>WOTTレベル:</strong> 
+                  <span class="badge bg-info"><%= @display_wott_level.name %></span>
+                  <% if @target_user.wott_level && @target_user.wott_level.id != @display_wott_level.id %>
+                    <i class="fas fa-arrow-right mx-2"></i>
+                    <span class="badge bg-success"><%= @target_user.wott_level.name %></span>
+                    <small class="text-muted">(現在)</small>
+                  <% end %>
+                </p>
+              <% end %>
               <p><strong>期間:</strong> <%= @start_date.strftime("%Y年%m月%d日") %> 〜 <%= @end_date.strftime("%Y年%m月%d日") %></p>
             </div>
           </div>
@@ -62,78 +81,47 @@
 
 
 
-      <!-- ユーザーの商品単価 -->
-      <div class="alert alert-info mb-4">
-        <i class="fas fa-tag me-2"></i><strong><%= @target_user.display_name %>の商品単価:</strong>
-        <% @user_product_prices.each_with_index do |price_info, index| %>
-          <%= price_info[:product].display_name %>: ¥<%= number_with_delimiter(price_info[:price]) %><%= index < @user_product_prices.length - 1 ? ' / ' : '' %>
-        <% end %>
-      </div>
+      <!-- ユーザーの商品単価（上清液のみ表示） -->
+      <% sl_products = @user_product_prices.select { |p| p[:product].category == 'sl' } %>
+      <% if sl_products.any? %>
+        <div class="alert alert-info mb-4">
+          <i class="fas fa-tag me-2"></i><strong><%= @target_user.display_name %>の商品単価:</strong>
+          <% sl_products.each_with_index do |price_info, index| %>
+            <%= price_info[:product].display_name %>: ¥<%= number_with_delimiter(price_info[:price]) %><%= index < sl_products.length - 1 ? ' / ' : '' %>
+          <% end %>
+        </div>
+      <% end %>
 
       <!-- 購入明細 -->
       <% 
         # 全ての購入明細を取得し、購入日で昇順ソート（古いものから）
         all_details = @detailed_incentives.dig(:details, :purchase_details) || []
-        own_sales_details = all_details.select { |d| d[:category] == 'own_sales' }.sort_by { |d| d[:purchase_date] }
-        descendant_details = all_details.select { |d| d[:category] == 'descendant_sales' }.sort_by { |d| d[:purchase_date] }
+        
+        # カテゴリー毎に分類
+        sl_details = all_details.select { |d| d[:product_category] == 'sl' }.sort_by { |d| d[:purchase_date] }
+        wott_details = all_details.select { |d| d[:product_category] == 'wott' }.sort_by { |d| d[:purchase_date] }
+        ms_details = all_details.select { |d| d[:product_category] == 'ms' }.sort_by { |d| d[:purchase_date] }
+        ag_details = all_details.select { |d| d[:product_category] == 'ag' }.sort_by { |d| d[:purchase_date] }
+        
         total_incentive = all_details.sum { |d| d[:total_incentive] || 0 }
+        
+        # カテゴリー毎の明細配列（Productモデルからカテゴリー名を取得）
+        category_details = [
+          { key: 'sl', name: Product.category_name_for('sl'), details: sl_details },
+          { key: 'wott', name: Product.category_name_for('wott'), details: wott_details },
+          { key: 'ms', name: Product.category_name_for('ms'), details: ms_details },
+          { key: 'ag', name: Product.category_name_for('ag'), details: ag_details }
+        ]
       %>
 
-      <!-- 自己購入インセンティブ（WOTT商品） -->
-      <% if own_sales_details.any? %>
+      <!-- カテゴリー毎のインセンティブ表示 -->
+      <% category_details.each do |category| %>
+        <% next if category[:details].empty? %>
+        
         <div class="card mb-4">
           <div class="card-header">
             <h6 class="mb-0">
-              <i class="fas fa-user me-2"></i>自己購入インセンティブ（WOTT商品）
-            </h6>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>購入日</th>
-                    <th>WOTTレベル</th>
-                    <th>商品名</th>
-                    <th class="text-end">基本価格</th>
-                    <th class="text-end">WOTT価格</th>
-                    <th class="text-end">数量</th>
-                    <th class="text-end">インセンティブ単価</th>
-                    <th class="text-end">インセンティブ合計</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% own_sales_details.each do |detail| %>
-                    <tr>
-                      <td><%= detail[:purchase_date]&.strftime("%Y/%m/%d") %></td>
-                      <td><span class="badge bg-info"><%= detail[:calculation_details][:purchaser_level] %></span></td>
-                      <td><%= detail[:product_name] %></td>
-                      <td class="text-end">¥<%= number_with_delimiter(detail[:calculation_details][:base_price] || 0) %></td>
-                      <td class="text-end">¥<%= number_with_delimiter(detail[:calculation_details][:my_price] || 0) %></td>
-                      <td class="text-end"><%= detail[:quantity] %></td>
-                      <td class="text-end">¥<%= number_with_delimiter(detail[:incentive_unit_price]) %></td>
-                      <td class="text-end text-success">¥<%= number_with_delimiter(detail[:total_incentive]) %></td>
-                    </tr>
-                  <% end %>
-                </tbody>
-                <tfoot>
-                  <tr class="table-info fw-bold">
-                    <td colspan="7" class="text-end">自己購入インセンティブ小計</td>
-                    <td class="text-end text-success">¥<%= number_with_delimiter(own_sales_details.sum { |d| d[:total_incentive] || 0 }) %></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        </div>
-      <% end %>
-
-      <!-- 階層差額インセンティブ -->
-      <% if descendant_details.any? %>
-        <div class="card mb-4">
-          <div class="card-header">
-            <h6 class="mb-0">
-              <i class="fas fa-sitemap me-2"></i>階層差額インセンティブ
+              <i class="fas fa-box me-2"></i><%= category[:name] %>のインセンティブ
             </h6>
           </div>
           <div class="card-body">
@@ -143,24 +131,48 @@
                   <tr>
                     <th class="border-end">購入日</th>
                     <th>購入者</th>
-                    <th>商品名</th>
-                    <th class="text-end border-end">購入者単価</th>
-                    <th>直下ユーザー</th>
-                    <th class="text-end border-end">直下ユーザー単価</th>
+                    <% if category[:key] == 'wott' || category[:key] == 'ms' %>
+                      <% if category[:key] == 'wott' %>
+                        <th>WOTTレベル</th>
+                        <th class="text-end">基本価格</th>
+                        <th class="text-end border-end">インセンティブ%</th>
+                      <% else %>
+                        <th>購入者レベル</th>
+                        <th class="text-end">基本価格</th>
+                        <th class="text-end border-end">インセンティブ%</th>
+                      <% end %>
+                    <% else %>
+                      <th>商品名</th>
+                      <th class="text-end border-end">購入者単価</th>
+                      <th>直下ユーザー</th>
+                      <th class="text-end border-end">直下ユーザー単価</th>
+                    <% end %>
                     <th class="text-end">数量</th>
                     <th class="text-end">インセンティブ単価</th>
                     <th class="text-end">インセンティブ合計</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <% descendant_details.each do |detail| %>
+                  <% category[:details].each do |detail| %>
                     <tr>
                       <td class="border-end"><%= detail[:purchase_date]&.strftime("%Y/%m/%d") %></td>
                       <td><%= detail[:purchaser_display_name] %></td>
-                      <td><%= detail[:product_name] %></td>
-                      <td class="text-end border-end">¥<%= number_with_delimiter(detail[:calculation_details][:purchaser_price]) %></td>
-                      <td><%= detail[:direct_referral_display_name] || '-' %></td>
-                      <td class="text-end border-end">¥<%= number_with_delimiter(detail[:direct_referral_price]) %></td>
+                      <% if category[:key] == 'wott' || category[:key] == 'ms' %>
+                        <% if category[:key] == 'wott' %>
+                          <td><span class="badge bg-info"><%= detail[:calculation_details][:purchaser_level] %></span></td>
+                          <td class="text-end">¥<%= number_with_delimiter(detail[:calculation_details][:base_price] || 0) %></td>
+                          <td class="text-end border-end"><%= number_to_percentage((detail[:calculation_details][:incentive_rate] || 0) * 100, precision: 0) %></td>
+                        <% else %>
+                          <td><span class="badge bg-warning text-dark"><%= detail[:calculation_details][:purchaser_level] %></span></td>
+                          <td class="text-end">¥<%= number_with_delimiter(detail[:calculation_details][:base_price] || 0) %></td>
+                          <td class="text-end border-end"><%= number_to_percentage((detail[:calculation_details][:incentive_rate] || 0) * 100, precision: 0) %></td>
+                        <% end %>
+                      <% else %>
+                        <td><%= detail[:product_name] %></td>
+                        <td class="text-end border-end">¥<%= number_with_delimiter(detail[:calculation_details][:purchaser_price]) %></td>
+                        <td><%= detail[:direct_referral_display_name] || '-' %></td>
+                        <td class="text-end border-end">¥<%= number_with_delimiter(detail[:direct_referral_price]) %></td>
+                      <% end %>
                       <td class="text-end"><%= detail[:quantity] %></td>
                       <td class="text-end">¥<%= number_with_delimiter(detail[:incentive_unit_price]) %></td>
                       <td class="text-end text-success">¥<%= number_with_delimiter(detail[:total_incentive]) %></td>
@@ -169,8 +181,8 @@
                 </tbody>
                 <tfoot>
                   <tr class="table-info fw-bold">
-                    <td colspan="8" class="text-end">階層差額インセンティブ小計</td>
-                    <td class="text-end text-success">¥<%= number_with_delimiter(descendant_details.sum { |d| d[:total_incentive] || 0 }) %></td>
+                    <td colspan="<%= (category[:key] == 'wott' || category[:key] == 'ms') ? '7' : '8' %>" class="text-end"><%= category[:name] %>インセンティブ小計</td>
+                    <td class="text-end text-success">¥<%= number_with_delimiter(category[:details].sum { |d| d[:total_incentive] || 0 }) %></td>
                   </tr>
                 </tfoot>
               </table>
@@ -180,7 +192,7 @@
       <% end %>
 
       <!-- 合計 -->
-      <% if own_sales_details.any? || descendant_details.any? %>
+      <% if all_details.any? %>
         <div class="card">
           <div class="card-body">
             <div class="row">
@@ -206,37 +218,3 @@
   </div>
 </div>
 
-<style>
-.breakdown-item {
-  padding: 1rem;
-  border: 1px solid #dee2e6;
-  border-radius: 0.375rem;
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.breakdown-label {
-  font-size: 0.9rem;
-  color: #6c757d;
-  margin-bottom: 0.5rem;
-}
-
-.breakdown-value {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-.incentive-summary-card .summary-value {
-  font-size: 2rem;
-  font-weight: bold;
-}
-
-.table th {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.table td {
-  font-size: 0.9rem;
-}
-</style>

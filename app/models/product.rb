@@ -3,6 +3,14 @@ class Product < ApplicationRecord
     has_many :levels, through: :product_prices
     accepts_nested_attributes_for :product_prices, allow_destroy: true, reject_if: proc { |attr| attr['price'].blank? }
     
+    # カテゴリー名のマッピング定数
+    CATEGORY_NAMES = {
+      'sl' => '幹細胞培養上清液',
+      'wott' => 'WOTT',
+      'ms' => 'MANNERSOUND',
+      'ag' => 'エアガン'
+    }.freeze
+    
     # 論理削除のスコープ
     scope :active, -> { where(deleted_at: nil, is_active: true) }
     scope :deleted, -> { where.not(deleted_at: nil) }
@@ -120,18 +128,12 @@ class Product < ApplicationRecord
     
     # カテゴリー名を取得
     def category_name
-      case category
-      when 'sl'
-        '幹細胞培養上清液'
-      when 'ms'
-        'MANNERSOUND'
-      when 'wott'
-        'WOTT'
-      when 'ag'
-        'エアガン'
-      else
-        'その他'
-      end
+      CATEGORY_NAMES[category] || 'その他'
+    end
+    
+    # クラスメソッド：カテゴリー名を取得
+    def self.category_name_for(category_key)
+      CATEGORY_NAMES[category_key] || 'その他'
     end
     
     # 送料タイプを判定

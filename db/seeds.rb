@@ -339,70 +339,97 @@ company = User.create!(
 user_id_seq += 1
 lstep_id_seq += 1
 
-# クリニック情報を作成（アジアビジネストラストの直下、ID: 2-5）
-puts "🏥 Creating clinic users..."
-clinic_level = levels["クリニック"]
-wott_clinic_level = wott_levels["クリニック"]
+# クリニック情報は最後に作成（最下部に表示するため）
 
-clinics_data = [
-  {
-    name: "銀座中央クリニック",
-    postal_code: "104-0061",
-    address: "東京都中央区銀座７丁目８−８ Isgビル 7F",
-    phone: "03-6280-6901",
-    email: "ginze-central-clinic@example.com"
-  },
-  {
-    name: "ティファクリニック大宮院",
-    postal_code: "330-0844",
-    address: "埼玉県さいたま市大宮区下町１丁目４５ 松亀センタービル 1F",
-    phone: "048-788-5926",
-    email: "tifa-omiya@example.com"
-  },
-  {
-    name: "ティファクリニック横浜院",
-    postal_code: "220-0004",
-    address: "神奈川県横浜市西区北幸1-1-8 エキニア横浜 7F 705",
-    phone: "045-509-1932",
-    email: "tifa-yokohama@example.com"
-  },
-  {
-    name: "ティファクリニック新宿東口院",
-    postal_code: "160-0022",
-    address: "東京都新宿区新宿3-21-6 龍生堂ビル 7F",
-    phone: "03-6416-0193",
-    email: "tifa-shinjuku-east@example.com"
-  }
-]
+# === 新しい階層構造：アジアビジネストラスト直下のアドバイザーとその下位 ===
+puts "👤 Creating new advisor hierarchy under アジアビジネストラスト..."
 
-clinics_data.each_with_index do |clinic_data, index|
-  user = User.create!(
-    id: user_id_seq,
-    name: clinic_data[:name],
-    phone: generate_unique_phone(clinic_data[:phone], used_phones),
-    email: clinic_data[:email],
-    level_id: clinic_level.id,
-    wott_level_id: wott_clinic_level.id,
-    referred_by_id: company.id,  # アジアビジネストラストの直下に配置
-    password: "clinic_password_#{index + 1}",
-    lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
-    confirmed_at: Time.current
-  )
-  
-  # invoice_baseを作成
-  InvoiceBase.create!(
-    user_id: user.id,
-    company_name: clinic_data[:name],
-    postal_code: clinic_data[:postal_code],
-    address: clinic_data[:address],
-    email: clinic_data[:email]
-  )
-  
-  user_id_seq += 1
-  lstep_id_seq += 1
-end
+# アドバイザー（アジアビジネストラストの直下）
+test_advisor = User.create!(
+  id: user_id_seq,
+  name: "テスト太郎",
+  email: "test_advisor@example.com",
+  password: "111111",
+  phone: generate_unique_phone("090-9999-0001", used_phones),
+  level_id: levels["アドバイザー"].id,
+  wott_level_id: wott_levels["サポーター"].id,
+  referred_by_id: company.id,  # アジアビジネストラストの直下
+  lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+  confirmed_at: Time.current
+)
+user_id_seq += 1
+lstep_id_seq += 1
 
-puts "✅ Created #{clinics_data.length} clinic users under アジアビジネストラスト (ID: 2-5)"
+# 1. アドバイザーの直下にクリニック
+test_clinic = User.create!(
+  id: user_id_seq,
+  name: "テストクリニック",
+  email: "test_clinic@example.com",
+  password: "111111",
+  phone: generate_unique_phone("03-9999-0001", used_phones),
+  level_id: levels["クリニック"].id,
+  wott_level_id: wott_levels["クリニック"].id,
+  referred_by_id: test_advisor.id,
+  lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+  confirmed_at: Time.current
+)
+user_id_seq += 1
+lstep_id_seq += 1
+
+# 2. アドバイザーの直下にサポーター（下位なし）
+test_supporter1 = User.create!(
+  id: user_id_seq,
+  name: "テスト花子",
+  email: "test_supporter1@example.com",
+  password: "111111",
+  phone: generate_unique_phone("090-9999-0002", used_phones),
+  level_id: levels["サポーター"].id,
+  wott_level_id: wott_levels["サポーター"].id,
+  referred_by_id: test_advisor.id,
+  lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+  confirmed_at: Time.current
+)
+user_id_seq += 1
+lstep_id_seq += 1
+
+# 3. アドバイザーの直下にサポーター（下位にサロンあり）
+test_supporter2 = User.create!(
+  id: user_id_seq,
+  name: "テスト次郎",
+  email: "test_supporter2@example.com",
+  password: "111111",
+  phone: generate_unique_phone("090-9999-0003", used_phones),
+  level_id: levels["サポーター"].id,
+  wott_level_id: wott_levels["サポーター"].id,
+  referred_by_id: test_advisor.id,
+  lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+  confirmed_at: Time.current
+)
+user_id_seq += 1
+lstep_id_seq += 1
+
+# サポーター（テスト次郎）の直下にサロン
+test_salon = User.create!(
+  id: user_id_seq,
+  name: "テストサロン",
+  email: "test_salon@example.com",
+  password: "111111",
+  phone: generate_unique_phone("03-9999-0002", used_phones),
+  level_id: levels["サロン"].id,
+  wott_level_id: wott_levels["サロン"].id,
+  referred_by_id: test_supporter2.id,
+  lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+  confirmed_at: Time.current
+)
+user_id_seq += 1
+lstep_id_seq += 1
+
+puts "✅ Created test advisor hierarchy:"
+puts "  - テスト太郎 (Advisor, ID: #{test_advisor.id})"
+puts "    - テストクリニック (Clinic, ID: #{test_clinic.id})"
+puts "    - テスト花子 (Supporter, ID: #{test_supporter1.id})"
+puts "    - テスト次郎 (Supporter, ID: #{test_supporter2.id})"
+puts "      - テストサロン (Salon, ID: #{test_salon.id})"
 
 # 総代理店（level: 総代理店）
 special_agent_names = ["田中美咲", "佐藤花音", "山田優香"]
@@ -518,9 +545,44 @@ end
 
 puts "✅ Created #{advisor_pre_names.length} advisor pre-certification users under #{first_agent.name} (no subordinates - referral function disabled)"
 
-# サロン・クリニック
+# 中村結衣（最初のアドバイザー）の直下にサポーターを作成し、そのサポーターの直下にサロンを作成
+nakamura_yuui = advisors[0]  # 中村結衣
+nakamura_supporter = User.create!(
+  id: user_id_seq,
+  name: "佐々木結衣",
+  email: "nakamura_supporter@example.com",
+  password: "111111",
+  phone: generate_unique_phone("080-5500-1234", used_phones),
+  level_id: levels["サポーター"].id,
+  wott_level_id: wott_levels["サポーター"].id,
+  referred_by_id: nakamura_yuui.id,
+  lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+  confirmed_at: Time.current
+)
+user_id_seq += 1
+lstep_id_seq += 1
+
+# サポーターの直下にサロンを作成
+nakamura_salon = User.create!(
+  id: user_id_seq,
+  name: "美容サロン花音",
+  email: "nakamura_salon@example.com",
+  password: "111111",
+  phone: generate_unique_phone("03-5500-5678", used_phones),
+  level_id: levels["サロン"].id,
+  wott_level_id: wott_levels["サロン"].id,
+  referred_by_id: nakamura_supporter.id,
+  lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+  confirmed_at: Time.current
+)
+user_id_seq += 1
+lstep_id_seq += 1
+
+puts "✅ Created supporter (佐々木結衣) under 中村結衣 and salon (美容サロン花音) under supporter"
+
+# サロン・クリニック（他のアドバイザーの下位）
 salon_clinic_names = [
-  ["美容サロン花音", "田中クリニック"],   # 中村結衣の下位
+  ["田中クリニック"],                   # 中村結衣の下位（クリニックのみ）
   ["エステ美里", "林医院"],             # 林美里の下位
   ["サロン桃花", "森川皮膚科"],         # 森川桃子の下位
   ["ビューティー香織", "清水内科"],     # 清水香織の下位
@@ -534,28 +596,43 @@ salon_clinic_names = [
   ["美和エステ", "吉田クリニック"]      # 吉田美和の下位
 ]
 advisors.each_with_index do |parent, i|
-  [
-    { type: "サロン", name: salon_clinic_names[i][0], email_prefix: "salon" },
-    { type: "クリニック", name: salon_clinic_names[i][1], email_prefix: "clinic" }
-  ].each do |type_data|
-    # 一部のサロン・クリニックをお客様レベルにする（違いを作るため）
-    wott_level = (type_data[:name].include?("美容サロン花音") || type_data[:name].include?("田中クリニック")) ? 
-                 wott_levels["お客様"] : wott_levels[type_data[:type]]
-    
+  # 中村結衣の場合はクリニックのみ作成（サロンは既にサポーター経由で作成済み）
+  if i == 0
     User.create!(
       id: user_id_seq,
-      name: type_data[:name],
-      email: "#{type_data[:email_prefix]}#{i + 1}@example.com",
+      name: salon_clinic_names[i][0],
+      email: "clinic#{i + 1}@example.com",
       password: "111111",
       phone: generate_unique_phone("050-#{4000 + (parent.id * 10) + i}-#{3456 + i}", used_phones),
-      level_id: levels[type_data[:type]].id,
-      wott_level_id: wott_level.id,
+      level_id: levels["クリニック"].id,
+      wott_level_id: wott_levels["クリニック"].id,
       referred_by_id: parent.id,
       lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
       confirmed_at: Time.current
     )
     user_id_seq += 1
     lstep_id_seq += 1
+  else
+    # 他のアドバイザーは通常通りサロンとクリニックを作成
+    [
+      { type: "サロン", name: salon_clinic_names[i][0], email_prefix: "salon" },
+      { type: "クリニック", name: salon_clinic_names[i][1], email_prefix: "clinic" }
+    ].each do |type_data|
+      User.create!(
+        id: user_id_seq,
+        name: type_data[:name],
+        email: "#{type_data[:email_prefix]}#{i + 1}@example.com",
+        password: "111111",
+        phone: generate_unique_phone("050-#{4000 + (parent.id * 10) + i}-#{3456 + i}", used_phones),
+        level_id: levels[type_data[:type]].id,
+        wott_level_id: wott_levels[type_data[:type]].id,
+        referred_by_id: parent.id,
+        lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+        confirmed_at: Time.current
+      )
+      user_id_seq += 1
+      lstep_id_seq += 1
+    end
   end
 end
 
@@ -723,6 +800,106 @@ products = [product2, product3, product4].compact
 if products.empty?
   puts "⚠️  No products found. Skipping purchase data creation."
 else
+  # === テスト階層のユーザーの購入データを作成 ===
+  puts "🛒 Creating purchase data for test hierarchy..."
+  
+  # テスト太郎（アドバイザー）の購入
+  test_advisor = User.find_by(name: "テスト太郎")
+  if test_advisor
+    purchase = Purchase.create!(
+      user_id: test_advisor.id,
+      purchased_at: "2025-11-01 09:00:00",
+      status: 'paid'
+    )
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: products[0],  # 臍帯幹細胞
+      quantity: 10,
+      unit_price: 30000,
+      seller_price: get_seller_price(products[0], test_advisor)
+    )
+    puts "  Created purchase for テスト太郎 (Advisor)"
+  end
+  
+  # テストクリニックの購入
+  test_clinic = User.find_by(name: "テストクリニック")
+  if test_clinic
+    purchase = Purchase.create!(
+      user_id: test_clinic.id,
+      purchased_at: "2025-11-02 10:00:00",
+      status: 'paid'
+    )
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: products[1],  # 歯髄幹細胞
+      quantity: 8,
+      unit_price: 30000,
+      seller_price: get_seller_price(products[1], test_clinic)
+    )
+    puts "  Created purchase for テストクリニック (Clinic)"
+  end
+  
+  # テスト花子（サポーター、下位なし）の購入
+  test_supporter1 = User.find_by(name: "テスト花子")
+  if test_supporter1
+    purchase = Purchase.create!(
+      user_id: test_supporter1.id,
+      purchased_at: "2025-11-03 11:00:00",
+      status: 'paid'
+    )
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: products[0],  # 臍帯幹細胞
+      quantity: 5,
+      unit_price: 30000,
+      seller_price: get_seller_price(products[0], test_supporter1)
+    )
+    puts "  Created purchase for テスト花子 (Supporter)"
+  end
+  
+  # テスト次郎（サポーター、下位にサロンあり）の購入
+  test_supporter2 = User.find_by(name: "テスト次郎")
+  if test_supporter2
+    purchase = Purchase.create!(
+      user_id: test_supporter2.id,
+      purchased_at: "2025-11-04 12:00:00",
+      status: 'paid'
+    )
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: products[1],  # 歯髄幹細胞
+      quantity: 6,
+      unit_price: 30000,
+      seller_price: get_seller_price(products[1], test_supporter2)
+    )
+    puts "  Created purchase for テスト次郎 (Supporter)"
+  end
+  
+  # テストサロンの購入
+  test_salon = User.find_by(name: "テストサロン")
+  if test_salon
+    purchase = Purchase.create!(
+      user_id: test_salon.id,
+      purchased_at: "2025-11-05 13:00:00",
+      status: 'paid'
+    )
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: products[2],  # 脂肪幹細胞
+      quantity: 7,
+      unit_price: 30000,
+      seller_price: get_seller_price(products[2], test_salon)
+    )
+    puts "  Created purchase for テストサロン (Salon)"
+  end
+  
+  puts "✅ Created purchase data for test hierarchy"
+  
   # 田中美咲が自分で購入するデータを作成
   special_agent_1 = User.find_by(name: "田中美咲")
   
@@ -1146,6 +1323,48 @@ if products.any?
     )
   end
   
+  # 佐々木結衣（サポーター、中村結衣の直下）の購入データを作成
+  sasaki = User.find_by(name: "佐々木結衣")
+  if sasaki
+    # 10月に購入
+    purchase = Purchase.create!(
+      user_id: sasaki.id,
+      purchased_at: "2025-10-12 14:00:00",
+      status: 'paid'
+    )
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: products[0],  # 臍帯幹細胞
+      quantity: 5,
+      unit_price: 30000,
+      seller_price: get_seller_price(products[0], sasaki)
+    )
+    
+    puts "✅ Created purchase data for 佐々木結衣 (supporter under 中村結衣)"
+  end
+  
+  # 美容サロン花音（佐々木結衣の直下）の購入データを作成
+  nakamura_salon = User.find_by(name: "美容サロン花音")
+  if nakamura_salon
+    # 10月に購入
+    purchase = Purchase.create!(
+      user_id: nakamura_salon.id,
+      purchased_at: "2025-10-13 15:00:00",
+      status: 'paid'
+    )
+    
+    PurchaseItem.create!(
+      purchase: purchase,
+      product: products[1],  # 歯髄幹細胞
+      quantity: 7,
+      unit_price: 30000,
+      seller_price: get_seller_price(products[1], nakamura_salon)
+    )
+    
+    puts "✅ Created purchase data for 美容サロン花音 (salon under 佐々木結衣)"
+  end
+  
   # サポーターが紹介したサロン・クリニックの購入データを作成（各1行ずつ）
   aoki_salon = User.find_by(name: "美香サロン")
   aoki_clinic = User.find_by(name: "美香クリニック")
@@ -1391,7 +1610,7 @@ if wott_product
     puts "  Created WOTT purchase for #{yamada.name} (お客様, 紹介者: #{tanaka.name})"
   end
   
-  # 鈴木愛美の直下のサロン（美容サロン花音）がWOTT購入
+  # 中村結衣→サポーター（佐々木結衣）の直下のサロン（美容サロン花音）がWOTT購入
   salon = User.find_by(name: "美容サロン花音")
   if salon && salon.referred_by_id && salon.level&.name == 'サロン'
     referrer = User.find(salon.referred_by_id)
@@ -1419,9 +1638,9 @@ if wott_product
     end
   end
   
-  # 田中美咲の直下のクリニック（銀座中央クリニック）がWOTT購入
+  # アジアビジネストラストの直下のクリニック（銀座中央クリニック）がWOTT購入
   clinic = User.find_by(name: "銀座中央クリニック")
-  if clinic && clinic.referred_by_id == tanaka.id && clinic.level&.name == 'クリニック'
+  if clinic && clinic.referred_by_id == company.id && clinic.level&.name == 'クリニック'
     purchase = Purchase.create!(
       user_id: clinic.id,
       purchased_at: "2025-11-05 14:00:00",
@@ -1440,7 +1659,7 @@ if wott_product
       seller_price: wott_price
     )
     
-    puts "  Created WOTT purchase for #{clinic.name} (クリニック, 紹介者: #{tanaka.name})"
+    puts "  Created WOTT purchase for #{clinic.name} (クリニック, 紹介者: アジアビジネストラスト)"
   end
   
   puts "✅ Created WOTT product purchase data (self-purchases + direct referral purchases)"
@@ -1499,6 +1718,102 @@ puts "🎵 Creating MANNERSOUND product purchase data..."
 
 mannersound_products = Product.where(id: 7..14) # MANNERSOUND商品（ID: 7-14）
 if mannersound_products.any?
+  # === テスト階層のMANNERSOUND購入データ ===
+  
+  # テスト太郎（アドバイザー）のMANNERSOUND購入
+  test_advisor = User.find_by(name: "テスト太郎")
+  if test_advisor
+    purchase = Purchase.create!(
+      user_id: test_advisor.id,
+      purchased_at: "2025-11-06 09:00:00",
+      status: 'paid'
+    )
+    
+    ms_mini = mannersound_products.find_by(id: 7)
+    if ms_mini
+      ms_price = ProductPrice.find_by(product: ms_mini, level: test_advisor.level)&.price || ms_mini.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_mini,
+        quantity: 3,
+        unit_price: ms_mini.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND MINI purchase for テスト太郎 (数量: 3)"
+    end
+  end
+  
+  # テストクリニックのMANNERSOUND購入
+  test_clinic = User.find_by(name: "テストクリニック")
+  if test_clinic
+    purchase = Purchase.create!(
+      user_id: test_clinic.id,
+      purchased_at: "2025-11-07 10:00:00",
+      status: 'paid'
+    )
+    
+    ms_standard = mannersound_products.find_by(id: 8)
+    if ms_standard
+      ms_price = ProductPrice.find_by(product: ms_standard, level: test_clinic.level)&.price || ms_standard.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_standard,
+        quantity: 2,
+        unit_price: ms_standard.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND STANDARD purchase for テストクリニック (数量: 2)"
+    end
+  end
+  
+  # テスト次郎（サポーター）のMANNERSOUND購入
+  test_supporter2 = User.find_by(name: "テスト次郎")
+  if test_supporter2
+    purchase = Purchase.create!(
+      user_id: test_supporter2.id,
+      purchased_at: "2025-11-08 11:00:00",
+      status: 'paid'
+    )
+    
+    ms_mini = mannersound_products.find_by(id: 7)
+    if ms_mini
+      ms_price = ProductPrice.find_by(product: ms_mini, level: test_supporter2.level)&.price || ms_mini.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_mini,
+        quantity: 2,
+        unit_price: ms_mini.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND MINI purchase for テスト次郎 (数量: 2)"
+    end
+  end
+  
+  # テストサロンのMANNERSOUND購入
+  test_salon = User.find_by(name: "テストサロン")
+  if test_salon
+    purchase = Purchase.create!(
+      user_id: test_salon.id,
+      purchased_at: "2025-11-09 12:00:00",
+      status: 'paid'
+    )
+    
+    ms_mini = mannersound_products.find_by(id: 7)
+    if ms_mini
+      ms_price = ProductPrice.find_by(product: ms_mini, level: test_salon.level)&.price || ms_mini.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_mini,
+        quantity: 4,
+        unit_price: ms_mini.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND MINI purchase for テストサロン (数量: 4)"
+    end
+  end
+  
+  puts "✅ Created MANNERSOUND purchase data for test hierarchy"
+  
   # 田中美咲（総代理店）のMANNERSOUND購入
   tanaka = User.find_by(name: "田中美咲")
   if tanaka
@@ -1585,6 +1900,56 @@ if mannersound_products.any?
         seller_price: ms_price
       )
       puts "  Created MANNERSOUND STANDARD purchase for #{nakamura.name} (数量: 1)"
+    end
+  end
+  
+  # 佐々木結衣（サポーター、中村結衣の直下）のMANNERSOUND購入
+  sasaki = User.find_by(name: "佐々木結衣")
+  if sasaki
+    # 2025年11月に購入
+    purchase = Purchase.create!(
+      user_id: sasaki.id,
+      purchased_at: "2025-11-09 11:00:00",
+      status: 'paid'
+    )
+    
+    # MANNERSOUND MINI（ID: 7）を2個購入
+    ms_mini = mannersound_products.find_by(id: 7)
+    if ms_mini
+      ms_price = ProductPrice.find_by(product: ms_mini, level: sasaki.level)&.price || ms_mini.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_mini,
+        quantity: 2,
+        unit_price: ms_mini.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND MINI purchase for #{sasaki.name} (数量: 2)"
+    end
+  end
+  
+  # 美容サロン花音（サロン、佐々木結衣の直下）のMANNERSOUND購入
+  nakamura_salon = User.find_by(name: "美容サロン花音")
+  if nakamura_salon
+    # 2025年11月に購入
+    purchase = Purchase.create!(
+      user_id: nakamura_salon.id,
+      purchased_at: "2025-11-10 13:00:00",
+      status: 'paid'
+    )
+    
+    # MANNERSOUND MINI（ID: 7）を4個購入
+    ms_mini = mannersound_products.find_by(id: 7)
+    if ms_mini
+      ms_price = ProductPrice.find_by(product: ms_mini, level: nakamura_salon.level)&.price || ms_mini.base_price
+      PurchaseItem.create!(
+        purchase: purchase,
+        product: ms_mini,
+        quantity: 4,
+        unit_price: ms_mini.base_price,
+        seller_price: ms_price
+      )
+      puts "  Created MANNERSOUND MINI purchase for #{nakamura_salon.name} (数量: 4)"
     end
   end
   
@@ -1688,6 +2053,71 @@ if mannersound_products.any?
 else
   puts "⚠️  MANNERSOUND products (ID: 7-14) not found. Skipping MANNERSOUND purchase data creation."
 end
+
+# クリニック情報を作成（最下部に表示するため最後に作成）
+puts "🏥 Creating clinic users at the end..."
+clinic_level = levels["クリニック"]
+wott_clinic_level = wott_levels["クリニック"]
+
+clinics_data = [
+  {
+    name: "銀座中央クリニック",
+    postal_code: "104-0061",
+    address: "東京都中央区銀座７丁目８−８ Isgビル 7F",
+    phone: "03-6280-6901",
+    email: "ginza-central-clinic@example.com"
+  },
+  {
+    name: "ティファクリニック大宮院",
+    postal_code: "330-0844",
+    address: "埼玉県さいたま市大宮区下町１丁目４５ 松亀センタービル 1F",
+    phone: "048-788-5926",
+    email: "tifa-omiya@example.com"
+  },
+  {
+    name: "ティファクリニック横浜院",
+    postal_code: "220-0004",
+    address: "神奈川県横浜市西区北幸1-1-8 エキニア横浜 7F 705",
+    phone: "045-509-1932",
+    email: "tifa-yokohama@example.com"
+  },
+  {
+    name: "ティファクリニック新宿東口院",
+    postal_code: "160-0022",
+    address: "東京都新宿区新宿3-21-6 龍生堂ビル 7F",
+    phone: "03-6416-0193",
+    email: "tifa-shinjuku-east@example.com"
+  }
+]
+
+clinics_data.each_with_index do |clinic_data, index|
+  user = User.create!(
+    id: user_id_seq,
+    name: clinic_data[:name],
+    phone: generate_unique_phone(clinic_data[:phone], used_phones),
+    email: clinic_data[:email],
+    level_id: clinic_level.id,
+    wott_level_id: wott_clinic_level.id,
+    referred_by_id: company.id,  # アジアビジネストラストの直下に配置
+    password: "clinic_password_#{index + 1}",
+    lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
+    confirmed_at: Time.current
+  )
+  
+  # invoice_baseを作成
+  InvoiceBase.create!(
+    user_id: user.id,
+    company_name: clinic_data[:name],
+    postal_code: clinic_data[:postal_code],
+    address: clinic_data[:address],
+    email: clinic_data[:email]
+  )
+  
+  user_id_seq += 1
+  lstep_id_seq += 1
+end
+
+puts "✅ Created #{clinics_data.length} clinic users at the end (displayed at bottom of hierarchy)"
 
 # すべてのユーザーに対して初期レベル履歴を作成
 puts "📋 Creating initial user level histories..."

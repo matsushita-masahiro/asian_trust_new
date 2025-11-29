@@ -2012,14 +2012,23 @@ if mannersound_products.any?
     # 請求書を作成
     invoice_number = PurchaseInvoice.generate_invoice_number
     
-    # 購入ステータスに応じて請求書ステータスを設定
-    invoice_status = case purchase.status
-                     when 'built' then 0
-                     when 'reserved' then 1
-                     when 'paid' then 2
-                     else 0
+    # 購入日時から月を取得
+    purchase_month = purchase.purchased_at.strftime("%Y-%m")
+    
+    # 9月・10月の購入は支払済み（status: 3）、11月は購入ステータスに応じて設定
+    invoice_status = if purchase_month == "2025-09" || purchase_month == "2025-10"
+                       3  # PAID
+                     else
+                       case purchase.status
+                       when 'built' then 0
+                       when 'reserved' then 1
+                       when 'paid' then 2
+                       else 0
+                       end
                      end
+    
     invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
+    invoice_paid_at = (invoice_status == 3) ? purchase.purchased_at : nil
     
     purchase.create_purchase_invoice!(
       invoice_number: invoice_number,
@@ -2028,7 +2037,8 @@ if mannersound_products.any?
       total_amount: purchase.total_price,
       status: invoice_status,
       sent_at: invoice_sent_at,
-      confirmed_at: (invoice_status == 2 ? purchase.purchased_at : nil)
+      confirmed_at: (invoice_status == 2 ? purchase.purchased_at : nil),
+      paid_at: invoice_paid_at
     )
     
     # 送料を設定
@@ -2046,9 +2056,10 @@ if mannersound_products.any?
                    when 0 then "DRAFT"
                    when 1 then "SENT"
                    when 2 then "CONFIRMED"
+                   when 3 then "PAID"
                    else "UNKNOWN"
                    end
-    puts "  Created invoice and shipping for purchase #{purchase.id} (status: #{status_label})"
+    puts "  Created invoice and shipping for purchase #{purchase.id} (status: #{status_label}, month: #{purchase_month})"
   end
 else
   puts "⚠️  MANNERSOUND products (ID: 7-14) not found. Skipping MANNERSOUND purchase data creation."

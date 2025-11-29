@@ -1716,14 +1716,23 @@ Purchase.includes(:purchase_invoice, :shipping_fees).where(purchase_invoice: nil
   # 請求書を作成
   invoice_number = PurchaseInvoice.generate_invoice_number
   
-  # 購入ステータスに応じて請求書ステータスを設定
-  invoice_status = case purchase.status
-                   when 'built' then 0
-                   when 'reserved' then 1
-                   when 'paid' then 2
-                   else 0
-                   end
-  invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
+  # 購入日時から月を取得
+  purchase_month = purchase.purchased_at.strftime("%Y-%m")
+  
+  # 9月・10月の購入は支払済み（status: 3）、11月は購入ステータスに応じて設定
+  if purchase_month == "2025-09" || purchase_month == "2025-10"
+    invoice_status = 3  # PAID
+    invoice_sent_at = purchase.purchased_at
+  else
+    # 11月以降は購入ステータスに応じて設定
+    invoice_status = case purchase.status
+                     when 'built' then 0
+                     when 'reserved' then 1
+                     when 'paid' then 2
+                     else 0
+                     end
+    invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
+  end
   
   purchase.create_purchase_invoice!(
     invoice_number: invoice_number,
@@ -1732,7 +1741,7 @@ Purchase.includes(:purchase_invoice, :shipping_fees).where(purchase_invoice: nil
     total_amount: purchase.total_price,
     status: invoice_status,
     sent_at: invoice_sent_at,
-    confirmed_at: (invoice_status == 2 ? purchase.purchased_at : nil)
+    confirmed_at: (invoice_status == 2 || invoice_status == 3 ? purchase.purchased_at : nil)
   )
   
   # 送料を設定
@@ -1750,9 +1759,10 @@ Purchase.includes(:purchase_invoice, :shipping_fees).where(purchase_invoice: nil
                  when 0 then "DRAFT"
                  when 1 then "SENT"
                  when 2 then "CONFIRMED"
+                 when 3 then "PAID"
                  else "UNKNOWN"
                  end
-  puts "  Created invoice and shipping for purchase #{purchase.id} (status: #{status_label})"
+  puts "  Created invoice and shipping for purchase #{purchase.id} (status: #{status_label}, month: #{purchase_month})"
 end
 
 # MANNERSOUND商品の購入履歴を作成
@@ -2070,7 +2080,6 @@ if mannersound_products.any?
                      end
     
     invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
-    invoice_paid_at = (invoice_status == 3) ? purchase.purchased_at : nil
     
     purchase.create_purchase_invoice!(
       invoice_number: invoice_number,
@@ -2196,5 +2205,59 @@ User.find_each do |user|
 end
 
 puts "✅ Created initial user level histories for all users"
+
+# 最終チェック：請求書がない購入に対して請求書を作成
+puts "🔍 Final check: Creating invoices for purchases without invoice..."
+purchases_without_invoice = Purchase.includes(:purchase_invoice).where(purchase_invoice: { id: nil })
+if purchases_without_invoice.any?
+  puts "  Found #{purchases_without_invoice.count} purchases without invoice"
+  purchases_without_invoice.each do |purchase|
+    invoice_number = PurchaseInvoice.generate_invoice_number
+    purchase_month = purchase.purchased_at.strftime("%Y-%m")
+    
+    # 9月・10月の購入は支払済み（status: 3）、11月は購入ステータスに応じて設定
+    if purchase_month == "2025-09" || purchase_month == "2025-10"
+      invoice_status = 3  # PAID
+      invoice_sent_at = purchase.purchased_at
+    else
+      invoice_status = case purchase.status
+                       when 'built' then 0
+                       when 'reserved' then 1
+                       when 'paid' then 2
+                       else 0
+                       end
+      invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
+    end
+    
+    purchase.create_purchase_invoice!(
+      invoice_number: invoice_number,
+      invoice_date: purchase.purchased_at.to_date,
+      due_date: purchase.purchased_at.to_date + 1.week,
+      total_amount: purchase.total_price,
+      status: invoice_status,
+      sent_at: invoice_sent_at,
+      confirmed_at: (invoice_status == 2 || invoice_status == 3 ? purchase.purchased_at : nil)
+    )
+    
+    # 送料を設定
+    unless purchase.shipping_fees.exists?
+      purchase.purchase_items.includes(:product).each do |item|
+        product = item.product
+        unless purchase.shipping_fees.where(shipping_type: product.shipping_type).exists?
+          purchase.shipping_fees.create!(
+            shipping_type: product.shipping_type,
+            amount: product.shipping_fee_amount
+          )
+        end
+      end
+    end
+    
+    puts "  Created invoice #{invoice_number} for purchase #{purchase.id} (month: #{purchase_month})"
+  end
+  puts "✅ Created #{purchases_without_invoice.count} missing invoices"
+else
+  puts "  All purchases have invoices"
+end
+
 puts "✅ Set shipping fees for all purchases"
 puts "✅ Seeding completed!"

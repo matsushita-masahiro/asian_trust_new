@@ -925,9 +925,13 @@ else
                         end
       puts "  Creating purchase for #{month_data[:month]} with status: #{purchase_status}"
       
+      # 9月・10月はクレジットカード払い（status: paid）、11月は銀行振込
+      payment_type = (month_data[:month] == "2025-09" || month_data[:month] == "2025-10") ? 'credit' : 'cash'
+      
       purchase = Purchase.create!(
         user_id: special_agent_1.id,        # 購入者
         purchased_at: "#{month_data[:month]}-#{format('%02d', month_data[:day])} 10:00:00",
+        payment_type: payment_type,
         status: purchase_status
       )
       
@@ -968,9 +972,13 @@ else
                             'paid'
                           end
         
+        # 9月・10月はクレジットカード払い（status: paid）、11月は銀行振込
+        payment_type = (month_data[:month] == "2025-09" || month_data[:month] == "2025-10") ? 'credit' : 'cash'
+        
         purchase = Purchase.create!(
           user_id: agent.id,        # 購入者
           purchased_at: "#{month_data[:month]}-#{format('%02d', day)} 14:00:00",
+          payment_type: payment_type,
           status: purchase_status
         )
         
@@ -1014,9 +1022,13 @@ else
                             'paid'
                           end
         
+        # 9月・10月はクレジットカード払い（status: paid）、11月は銀行振込
+        payment_type = purchase_data[:date].start_with?("2025-11") ? 'cash' : 'credit'
+        
         purchase = Purchase.create!(
           user_id: nakamura.id,
           purchased_at: "#{purchase_data[:date]} 16:00:00",
+          payment_type: payment_type,
           status: purchase_status
         )
         
@@ -1050,9 +1062,13 @@ else
                             'paid'
                           end
         
+        # 9月・10月はクレジットカード払い（status: paid）、11月は銀行振込
+        payment_type = date.start_with?("2025-11") ? 'cash' : 'credit'
+        
         purchase = Purchase.create!(
           user_id: advisor.id,
           purchased_at: "#{date} 16:00:00",
+          payment_type: payment_type,
           status: purchase_status
         )
         
@@ -1090,9 +1106,13 @@ else
                             'paid'
                           end
         
+        # 9月・10月はクレジットカード払い（status: paid）、11月は銀行振込
+        payment_type = date.start_with?("2025-11") ? 'cash' : 'credit'
+        
         purchase = Purchase.create!(
           user_id: supporter.id,
           purchased_at: "#{date} 18:00:00",
+          payment_type: payment_type,
           status: purchase_status
         )
         
@@ -1235,9 +1255,13 @@ if products.any?
                           'paid'
                         end
       
+      # 9月・10月はクレジットカード払い（status: paid）、11月は銀行振込
+      payment_type = date.start_with?("2025-11") ? 'cash' : 'credit'
+      
       purchase = Purchase.create!(
         user_id: customer.id,
         purchased_at: "#{date} 12:00:00",
+        payment_type: payment_type,
         status: purchase_status
       )
       
@@ -1411,6 +1435,12 @@ if products.any?
   puts "   - Supporter's salon/clinic: 2 users purchasing"
 end
 
+# 9月・10月の全ての購入データのステータスを'paid'に更新
+puts "💳 Updating Sept/Oct purchases to paid status..."
+sept_oct_purchases = Purchase.where('purchased_at >= ? AND purchased_at < ?', '2025-09-01', '2025-11-01')
+updated_count = sept_oct_purchases.update_all(status: 'paid', payment_type: 'credit')
+puts "✅ Updated #{updated_count} purchases (Sept/Oct) to paid status"
+
 # 全てのPurchaseに対してpurchase_invoiceを作成
 puts "📄 Creating purchase invoices for all purchases..."
 
@@ -1420,17 +1450,28 @@ Purchase.includes(:purchase_items, :user).find_each do |purchase|
   # 請求書番号を生成
   invoice_number = PurchaseInvoice.generate_invoice_number
   
-  # 購入ステータスに応じて請求書ステータスを設定
-  # built: status = 0 (DRAFT), sent_at = nil
-  # reserved: status = 1 (SENT), sent_at = 購入日時
-  # paid: status = 2 (CONFIRMED), sent_at = 購入日時
-  invoice_status = case purchase.status
-                   when 'built' then 0
-                   when 'reserved' then 1
-                   when 'paid' then 2
-                   else 0
-                   end
-  invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
+  # 購入日時から月を取得
+  purchase_month = purchase.purchased_at.strftime("%Y-%m")
+  
+  # 9月・10月の購入は支払済み（status: 3）、11月は購入ステータスに応じて設定
+  if purchase_month == "2025-09" || purchase_month == "2025-10"
+    invoice_status = 3  # PAID
+    invoice_sent_at = purchase.purchased_at
+    invoice_paid_at = purchase.purchased_at
+  else
+    # 11月以降は購入ステータスに応じて設定
+    # built: status = 0 (DRAFT), sent_at = nil
+    # reserved: status = 1 (SENT), sent_at = 購入日時
+    # paid: status = 2 (CONFIRMED), sent_at = 購入日時
+    invoice_status = case purchase.status
+                     when 'built' then 0
+                     when 'reserved' then 1
+                     when 'paid' then 2
+                     else 0
+                     end
+    invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
+    invoice_paid_at = nil
+  end
   
   # 請求書を作成
   purchase_invoice = purchase.create_purchase_invoice!(
@@ -1440,13 +1481,14 @@ Purchase.includes(:purchase_items, :user).find_each do |purchase|
     total_amount: purchase.total_price,
     status: invoice_status,
     sent_at: invoice_sent_at,
-    confirmed_at: (invoice_status == 2 ? purchase.purchased_at : nil)
+    confirmed_at: (invoice_status == 2 || invoice_status == 3 ? purchase.purchased_at : nil)
   )
   
   status_label = case invoice_status
                  when 0 then "DRAFT"
                  when 1 then "SENT"
                  when 2 then "CONFIRMED"
+                 when 3 then "PAID"
                  else "UNKNOWN"
                  end
   puts "  Created invoice #{invoice_number} for purchase #{purchase.id} (status: #{status_label})"
@@ -2037,8 +2079,7 @@ if mannersound_products.any?
       total_amount: purchase.total_price,
       status: invoice_status,
       sent_at: invoice_sent_at,
-      confirmed_at: (invoice_status == 2 ? purchase.purchased_at : nil),
-      paid_at: invoice_paid_at
+      confirmed_at: (invoice_status == 2 || invoice_status == 3 ? purchase.purchased_at : nil)
     )
     
     # 送料を設定

@@ -6,8 +6,8 @@ class PurchasesController < ApplicationController
   def my_history
     # 月選択（デフォルトは今月）
     @selected_month = params[:month].presence || Date.current.strftime('%Y-%m')
-    @selected_month_start = Date.strptime(@selected_month, '%Y-%m').beginning_of_month
-    @selected_month_end = Date.strptime(@selected_month, '%Y-%m').end_of_month
+    @selected_month_start = Date.strptime(@selected_month, '%Y-%m').beginning_of_month.beginning_of_day
+    @selected_month_end = Date.strptime(@selected_month, '%Y-%m').end_of_month.end_of_day
 
     # 自分の購入履歴を取得
     @purchases = current_user.purchases

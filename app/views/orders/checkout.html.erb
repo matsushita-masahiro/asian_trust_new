@@ -1,3 +1,61 @@
+<% 
+  # ページ全体で使用する変数を最初に定義
+  delivery_destinations = []
+  clinic_ids = []
+  has_home_delivery = false
+  
+  if @cart_items_with_delivery.present?
+    @cart_items_with_delivery.each do |item_info|
+      if item_info[:delivery_type] == 'clinic' && item_info[:clinic_id].present?
+        clinic_ids << item_info[:clinic_id] unless clinic_ids.include?(item_info[:clinic_id])
+      elsif item_info[:delivery_type] == 'home'
+        has_home_delivery = true
+      end
+    end
+    
+    # クリニック配送先を追加
+    clinic_ids.each do |clinic_id|
+      clinic = User.joins(:invoice_base).find_by(id: clinic_id)
+      if clinic&.invoice_base
+        items = @cart_items_with_delivery.select { |i| i[:clinic_id] == clinic_id }
+        product_names = items.map { |i| i[:item].product.name }.join(', ')
+        
+        delivery_destinations << {
+          title: "#{clinic.name}（クリニック配送）",
+          icon: 'fas fa-hospital',
+          address: "〒#{clinic.invoice_base.postal_code}<br>#{clinic.invoice_base.address}".html_safe,
+          note: product_names,
+          phone: clinic.phone,
+          type: 'clinic'
+        }
+      end
+    end
+    
+    # 自宅配送先を追加
+    if has_home_delivery
+      home_items = @cart_items_with_delivery.select { |i| i[:delivery_type] == 'home' }
+      address_type = home_items.first[:address_type]
+      selected_address = address_type == 'shipping' ? current_user.shipping_address : current_user.registration_address
+      address_type_label = address_type == 'shipping' ? '配送先住所' : '登録住所'
+      product_names = home_items.map { |i| i[:item].product.name }.join(', ')
+      
+      delivery_destinations << {
+        title: "#{address_type_label}（自宅配送）",
+        icon: 'fas fa-home',
+        address: (selected_address&.postal_code.present? && selected_address&.address.present?) ? 
+                 "〒#{selected_address.postal_code}<br>#{selected_address.address}".html_safe : 
+                 '<span class="text-danger">住所が登録されていません</span>'.html_safe,
+        note: product_names,
+        type: 'home'
+      }
+    end
+  end
+  
+  # 配送先数を計算
+  has_stem_cell_product = clinic_ids.any?
+  has_other_products = has_home_delivery
+%>
+
 <div class="container mt-4">
   <h3>購入確認</h3>
   
@@ -9,23 +67,84 @@
         </div>
         <div class="card-body">
           <% if @cart&.cart_items&.any? %>
-            <% @cart.cart_items.each do |item| %>
-              <div class="row mb-3 pb-3 border-bottom">
-                <div class="col-md-6">
-                  <h6><%= item.product.name %></h6>
-                  <p class="text-muted mb-0">単位: <%= item.product.display_unit %></p>
-                </div>
-                <div class="col-md-2 text-center">
-                  <span class="badge bg-secondary">× <%= item.quantity %></span>
-                </div>
-                <div class="col-md-2 text-end">
-                  ¥<%= number_with_delimiter(item.product.price_for(current_user.level_symbol) || 0) %>
-                </div>
-                <div class="col-md-2 text-end">
-                  <strong>¥<%= number_with_delimiter(item.subtotal(current_user.level_symbol)) %></strong>
-                </div>
-              </div>
-            <% end %>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>商品名</th>
+                  <th class="text-center">数量</th>
+                  <th class="text-end">単価</th>
+                  <th class="text-end">小計</th>
+                  <th>配送先</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @cart.cart_items.each do |item| %>
+                  <% 
+                    # 骨髄幹細胞培養上清液（ID: 1）の場合は、保存されている数量を5で割って表示
+                    display_quantity = (item.product.id == 1) ? (item.quantity / 5) : item.quantity
+                    # 骨髄幹細胞培養上清液（ID: 1）の場合は10cc単位で表示
+                    display_unit = (item.product.id == 1) ? "10cc" : item.product.display_unit
+                    # 単価取得
+                    unit_price = item.product.price_for(current_user.level_symbol) || 0
+                    # 骨髄幹細胞培養上清液（ID: 1）の場合は10cc単位の価格（5倍）
+                    display_unit_price = (item.product.id == 1) ? (unit_price * 5) : unit_price
+                    # 小計計算
+                    item_subtotal = display_unit_price * display_quantity
+                    
+                    # 配送先情報を取得
+                    item_delivery_info = @cart_items_with_delivery.find { |i| i[:item].id == item.id }
+                    delivery_type = item_delivery_info[:delivery_type]
+                    clinic_id = item_delivery_info[:clinic_id]
+                    address_type = item_delivery_info[:address_type]
+                  %>
+                  <tr>
+                    <td>
+                      <h6 class="mb-1"><%= item.product.name %></h6>
+                      <small class="text-muted">単位: <%= display_unit %></small>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-secondary">× <%= display_quantity %></span>
+                    </td>
+                    <td class="text-end">
+                      ¥<%= number_with_delimiter(display_unit_price) %>
+                    </td>
+                    <td class="text-end">
+                      <strong>¥<%= number_with_delimiter(item_subtotal) %></strong>
+                    </td>
+                    <td>
+                      <% if delivery_type == 'clinic' && clinic_id.present? %>
+                        <% clinic = User.joins(:invoice_base).find_by(id: clinic_id) %>
+                        <div class="small">
+                          <i class="fas fa-hospital text-primary"></i>
+                          <strong><%= clinic&.name || 'クリニック' %></strong>
+                          <% if clinic&.invoice_base %>
+                            <div class="text-muted" style="font-size: 0.85em;">
+                              〒<%= clinic.invoice_base.postal_code %><br>
+                              <%= clinic.invoice_base.address %>
+                            </div>
+                          <% end %>
+                        </div>
+                      <% else %>
+                        <% 
+                          selected_address = address_type == 'shipping' ? current_user.shipping_address : current_user.registration_address
+                          address_label = address_type == 'shipping' ? '配送先住所' : '登録住所'
+                        %>
+                        <div class="small">
+                          <i class="fas fa-home text-success"></i>
+                          <strong><%= address_label %></strong>
+                          <% if selected_address %>
+                            <div class="text-muted" style="font-size: 0.85em;">
+                              〒<%= selected_address.postal_code %><br>
+                              <%= selected_address.address %>
+                            </div>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
           <% else %>
             <p class="text-muted">カートに商品がありません</p>
           <% end %>
@@ -34,109 +153,28 @@
     </div>
     
     <div class="col-md-4">
-      <!-- 配送先情報カード -->
-      <% if params[:delivery_type].present? %>
+      <!-- 配送先情報サマリー -->
+      <% if delivery_destinations.any? %>
         <div class="card mb-3">
           <div class="card-header bg-info text-white">
-            <h5 class="mb-0">
+            <h6 class="mb-0">
               <i class="fas fa-shipping-fast me-2"></i>
-              配送先情報
-            </h5>
+              配送先サマリー
+            </h6>
           </div>
           <div class="card-body">
-            <% 
-              # 商品別配送先情報を準備
-              stem_cell_items = @cart&.cart_items&.select { |item| item.product.name.include?('骨髄幹細胞培培養上清液') } || []
-              other_items = @cart&.cart_items&.select { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') } || []
-              
-              has_stem_cell_product = stem_cell_items.any?
-              has_other_products = other_items.any?
-              
-              # クリニック情報
-              selected_clinic = params[:clinic_id].present? ? User.find_by(id: params[:clinic_id]) : nil
-              
-              delivery_destinations = []
-              
-              # クリニック配送先
-              if has_stem_cell_product
-                if selected_clinic&.invoice_base
-                  delivery_destinations << {
-                    title: "#{selected_clinic.name}（クリニック配送）",
-                    icon: 'fas fa-hospital',
-                    address: "〒#{selected_clinic.invoice_base.postal_code}<br>#{selected_clinic.invoice_base.address}".html_safe,
-                    note: '骨髄幹細胞培培養上清液',
-                    phone: selected_clinic.phone,
-                    type: 'clinic'
-                  }
-                else
-                  delivery_destinations << {
-                    title: 'クリニック配送',
-                    icon: 'fas fa-hospital',
-                    address: nil,
-                    note: 'クリニック情報が見つかりません',
-                    type: 'clinic'
-                  }
-                end
-              end
-              
-              # 自宅配送先
-              if has_other_products
-                # 選択された住所タイプに基づいて住所を取得
-                selected_address = @selected_address
-                address_type_label = case @address_type
-                                   when 'shipping'
-                                     '配送先住所'
-                                   else
-                                     '登録住所'
-                                   end
-                
-                delivery_destinations << {
-                  title: "#{address_type_label}（自宅配送）",
-                  icon: 'fas fa-home',
-                  address: (selected_address&.postal_code.present? && selected_address&.address.present?) ? 
-                           "〒#{selected_address.postal_code}<br>#{selected_address.address}".html_safe : 
-                           '<span class="text-danger">住所が登録されていません</span>'.html_safe,
-                  note: 'その他の商品',
-                  type: 'home'
-                }
-              end
-            %>
-            
-            <% delivery_destinations.each_with_index do |destination, index| %>
-              <div class="<%= 'mb-4' if delivery_destinations.size > 1 %>">
-                <div class="d-flex align-items-start mb-3">
-                  <i class="<%= destination[:icon] %> me-3 mt-1 text-primary"></i>
-                  <div>
-                    <div class="fw-bold"><%= destination[:title] %></div>
-                    <small class="text-muted"><%= destination[:note] %></small>
-                  </div>
-                </div>
-                
-                <% if destination[:address].present? %>
-                  <div class="alert alert-light">
-                    <i class="fas fa-map-marker-alt me-2"></i>
-                    <strong>配送先住所:</strong>
-                    <div class="mt-2"><%= destination[:address] %></div>
-                    <% if destination[:phone].present? %>
-                      <div class="mt-2">
-                        <i class="fas fa-phone me-2"></i>
-                        <strong>電話番号:</strong> <%= destination[:phone] %>
-                      </div>
-                    <% end %>
-                  </div>
-                <% else %>
-                  <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>配送先:</strong>
-                    <div class="mt-2"><%= destination[:note] %></div>
-                  </div>
+            <div class="alert alert-light mb-0">
+              <small>
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>配送先数:</strong> <%= delivery_destinations.size %>箇所<br>
+                <% if has_stem_cell_product %>
+                  <i class="fas fa-hospital text-primary me-2"></i>クリニック配送あり<br>
                 <% end %>
-                
-                <% if delivery_destinations.size > 1 && index < delivery_destinations.size - 1 %>
-                  <hr class="my-3">
+                <% if has_other_products %>
+                  <i class="fas fa-home text-success me-2"></i>住所配送あり
                 <% end %>
-              </div>
-            <% end %>
+              </small>
+            </div>
           </div>
         </div>
       <% end %>
@@ -148,8 +186,8 @@
         </div>
         <div class="card-body">
           <% 
-            # 基本料金計算
-            subtotal = @cart&.total_amount(current_user.level_symbol) || 0
+            # 基本料金計算（ユーザーに応じた価格で計算）
+            subtotal = @cart&.total_amount_for_user(current_user) || 0
             
             # 配送先数を計算
             delivery_count = delivery_destinations.size
@@ -230,11 +268,15 @@
           </div>
           
           <div class="d-grid gap-2">
-            <% if params[:delivery_type].present? %>
+            <% if @cart_items_with_delivery.present? %>
               <% 
-                payment_params = { delivery_type: params[:delivery_type] }
-                payment_params[:address_type] = params[:address_type] if params[:address_type].present?
-                payment_params[:clinic_id] = params[:clinic_id] if params[:clinic_id].present?
+                # カートアイテムの配送先情報をパラメータとして渡す
+                payment_params = {}
+                @cart_items_with_delivery.each_with_index do |item_info, index|
+                  payment_params["items[#{item_info[:item].id}][delivery_type]"] = item_info[:delivery_type]
+                  payment_params["items[#{item_info[:item].id}][clinic_id]"] = item_info[:clinic_id] if item_info[:clinic_id].present?
+                  payment_params["items[#{item_info[:item].id}][address_type]"] = item_info[:address_type]
+                end
               %>
               <%= link_to "お支払い方法を選択する", select_method_payments_path(payment_params), 
                   class: "btn btn-success btn-lg" %>

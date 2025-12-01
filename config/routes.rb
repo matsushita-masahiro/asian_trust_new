@@ -238,6 +238,7 @@ Rails.application.routes.draw do
     member do
       post :add_item
       patch :update_item
+      patch :update_delivery
       delete :remove_item
     end
   end

@@ -6,272 +6,248 @@
   
   <% if @cart_items.any? %>
     <div class="row">
-      <div class="col-md-8">
+      <div class="col-md-12">
         <div class="card">
           <div class="card-body">
-            <% @cart_items.each do |item| %>
-              <div class="row mb-3 pb-3 border-bottom align-items-center">
-                <div class="col-md-4">
-                  <h6><%= item.product.name %></h6>
-                  <p class="text-muted mb-0 small">単位: <%= item.product.display_unit %></p>
-                </div>
-                <div class="col-md-2">
-                  <%= form_with url: update_item_cart_path, method: :patch, local: true, class: "d-flex align-items-center" do |f| %>
-                    <%= f.hidden_field :cart_item_id, value: item.id %>
-                    <% 
-                      # WOTT商品またはMANNERSSOUND商品の場合は5個まで、その他は10個まで
-                      max_quantity = (['wott', 'ms'].include?(item.product.category)) ? 5 : 10
-                      quantity_options = (1..max_quantity).map { |i| [i, i] }
-                    %>
-                    <%= f.select :quantity, options_for_select(quantity_options, item.quantity), 
-                        {}, { class: "form-select form-select-sm", onchange: "this.form.submit();" } %>
-                  <% end %>
-                </div>
-                <div class="col-md-2 text-end">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>商品名</th>
+                  <th class="text-center">数量</th>
+                  <th class="text-end">単価</th>
+                  <th class="text-end">小計</th>
+                  <th>配送先</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @cart_items.each do |item| %>
                   <% 
+                    # 骨髄幹細胞培養上清液（ID: 1）の場合は、保存されている数量を5で割って表示
+                    display_quantity = (item.product.id == 1) ? (item.quantity / 5) : item.quantity
+                    # 骨髄幹細胞培養上清液（ID: 1）の場合は10cc単位で表示
+                    display_unit = (item.product.id == 1) ? "10cc" : item.product.display_unit
+                    
+                    # 単価計算
                     if item.product.respond_to?(:category) && item.product.category == 'wott'
                       unit_price = item.product.wott_price_for(current_user.wott_level_symbol) || 0
                     else
                       unit_price = item.product.price_for(current_user.level_symbol) || 0
                     end
+                    
+                    # 骨髄幹細胞培養上清液（ID: 1）の場合は10cc単位で表示（5倍）
+                    display_unit_price = (item.product.id == 1) ? (unit_price * 5) : unit_price
+                    # 小計計算
+                    item_subtotal = display_unit_price * display_quantity
                   %>
-                  ¥<%= number_with_delimiter(unit_price) %>
-                </div>
-                <div class="col-md-2 text-end">
-                  <strong>¥<%= number_with_delimiter(unit_price * item.quantity) %></strong>
-                </div>
-                <div class="col-md-2 text-end">
-                  <%= form_with url: remove_item_cart_path, method: :delete, local: true do |f| %>
-                    <%= f.hidden_field :cart_item_id, value: item.id %>
-                    <%= f.submit "削除", class: "btn btn-outline-danger btn-sm", 
-                        confirm: "この商品をカートから削除しますか？" %>
-                  <% end %>
+                  <tr>
+                    <td>
+                      <h6 class="mb-1"><%= item.product.name %></h6>
+                      <small class="text-muted">単位: <%= display_unit %></small>
+                    </td>
+                    <td class="text-center">
+                      <%= form_with url: update_item_cart_path, method: :patch, local: true, class: "d-inline" do |f| %>
+                        <%= f.hidden_field :cart_item_id, value: item.id %>
+                        <%= f.hidden_field :product_id, value: item.product.id %>
+                        <% 
+                          # WOTT商品またはMANNERSSOUND商品の場合は5個まで、その他は10個まで
+                          max_quantity = (['wott', 'ms'].include?(item.product.category)) ? 5 : 10
+                          
+                          # 骨髄幹細胞培養上清液の場合は、選択肢の値も5倍にする（内部保存用）
+                          if item.product.id == 1
+                            quantity_options = (1..max_quantity).map { |i| [i, i * 5] }
+                          else
+                            quantity_options = (1..max_quantity).map { |i| [i, i] }
+                          end
+                        %>
+                        <%= f.select :quantity, options_for_select(quantity_options, item.quantity), 
+                            {}, { class: "form-select form-select-sm", onchange: "this.form.submit();", style: "width: 80px;" } %>
+                      <% end %>
+                    </td>
+                    <td class="text-end">
+                      ¥<%= number_with_delimiter(display_unit_price) %>
+                    </td>
+                    <td class="text-end">
+                      <strong>¥<%= number_with_delimiter(item_subtotal) %></strong>
+                    </td>
+                    <td>
+                      <%= form_with url: update_delivery_cart_path, method: :patch, local: true, class: "delivery-form" do |f| %>
+                        <%= f.hidden_field :cart_item_id, value: item.id %>
+                        
+                        <% 
+                          # デフォルトの配送先を設定
+                          default_delivery_type = item.delivery_type || (item.product.id == 1 ? 'clinic' : 'home')
+                        %>
+                        
+                        <div class="mb-2">
+                          <div class="form-check form-check-inline">
+                            <%= f.radio_button :delivery_type, 'clinic', 
+                                checked: (default_delivery_type == 'clinic'),
+                                class: "form-check-input delivery-type-radio",
+                                data: { item_id: item.id },
+                                onchange: "this.form.submit();" %>
+                            <label class="form-check-label small">
+                              <i class="fas fa-hospital text-primary"></i> クリニック
+                            </label>
+                          </div>
+                          <div class="form-check form-check-inline">
+                            <%= f.radio_button :delivery_type, 'home', 
+                                checked: (default_delivery_type == 'home'),
+                                class: "form-check-input delivery-type-radio",
+                                data: { item_id: item.id },
+                                onchange: "this.form.submit();" %>
+                            <label class="form-check-label small">
+                              <i class="fas fa-home text-success"></i> 住所
+                            </label>
+                          </div>
+                        </div>
+                        
+                        <% if default_delivery_type == 'clinic' %>
+                          <% 
+                            # クリニック情報を取得
+                            clinic_level = Level.find_by(name: 'クリニック')
+                            clinics = clinic_level ? User.joins(:invoice_base).where(level: clinic_level).includes(:invoice_base) : []
+                          %>
+                          <div class="clinic-selection" id="clinic-selection-<%= item.id %>">
+                            <%= f.select :clinic_id, 
+                                options_for_select(
+                                  clinics.map { |c| [c.name, c.id] },
+                                  item.clinic_id
+                                ),
+                                { prompt: 'クリニックを選択' },
+                                { class: "form-select form-select-sm", onchange: "this.form.submit();" } %>
+                          </div>
+                        <% else %>
+                          <div class="address-selection" id="address-selection-<%= item.id %>">
+                            <% 
+                              default_address_type = item.address_type || 'registration'
+                            %>
+                            <%= f.select :address_type,
+                                options_for_select(
+                                  [['登録住所', 'registration'], ['配送先住所', 'shipping']],
+                                  default_address_type
+                                ),
+                                {},
+                                { class: "form-select form-select-sm", onchange: "this.form.submit();" } %>
+                          </div>
+                        <% end %>
+                      <% end %>
+                    </td>
+                    <td class="text-end">
+                      <%= form_with url: remove_item_cart_path, method: :delete, local: true, class: "d-inline" do |f| %>
+                        <%= f.hidden_field :cart_item_id, value: item.id %>
+                        <%= f.submit "削除", class: "btn btn-outline-danger btn-sm", 
+                            data: { confirm: "この商品をカートから削除しますか？" } %>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+            
+            <!-- JavaScriptで配送先選択を動的に切り替え -->
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                // 配送先タイプのラジオボタンにイベントリスナーを追加
+                document.querySelectorAll('.delivery-type-radio').forEach(function(radio) {
+                  radio.addEventListener('change', function() {
+                    const itemId = this.dataset.itemId;
+                    const deliveryType = this.value;
+                    const clinicSelection = document.getElementById('clinic-selection-' + itemId);
+                    const addressSelection = document.getElementById('address-selection-' + itemId);
+                    
+                    if (deliveryType === 'clinic') {
+                      if (clinicSelection) clinicSelection.style.display = 'block';
+                      if (addressSelection) addressSelection.style.display = 'none';
+                    } else {
+                      if (clinicSelection) clinicSelection.style.display = 'none';
+                      if (addressSelection) addressSelection.style.display = 'block';
+                    }
+                  });
+                });
+              });
+            </script>
+            
+            <!-- カート合計と購入ボタン -->
+            <div class="row mt-4">
+              <div class="col-md-8">
+                <div class="alert alert-info">
+                  <h6><i class="fas fa-info-circle me-2"></i>配送先について</h6>
+                  <ul class="mb-0 small">
+                    <li><strong>骨髄幹細胞培養上清液</strong> → クリニック配送（事務手数料¥10,000）</li>
+                    <li><strong>その他の商品</strong> → ご登録住所配送</li>
+                    <li>配送先ごとに送料¥6,000がかかります</li>
+                  </ul>
                 </div>
               </div>
-            <% end %>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-md-4">
-        <!-- 配送先選択カード -->
-        <div class="card mb-3">
-          <div class="card-header">
-            <h5>
-              <i class="fas fa-shipping-fast me-2"></i>
-              配送先を選択してください
-            </h5>
-          </div>
-          <div class="card-body">
-            <% 
-              # カート内の商品を詳細にチェック
-              stem_cell_items = @cart_items.select { |item| item.product.name.include?('骨髄幹細胞培培養上清液') }
-              other_items = @cart_items.select { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') }
-              
-              has_stem_cell_product = stem_cell_items.any?
-              has_other_products = other_items.any?
-              
-              # クリニック情報を取得
-              clinic_level = Level.find_by(name: 'クリニック')
-              clinics = clinic_level ? User.joins(:invoice_base).where(level: clinic_level).includes(:invoice_base) : []
-            %>
-            
-            <%= form_with url: orders_checkout_path, method: :get, local: true, id: "delivery-form" do |f| %>
-              <div class="delivery-options">
-                <% if has_stem_cell_product && has_other_products %>
-                  <!-- 複数商品がある場合：配送先情報の説明 -->
-                  <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>配送先について:</strong>
-                    <ul class="mb-0 mt-2">
-                      <li><strong>骨髄幹細胞培培養上清液</strong> → クリニック配送</li>
-                      <li><strong>その他の商品</strong> → ご登録住所配送</li>
-                    </ul>
-                    <div class="mt-2 text-warning">
-                      <i class="fas fa-exclamation-triangle me-1"></i>
-                      複数の配送先になるため、送料が複数箇所分かかります。
-                    </div>
-                  </div>
-                <% elsif has_stem_cell_product %>
-                  <!-- 骨髄幹細胞培養上清液のみの場合 -->
-                  <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>骨髄幹細胞培培養上清液</strong>はクリニックへの配送が必要です。
-                  </div>
-                <% end %>
-
-                <% if has_stem_cell_product %>
-                  <!-- 骨髄幹細胞培養上清液がある場合：クリニック選択 -->
-                  <div class="delivery-option mb-3">
-                    <label class="form-label fw-bold">
-                      <i class="fas fa-hospital me-2"></i>
-                      骨髄幹細胞培培養上清液の配送先クリニック
-                    </label>
+              <div class="col-md-4">
+                <div class="card">
+                  <div class="card-body">
+                    <% 
+                      # 基本料金計算
+                      subtotal = @cart.total_amount_for_user(current_user)
+                      
+                      # 配送先数を計算
+                      stem_cell_items = @cart_items.select { |item| item.product.id == 1 }
+                      other_items = @cart_items.select { |item| item.product.id != 1 }
+                      
+                      has_stem_cell_product = stem_cell_items.any?
+                      has_other_products = other_items.any?
+                      
+                      delivery_destinations = 0
+                      delivery_destinations += 1 if has_stem_cell_product  # クリニック配送
+                      delivery_destinations += 1 if has_other_products     # 自宅配送
+                      
+                      shipping_fee = delivery_destinations * 6000
+                      admin_fee = has_stem_cell_product ? 10000 : 0
+                      
+                      # 税抜き合計
+                      subtotal_before_tax = subtotal + shipping_fee + admin_fee
+                      # 消費税計算
+                      tax_amount = calculate_tax(subtotal_before_tax)
+                      # 税込み合計
+                      total_amount_with_tax = subtotal_before_tax + tax_amount
+                    %>
                     
-                    <% if clinics.any? %>
-                      <select name="clinic_id" id="clinic-select" class="form-select" required>
-                        <option value="">クリニックを選択してください</option>
-                        <% clinics.each do |clinic| %>
-                          <option value="<%= clinic.id %>" 
-                                  data-name="<%= clinic.name %>"
-                                  data-address="〒<%= clinic.invoice_base.postal_code %>|<%= clinic.invoice_base.address %>"
-                                  data-phone="<%= clinic.phone %>">
-                            <%= clinic.name %>
-                          </option>
-                        <% end %>
-                      </select>
-                    <% else %>
-                      <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        登録されているクリニックがありません。管理者にお問い合わせください。
+                    <div class="d-flex justify-content-between mb-2">
+                      <span>商品数:</span>
+                      <span><%= @cart.total_items %>個</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                      <span>商品代金:</span>
+                      <span>¥<%= number_with_delimiter(subtotal) %></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                      <span>送料:</span>
+                      <span>¥<%= number_with_delimiter(shipping_fee) %></span>
+                    </div>
+                    <% if admin_fee > 0 %>
+                      <div class="d-flex justify-content-between mb-2">
+                        <span>事務手数料:</span>
+                        <span class="text-warning">¥<%= number_with_delimiter(admin_fee) %></span>
                       </div>
                     <% end %>
-                  </div>
-                <% end %>
-
-                <% if has_other_products && has_stem_cell_product %>
-                  <!-- 複数商品がある場合：その他商品の配送先 -->
-                  <div class="delivery-option mb-3">
-                    <label class="form-label fw-bold">
-                      <i class="fas fa-home me-2"></i>
-                      その他商品の配送先住所を選択してください
-                    </label>
+                    <div class="d-flex justify-content-between mb-2">
+                      <span>消費税（<%= tax_rate_percentage %>%）:</span>
+                      <span>¥<%= number_with_delimiter(tax_amount) %></span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                      <strong>合計:</strong>
+                      <strong class="text-success">¥<%= number_with_delimiter(total_amount_with_tax) %></strong>
+                    </div>
                     
-                    <%= render 'address_selection', 
-                        radio_id_prefix: 'multi_', 
-                        display_id_prefix: 'multi-' %>
-                    
-                    <input type="hidden" name="has_other_products" value="true">
-                  </div>
-                <% elsif has_other_products %>
-                  <!-- その他商品のみの場合：住所選択ラジオボタン -->
-                  <div class="delivery-option mb-3">
-                    <label class="form-label fw-bold">
-                      <i class="fas fa-home me-2"></i>
-                      配送先住所を選択してください
-                    </label>
-                    
-                    <%= render 'address_selection', 
-                        radio_id_prefix: '', 
-                        display_id_prefix: '' %>
-                    
-                    <input type="hidden" name="delivery_type" value="home">
-                  </div>
-                <% end %>
-              </div>
-
-              <% if has_stem_cell_product %>
-                <div class="delivery-address mt-3" id="delivery-address" style="display: none;">
-                  <div class="alert alert-info">
-                    <i class="fas fa-map-marker-alt me-2"></i>
-                    <strong>今回の配送先:</strong>
-                    <div id="selected-address" class="mt-2"></div>
+                    <%= form_with url: orders_checkout_path, method: :get, local: true do |f| %>
+                      <% @cart_items.each do |item| %>
+                        <%= f.hidden_field "items[#{item.id}][delivery_type]", value: item.delivery_type || (item.product.id == 1 ? 'clinic' : 'home') %>
+                        <%= f.hidden_field "items[#{item.id}][clinic_id]", value: item.clinic_id if item.clinic_id.present? %>
+                        <%= f.hidden_field "items[#{item.id}][address_type]", value: item.address_type || 'registration' %>
+                      <% end %>
+                      <%= f.submit "購入手続きへ", class: "btn btn-success btn-lg w-100" %>
+                    <% end %>
                   </div>
                 </div>
-              <% end %>
-            <% end %>
-          </div>
-        </div>
-
-        <!-- カート合計カード -->
-        <div class="card">
-          <div class="card-header">
-            <h5>カート合計</h5>
-          </div>
-          <div class="card-body">
-            <% 
-              # 基本料金計算（商品カテゴリに応じた価格を使用）
-              subtotal = @cart.total_amount_for_user(current_user)
-              
-              # 配送先数を計算
-              delivery_destinations = 0
-              delivery_destinations += 1 if has_stem_cell_product  # クリニック配送
-              delivery_destinations += 1 if has_other_products     # 自宅配送
-              
-              shipping_fee = delivery_destinations * 6000
-              
-              # 事務手数料（クリニック配送の場合）
-              admin_fee = has_stem_cell_product ? 10000 : 0
-              
-              # 合計金額
-              total_amount = subtotal + shipping_fee + admin_fee
-            %>
-            
-            <div class="d-flex justify-content-between mb-2">
-              <span>商品数:</span>
-              <span><%= @cart.total_items %>個</span>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-              <span>商品代金:</span>
-              <span>¥<%= number_with_delimiter(subtotal) %></span>
-            </div>
-            <% if has_stem_cell_product && has_other_products %>
-              <!-- 複数配送先の場合：送料を2行で表示 -->
-              <div class="d-flex justify-content-between mb-2">
-                <span>送料:</span>
-                <span>¥6,000</span>
               </div>
-              <div class="d-flex justify-content-between mb-2">
-                <span>送料（骨髄別送）:</span>
-                <span>¥6,000</span>
-              </div>
-            <% else %>
-              <!-- 単一配送先の場合：従来通り -->
-              <div class="d-flex justify-content-between mb-2">
-                <span>送料 (<%= delivery_destinations %>箇所):</span>
-                <span id="shipping-fee">¥<%= number_with_delimiter(shipping_fee) %></span>
-              </div>
-            <% end %>
-            <% if has_stem_cell_product %>
-              <div class="d-flex justify-content-between mb-2">
-                <span>事務手数料:</span>
-                <span class="text-warning">¥<%= number_with_delimiter(admin_fee) %></span>
-              </div>
-            <% end %>
-            <% 
-              # 税抜き合計（商品代金+送料+事務手数料）
-              subtotal_before_tax = subtotal + shipping_fee + admin_fee
-              # 消費税計算
-              tax_amount = calculate_tax(subtotal_before_tax)
-              # 税込み合計
-              total_amount_with_tax = subtotal_before_tax + tax_amount
-            %>
-            <div class="d-flex justify-content-between mb-2">
-              <span>小計（税抜）:</span>
-              <span>¥<%= number_with_delimiter(subtotal_before_tax) %></span>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-              <span>消費税（<%= tax_rate_percentage %>%）:</span>
-              <span>¥<%= number_with_delimiter(tax_amount) %></span>
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between mb-3">
-              <strong>合計:</strong>
-              <strong class="text-success" id="total-amount">¥<%= number_with_delimiter(total_amount_with_tax) %></strong>
-            </div>
-            
-            <!-- 料金説明 -->
-            <div class="alert alert-light small">
-              <i class="fas fa-info-circle me-2"></i>
-              <strong>料金について:</strong>
-              <ul class="mb-0 mt-2">
-                <% if has_stem_cell_product && has_other_products %>
-                  <li>送料: ご登録住所への配送 ¥6,000</li>
-                  <li>送料（骨髄別送）: クリニックへの配送 ¥6,000</li>
-                  <li class="text-warning">事務手数料: クリニック配送 ¥10,000</li>
-                <% elsif has_stem_cell_product %>
-                  <li>送料（骨髄別送）: クリニックへの配送 ¥6,000</li>
-                  <li class="text-warning">事務手数料: クリニック配送 ¥10,000</li>
-                <% else %>
-                  <li>送料: 配送先1箇所につき ¥6,000</li>
-                <% end %>
-              </ul>
-            </div>
-            
-            <div class="d-grid">
-              <button type="button" id="checkout-btn" class="btn btn-success btn-lg" disabled>
-                配送先を選択してください
-              </button>
             </div>
           </div>
         </div>
@@ -285,266 +261,3 @@
     </div>
   <% end %>
 </div>
-<script>
-// Turbo対応のイベントリスナー
-function initializeCartDelivery() {
-  const checkoutBtn = document.getElementById('checkout-btn');
-  const deliveryAddress = document.getElementById('delivery-address');
-  const selectedAddress = document.getElementById('selected-address');
-  const deliveryForm = document.getElementById('delivery-form');
-  const clinicSelect = document.getElementById('clinic-select');
-  
-  // 要素が存在しない場合は処理を終了
-  if (!checkoutBtn) {
-    console.log('Cart delivery elements not found, skipping initialization');
-    return;
-  }
-  
-  // 商品タイプをチェック
-  const hasStemCellProduct = <%= @cart_items.any? { |item| item.product.name.include?('骨髄幹細胞培培養上清液') } %>;
-  const hasOtherProducts = <%= @cart_items.any? { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') } %>;
-  
-  // 住所情報（ヘルパーメソッドを使用）
-  <% address_info = user_address_info(current_user) %>
-  const registrationAddress = {
-    <% if address_info[:registration][:exists] %>
-      postal_code: '<%= address_info[:registration][:address].postal_code %>',
-      address: '<%= address_info[:registration][:address].address %>',
-      exists: true
-    <% else %>
-      exists: false
-    <% end %>
-  };
-  
-  const shippingAddress = {
-    <% if address_info[:shipping][:exists] %>
-      postal_code: '<%= address_info[:shipping][:address].postal_code %>',
-      address: '<%= address_info[:shipping][:address].address %>',
-      exists: true
-    <% else %>
-      exists: false
-    <% end %>
-  };
-  
-  const hasAddress = <%= can_select_address?(address_info) %>;
-
-  // 初期状態の設定
-  function updateCheckoutButton() {
-    if (!checkoutBtn) return;
-    
-    let canCheckout = true;
-    let buttonText = '購入手続きへ';
-    let buttonClass = 'btn btn-success btn-lg';
-    
-    // クリニック配送が必要な場合のチェック
-    if (hasStemCellProduct && clinicSelect) {
-      if (!clinicSelect.value) {
-        canCheckout = false;
-        buttonText = 'クリニックを選択してください';
-        buttonClass = 'btn btn-secondary btn-lg';
-      }
-    }
-    
-    // 自宅配送が必要で住所未登録の場合
-    if (hasOtherProducts && !hasAddress) {
-      canCheckout = false;
-      buttonText = '住所登録が必要です';
-      buttonClass = 'btn btn-secondary btn-lg';
-    }
-    
-    checkoutBtn.disabled = !canCheckout;
-    checkoutBtn.textContent = buttonText;
-    checkoutBtn.className = buttonClass;
-  }
-
-  // クリニック選択イベント
-  if (hasStemCellProduct && clinicSelect) {
-    // 既存のイベントリスナーを削除（重複防止）
-    clinicSelect.removeEventListener('change', handleClinicChange);
-    
-    // イベントハンドラー関数を定義
-    function handleClinicChange() {
-      console.log('Clinic selection changed:', this.value);
-      const selectedOption = this.options[this.selectedIndex];
-      
-      if (this.value && selectedAddress) {
-        // 選択されたクリニックの住所を表示（パイプ文字をbrタグに変換）
-        const clinicAddress = selectedOption.dataset.address.replace(/\|/g, '<br>');
-        console.log('Clinic address:', clinicAddress);
-        selectedAddress.innerHTML = clinicAddress;
-        if (deliveryAddress) {
-          deliveryAddress.style.display = 'block';
-        }
-      } else {
-        if (deliveryAddress) {
-          deliveryAddress.style.display = 'none';
-        }
-      }
-      
-      // ボタン状態を更新（現在のclinicSelectを参照）
-      updateCheckoutButtonWithCurrentState();
-    }
-    
-    // 新しいイベントリスナーを追加
-    clinicSelect.addEventListener('change', handleClinicChange);
-  }
-
-  // 現在の状態でボタンを更新する関数
-  function updateCheckoutButtonWithCurrentState() {
-    const currentCheckoutBtn = document.getElementById('checkout-btn');
-    const currentClinicSelect = document.getElementById('clinic-select');
-    
-    if (!currentCheckoutBtn) return;
-    
-    let canCheckout = true;
-    let buttonText = '購入手続きへ';
-    let buttonClass = 'btn btn-success btn-lg';
-    
-    // クリニック配送が必要な場合のチェック
-    if (hasStemCellProduct && currentClinicSelect) {
-      if (!currentClinicSelect.value) {
-        canCheckout = false;
-        buttonText = 'クリニックを選択してください';
-        buttonClass = 'btn btn-secondary btn-lg';
-      }
-    }
-    
-    // 自宅配送が必要で住所未登録の場合
-    if (hasOtherProducts && !hasAddress) {
-      canCheckout = false;
-      buttonText = '住所登録が必要です';
-      buttonClass = 'btn btn-secondary btn-lg';
-    }
-    
-    currentCheckoutBtn.disabled = !canCheckout;
-    currentCheckoutBtn.textContent = buttonText;
-    currentCheckoutBtn.className = buttonClass;
-  }
-
-  // 初期状態の設定
-  updateCheckoutButtonWithCurrentState();
-  
-  // 住所選択ラジオボタンのイベントリスナー
-  function setupAddressSelection() {
-    // 住所選択ラジオボタンのイベントリスナー
-    const addressRadios = document.querySelectorAll('input[name="address_type"]');
-    
-    addressRadios.forEach(radio => {
-      // カードのクリックでもラジオボタンを選択
-      const card = radio.closest('.address-option');
-      if (card) {
-        card.addEventListener('click', function(e) {
-          if (e.target !== radio) {
-            radio.checked = true;
-            radio.dispatchEvent(new Event('change'));
-          }
-        });
-      }
-      
-      radio.addEventListener('change', function() {
-        // 視覚的フィードバックの更新
-        updateAddressSelection(this.value);
-        
-        // 選択された住所の表示を更新
-        updateSelectedAddressDisplay(this.value);
-      });
-    });
-  }
-  
-  // 住所選択の視覚的フィードバックを更新
-  function updateAddressSelection(selectedType) {
-    const allCards = document.querySelectorAll('.address-option');
-    allCards.forEach(card => {
-      const radio = card.querySelector('input[name="address_type"]');
-      if (radio) {
-        if (radio.value === selectedType && radio.checked) {
-          card.classList.add('selected');
-        } else {
-          card.classList.remove('selected');
-        }
-      }
-    });
-  }
-  
-  // 選択された住所の表示を更新
-  function updateSelectedAddressDisplay(addressType) {
-    // 単一商品の場合
-    const selectedAddressContent = document.getElementById('selected-address-content');
-    if (selectedAddressContent) {
-      updateAddressContent(selectedAddressContent, addressType);
-    }
-    
-    // 複数商品の場合
-    const multiAddressContent = document.getElementById('multi-selected-address-content');
-    if (multiAddressContent) {
-      updateAddressContent(multiAddressContent, addressType);
-      
-      // 複数商品の場合のラジオボタンも同期
-      const multiRadio = document.querySelector(`input[name="address_type"][id*="multi"][value="${addressType}"]`);
-      if (multiRadio) {
-        multiRadio.checked = true;
-      }
-    }
-  }
-  
-  // 住所コンテンツを更新
-  function updateAddressContent(contentElement, addressType) {
-    let addressHtml = '';
-    
-    if (addressType === 'registration' && registrationAddress.exists) {
-      addressHtml = `〒${registrationAddress.postal_code}<br>${registrationAddress.address}`;
-    } else if (addressType === 'shipping' && shippingAddress.exists) {
-      addressHtml = `〒${shippingAddress.postal_code}<br>${shippingAddress.address}`;
-    }
-    
-    contentElement.innerHTML = addressHtml;
-  }
-  
-  // 住所選択の初期化
-  setupAddressSelection();
-
-  // チェックアウトボタンのクリックイベント
-  if (checkoutBtn) {
-    // 既存のイベントリスナーを削除（重複防止）
-    checkoutBtn.removeEventListener('click', handleCheckoutClick);
-    
-    // イベントハンドラー関数を定義
-    function handleCheckoutClick() {
-      const currentClinicSelect = document.getElementById('clinic-select');
-      const url = new URL('<%= orders_checkout_path %>', window.location.origin);
-      
-      // 選択された住所タイプを取得
-      const selectedAddressType = document.querySelector('input[name="address_type"]:checked')?.value || 'registration';
-      
-      // 複数配送先の場合
-      if (hasStemCellProduct && hasOtherProducts) {
-        url.searchParams.set('delivery_type', 'multiple');
-        url.searchParams.set('address_type', selectedAddressType);
-        if (currentClinicSelect && currentClinicSelect.value) {
-          url.searchParams.set('clinic_id', currentClinicSelect.value);
-        }
-      } else if (hasStemCellProduct) {
-        // クリニック配送のみ
-        url.searchParams.set('delivery_type', 'clinic');
-        if (currentClinicSelect && currentClinicSelect.value) {
-          url.searchParams.set('clinic_id', currentClinicSelect.value);
-        }
-      } else {
-        // 自宅配送のみ
-        url.searchParams.set('delivery_type', 'home');
-        url.searchParams.set('address_type', selectedAddressType);
-      }
-      
-      window.location.href = url.toString();
-    }
-    
-    // 新しいイベントリスナーを追加
-    checkoutBtn.addEventListener('click', handleCheckoutClick);
-  }
-}
-
-// Turbo対応のイベントリスナー
-document.addEventListener('DOMContentLoaded', initializeCartDelivery);
-document.addEventListener('turbo:load', initializeCartDelivery);
-document.addEventListener('turbo:render', initializeCartDelivery);
-</script>

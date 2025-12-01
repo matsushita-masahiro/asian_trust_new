@@ -41,7 +41,7 @@
             </a>
             <ul class="custom-dropdown-menu" id="mypageDropdownMenu">
               <li><%= link_to "マイアカウント", user_path(current_user), class: "custom-dropdown-item" %></li>
-              <% unless current_user.level.value == 8 || current_user.level&.name == 'アドバイザー認定前' %>
+              <% unless current_user.level.value.in?([6, 7, 8]) || current_user.level&.name == 'アドバイザー認定前' %>
                 <li><%= link_to "売上情報", mysales_path, class: "custom-dropdown-item" %></li>
               <% end %>
               <% unless current_user.admin? || current_user.level&.name == 'アドバイザー認定前' %>

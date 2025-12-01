@@ -128,19 +128,70 @@ class PaymentsController < ApplicationController
   private
 
   def create_delivery_information(purchase)
-    delivery_type = params[:delivery_type] || 'home'
-    address_type = params[:address_type] || 'registration'
-    clinic_id = params[:clinic_id]
-    
     Rails.logger.info "=== CREATE DELIVERY INFORMATION DEBUG ==="
     Rails.logger.info "Purchase ID: #{purchase.id}"
-    Rails.logger.info "Delivery type: #{delivery_type}"
-    Rails.logger.info "Address type: #{address_type}"
-    Rails.logger.info "Clinic ID: #{clinic_id}"
-    Rails.logger.info "============================================"
+    Rails.logger.info "Params: #{params.inspect}"
     
-    # 配送先住所を取得してスナップショットとして保存
-    delivery_address = get_delivery_address(address_type, clinic_id)
+    # カートアイテムの配送先情報から配送先を判定
+    items_params = params[:items] || {}
+    
+    clinic_ids = []
+    has_home_delivery = false
+    all_addresses = []
+    
+    purchase.purchase_items.each do |purchase_item|
+      # カートアイテムから配送先情報を取得
+      cart_item = purchase.user.cart.cart_items.find_by(product_id: purchase_item.product_id)
+      
+      if cart_item
+        delivery_type = cart_item.delivery_type || (cart_item.product.id == 1 ? 'clinic' : 'home')
+        
+        if delivery_type == 'clinic' && cart_item.clinic_id.present?
+          clinic_ids << cart_item.clinic_id unless clinic_ids.include?(cart_item.clinic_id)
+          
+          # クリニック住所を追加
+          clinic = User.joins(:invoice_base).find_by(id: cart_item.clinic_id)
+          if clinic&.invoice_base
+            all_addresses << "#{clinic.invoice_base.postal_code}|#{clinic.invoice_base.address}|#{clinic.name}"
+          end
+        elsif delivery_type == 'home'
+          has_home_delivery = true
+          
+          # 住所を追加（まだ追加されていない場合）
+          address_type = cart_item.address_type || 'registration'
+          if address_type == 'shipping' && current_user.shipping_address
+            addr = "#{current_user.shipping_address.postal_code}|#{current_user.shipping_address.address}"
+            all_addresses << addr unless all_addresses.include?(addr)
+          elsif current_user.registration_address
+            addr = "#{current_user.registration_address.postal_code}|#{current_user.registration_address.address}"
+            all_addresses << addr unless all_addresses.include?(addr)
+          end
+        end
+      end
+    end
+    
+    # delivery_typeを決定
+    if clinic_ids.any? && has_home_delivery
+      delivery_type = 'multiple'
+      clinic_id = clinic_ids.first
+      address_type = 'registration'
+    elsif clinic_ids.any?
+      delivery_type = 'clinic'
+      clinic_id = clinic_ids.first
+      address_type = nil
+    else
+      delivery_type = 'home'
+      clinic_id = nil
+      address_type = 'registration'
+    end
+    
+    delivery_address = all_addresses.join("\n")
+    
+    Rails.logger.info "Delivery type: #{delivery_type}"
+    Rails.logger.info "Clinic ID: #{clinic_id}"
+    Rails.logger.info "Address type: #{address_type}"
+    Rails.logger.info "Delivery address: #{delivery_address}"
+    Rails.logger.info "============================================"
     
     delivery_info = DeliveryInformation.create!(
       purchase: purchase,

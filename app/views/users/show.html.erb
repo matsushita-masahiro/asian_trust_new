@@ -38,11 +38,7 @@
         <div class="card-body">
           <table class="table table-borderless">
             <tr>
-              <th width="30%">ID:</th>
-              <td><%= @user.id %></td>
-            </tr>
-            <tr>
-              <th>レベル:</th>
+              <th width="30%">レベル:</th>
               <td>
                 <span class="badge bg-secondary"><%= @user.level_label %></span>
               </td>
@@ -112,7 +108,13 @@
               </td>
             </tr>
             <tr>
-              <th>トータル販売実績:</th>
+              <th>
+                <% if @user.level.value.in?([6, 7, 8]) %>
+                  トータル購入実績:
+                <% else %>
+                  トータル販売実績:
+                <% end %>
+              </th>
               <td>
                 <span class="fs-6 fw-bold" style="color: #9400d3;">
                   <%= @user.total_purchase_volume_cc.to_i %>cc

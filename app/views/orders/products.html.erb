@@ -24,14 +24,19 @@
           else
             user_price = product.price_for(current_user.level_symbol)
           end
+          
+          # 骨髄幹細胞培培養上清液（ID: 1）の場合は10cc単位で表示
+          is_bone_marrow = product.id == 1
+          display_unit = is_bone_marrow ? "10cc" : product.display_unit
+          display_price = is_bone_marrow ? (user_price * 5) : user_price
         %>
         <% if user_price %>
           <div class="col-md-6 col-lg-4 mb-4">
             <div class="card h-100">
               <div class="card-body">
                 <h5 class="card-title"><%= product.name %></h5>
-                <p class="text-muted">単位: <%= product.display_unit %></p>
-                <p class="h5 text-success">¥<%= number_with_delimiter(user_price) %></p>
+                <p class="text-muted">単位: <%= display_unit %></p>
+                <p class="h5 text-success">¥<%= number_with_delimiter(display_price) %></p>
                 <% if @category == 'wott' %>
                   <p class="small text-muted mb-2">
                     ※上清液のレベルは<%= current_user.level_label %>ですが、WOTTの購入レベルは<%= current_user.wott_level_name %>です

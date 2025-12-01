@@ -30,26 +30,37 @@
                   </thead>
                   <tbody>
                     <% @cart.cart_items.each do |item| %>
+                      <% 
+                        # 骨髄幹細胞培養上清液（ID: 1）の場合は、保存されている数量を5で割って表示
+                        display_quantity = (item.product.id == 1) ? (item.quantity / 5) : item.quantity
+                        # 骨髄幹細胞培養上清液（ID: 1）の場合は10cc単位で表示
+                        display_unit = (item.product.id == 1) ? "10cc" : item.product.display_unit
+                        
+                        # 単価取得
+                        if item.product.respond_to?(:category) && item.product.category == 'wott' && current_user.has_wott_level?
+                          unit_price = item.product.wott_price_for(current_user.wott_level_symbol) || 0
+                        else
+                          unit_price = item.product.price_for(current_user.level_symbol) || 0
+                        end
+                        
+                        # 骨髄幹細胞培養上清液（ID: 1）の場合は10cc単位の価格（5倍）
+                        display_unit_price = (item.product.id == 1) ? (unit_price * 5) : unit_price
+                        # 小計計算
+                        item_subtotal = display_unit_price * display_quantity
+                      %>
                       <tr>
                         <td>
                           <div class="fw-bold"><%= item.product.name %></div>
-                          <small class="text-muted">単位: <%= item.product.display_unit %></small>
+                          <small class="text-muted">単位: <%= display_unit %></small>
                         </td>
                         <td class="text-center">
-                          <span class="badge bg-secondary"><%= item.quantity %></span>
+                          <span class="badge bg-secondary"><%= display_quantity %></span>
                         </td>
                         <td class="text-end">
-                          <% 
-                            if item.product.respond_to?(:category) && item.product.category == 'wott' && current_user.has_wott_level?
-                              unit_price = item.product.wott_price_for(current_user.wott_level_symbol) || 0
-                            else
-                              unit_price = item.product.price_for(current_user.level_symbol) || 0
-                            end
-                          %>
-                          ¥<%= number_with_delimiter(unit_price) %>
+                          ¥<%= number_with_delimiter(display_unit_price) %>
                         </td>
                         <td class="text-end fw-bold">
-                          ¥<%= number_with_delimiter(item.subtotal(current_user.level_symbol, current_user)) %>
+                          ¥<%= number_with_delimiter(item_subtotal) %>
                         </td>
                       </tr>
                     <% end %>
@@ -152,10 +163,9 @@
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 お支払いについて
               </h6>
-              <p class="mb-2">下記の通り2回にわけてお願いしております。</p>
               <div class="mb-2">
-                <strong>①幹細胞商品代等</strong><br>
-                ⇒添付の請求書にて期限内にお支払いお願いします。
+                <strong>①商品代金 等</strong><br>
+                ⇒購入確定後のマイページ->購入履歴にある請求書PDFにて期限内にお支払いお願いします。
               </div>
               <div class="mb-2">
                 <strong>②病院使用料等　22,000円税込</strong><br>

@@ -16,6 +16,10 @@ class CartsController < ApplicationController
       return
     end
     
+    # 骨髄幹細胞培培養上清液（ID: 1）の場合は、10cc単位なので数量を5倍にする
+    # ユーザーが「1」を選択 = 10cc = 2cc × 5
+    actual_quantity = (product.id == 1) ? (quantity * 5) : quantity
+    
     # 追加しようとする商品のカテゴリを判定
     product_category = product.category
     new_category = if product_category.nil? || product_category == 'sl'
@@ -46,9 +50,9 @@ class CartsController < ApplicationController
     cart_item = @cart.cart_items.find_by(product: product)
     
     if cart_item
-      cart_item.update!(quantity: cart_item.quantity + quantity)
+      cart_item.update!(quantity: cart_item.quantity + actual_quantity)
     else
-      @cart.cart_items.create!(product: product, quantity: quantity)
+      @cart.cart_items.create!(product: product, quantity: actual_quantity)
     end
     
     redirect_back(fallback_location: orders_products_path, notice: 'カートに追加しました')
@@ -74,6 +78,22 @@ class CartsController < ApplicationController
     end
     
     redirect_to cart_path, notice: message
+  end
+  
+  def update_delivery
+    cart_item = @cart.cart_items.find(params[:cart_item_id])
+    
+    delivery_type = params[:delivery_type]
+    clinic_id = params[:clinic_id]
+    address_type = params[:address_type]
+    
+    cart_item.update!(
+      delivery_type: delivery_type,
+      clinic_id: clinic_id,
+      address_type: address_type
+    )
+    
+    redirect_to cart_path, notice: '配送先を更新しました'
   end
   
   private

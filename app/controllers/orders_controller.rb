@@ -52,12 +52,15 @@ class OrdersController < ApplicationController
       product = Product.find(params[:product_id])
       quantity = params[:quantity].to_i
       
+      # 骨髄幹細胞培養上清液（ID: 1）の場合は、10cc単位なので数量を5倍にする
+      actual_quantity = (product.id == 1) ? (quantity * 5) : quantity
+      
       # 既存のカートアイテムがあれば数量を追加、なければ新規作成
       cart_item = @cart.cart_items.find_by(product: product)
       if cart_item
-        cart_item.update!(quantity: cart_item.quantity + quantity)
+        cart_item.update!(quantity: cart_item.quantity + actual_quantity)
       else
-        @cart.cart_items.create!(product: product, quantity: quantity)
+        @cart.cart_items.create!(product: product, quantity: actual_quantity)
       end
     else
       @cart = current_user.cart
@@ -68,30 +71,33 @@ class OrdersController < ApplicationController
       return
     end
     
-    # 配送情報を設定
-    @delivery_type = params[:delivery_type] || 'home'
-    @address_type = params[:address_type] || 'registration'
-    @clinic_id = params[:clinic_id]
-    
-    # 選択された住所を取得
-    case @address_type
-    when 'shipping'
-      @selected_address = current_user.shipping_address
-    else
-      @selected_address = current_user.registration_address
+    # カートアイテムから配送先情報を取得
+    @cart_items_with_delivery = @cart.cart_items.map do |item|
+      {
+        item: item,
+        delivery_type: item.delivery_type || (item.product.id == 1 ? 'clinic' : 'home'),
+        clinic_id: item.clinic_id,
+        address_type: item.address_type || 'registration'
+      }
     end
     
-    # 住所が選択されていない場合はカートに戻す
-    if @delivery_type.in?(['home', 'multiple']) && @selected_address.blank?
-      redirect_to cart_path, alert: '配送先住所を選択してください'
+    # 配送先の検証
+    clinic_items = @cart_items_with_delivery.select { |i| i[:delivery_type] == 'clinic' }
+    home_items = @cart_items_with_delivery.select { |i| i[:delivery_type] == 'home' }
+    
+    # クリニック配送の商品でクリニックが未選択の場合
+    if clinic_items.any? { |i| i[:clinic_id].blank? }
+      redirect_to cart_path, alert: 'クリニック配送の商品はクリニックを選択してください'
       return
     end
     
-    # クリニック配送の場合はクリニック情報を取得
-    if @delivery_type.in?(['clinic', 'multiple']) && @clinic_id.present?
-      @selected_clinic = User.joins(:invoice_base).find_by(id: @clinic_id)
-      if @selected_clinic.blank?
-        redirect_to cart_path, alert: '配送先クリニックを選択してください'
+    # 住所配送の商品で住所が未登録の場合
+    if home_items.any?
+      address_type = home_items.first[:address_type]
+      @selected_address = address_type == 'shipping' ? current_user.shipping_address : current_user.registration_address
+      
+      if @selected_address.blank?
+        redirect_to cart_path, alert: '配送先住所を登録してください'
         return
       end
     end

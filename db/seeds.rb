@@ -2260,4 +2260,22 @@ else
 end
 
 puts "✅ Set shipping fees for all purchases"
+
+# 11月分の全ての購入データのステータスを'paid'に更新し、請求書ステータスも3（PAID）に更新
+puts "💳 Updating November purchases to paid status..."
+november_purchases = Purchase.where('purchased_at >= ? AND purchased_at < ?', '2025-11-01', '2025-12-01')
+november_purchases.each do |purchase|
+  purchase.update!(status: 'paid', payment_type: 'cash')
+  
+  # 請求書のステータスも更新
+  if purchase.purchase_invoice
+    purchase.purchase_invoice.update!(
+      status: 3,  # PAID
+      sent_at: purchase.purchased_at,
+      confirmed_at: purchase.purchased_at
+    )
+  end
+end
+puts "✅ Updated #{november_purchases.count} purchases (November) to paid status (cash payment) with invoice status 3 (PAID)"
+
 puts "✅ Seeding completed!"

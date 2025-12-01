@@ -8,11 +8,19 @@ class Cart < ApplicationRecord
   end
   
   def total_amount_for_user(user)
-    cart_items.sum { |item| item.unit_price_for_user(user) * item.quantity }
+    cart_items.sum do |item|
+      unit_price = item.unit_price_for_user(user)
+      # 骨髄幹細胞培養上清液（ID: 1）の場合は、2cc単位の価格 × 保存数量
+      # 内部では既に5倍で保存されているので、そのまま計算
+      unit_price * item.quantity
+    end
   end
   
   def total_items
-    cart_items.sum(:quantity)
+    cart_items.sum do |item|
+      # 骨髄幹細胞培養上清液（ID: 1）の場合は、保存されている数量を5で割って表示
+      (item.product_id == 1) ? (item.quantity / 5) : item.quantity
+    end
   end
   
   def has_stem_cell_products?

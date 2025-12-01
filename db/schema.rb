@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_064035) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_30_183723) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -81,6 +81,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_064035) do
     t.integer "quantity"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "delivery_type"
+    t.integer "clinic_id"
+    t.string "address_type"
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
     t.index ["product_id"], name: "index_cart_items_on_product_id"
   end

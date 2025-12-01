@@ -49,8 +49,12 @@
                         <% if purchase.purchase_items.count == 1 %>
                           <!-- 単一商品の場合 -->
                           <% item = purchase.purchase_items.first %>
+                          <% 
+                            # 骨髄幹細胞培養上清液（ID: 1）の場合は10cc単位の価格（5倍）
+                            display_unit_price = (item.product_id == 1) ? (item.seller_price * 5) : item.seller_price
+                          %>
                           <div class="fw-bold"><%= item.product.name %></div>
-                          <small class="text-muted">単価: ¥<%= number_with_delimiter(item.seller_price) %></small>
+                          <small class="text-muted">単価: ¥<%= number_with_delimiter(display_unit_price) %></small>
                         <% else %>
                           <!-- 複数商品の場合 -->
                           <div class="fw-bold">複数商品 (<%= purchase.purchase_items.count %>種類)</div>
@@ -65,8 +69,14 @@
                         <% end %>
                       </td>
                       <td>
+                        <% 
+                          # 骨髄幹細胞培養上清液（ID: 1）の場合は数量を5で割って表示
+                          total_display_quantity = purchase.purchase_items.sum do |item|
+                            (item.product_id == 1) ? (item.quantity / 5) : item.quantity
+                          end
+                        %>
                         <span class="badge bg-secondary fs-6">
-                          <%= purchase.purchase_items.sum(:quantity) %>個
+                          <%= total_display_quantity %>個
                         </span>
                       </td>
                       <td>

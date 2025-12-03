@@ -19,7 +19,6 @@
             <% end %>
           <% end %>
 
-          <%= link_to "🏠 マイページに戻る", mysales_path, class: "btn btn-outline-secondary me-2" %>
           <% if @user.referrer.present? && (@user.referrer == current_user || current_user.descendants.include?(@user.referrer)) %>
             <%= link_to "🔼 1つ上位に戻る", user_path(@user.referrer), class: "btn btn-outline-primary" %>
           <% end %>
@@ -36,7 +35,7 @@
           <h5 class="card-title mb-0">基本情報</h5>
         </div>
         <div class="card-body">
-          <table class="table table-borderless">
+          <table class="table table-borderless" style="table-layout: fixed; width: 100%;">
             <tr>
               <th width="30%">レベル:</th>
               <td>
@@ -50,8 +49,8 @@
               </td>
             </tr>
             <tr>
-              <th>メールアドレス:</th>
-              <td>
+              <th width="30%">メールアドレス:</th>
+              <td style="max-width: 0; word-break: break-all; overflow-wrap: break-word; white-space: normal !important;">
                 <div id="email-display">
                   <div><%= @user.email %></div>
                   <% if @user == current_user %>
@@ -151,8 +150,8 @@
       </div>
     </div>
 
-    <!-- 統計情報（サロン・クリニック・お客様レベルは非表示） -->
-    <% unless @user.level.value.in?([4, 5, 7]) %>
+    <!-- 統計情報（クリニック・サロン・お客様レベルは非表示） -->
+    <% unless @user.level.value.in?([6, 7, 8]) %>
       <div class="col-md-6">
         <div class="card">
           <div class="card-header">

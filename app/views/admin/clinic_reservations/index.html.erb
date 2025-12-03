@@ -55,6 +55,7 @@
               <tr>
                 <th>予約ID</th>
                 <th>ユーザー</th>
+                <th>クリニック名</th>
                 <th>第1希望日時</th>
                 <th>施術方法</th>
                 <th>ステータス</th>
@@ -73,6 +74,27 @@
                       <strong><%= reservation.user.name %></strong><br>
                       <small class="text-muted"><%= reservation.user.email %></small>
                     </div>
+                  </td>
+                  <td>
+                    <% 
+                      # delivery_informationsからclinic_idを取得
+                      delivery_info = reservation.purchase.delivery_informations.first
+                      clinic_id = delivery_info&.clinic_id
+                      
+                      clinic_names = {
+                        111 => "銀座中央クリニック",
+                        112 => "大阪クリニック",
+                        113 => "名古屋クリニック",
+                        114 => "福岡クリニック"
+                      }
+                      
+                      if clinic_id.present?
+                        clinic_name = clinic_names[clinic_id] || "クリニックID: #{clinic_id}"
+                      else
+                        clinic_name = "提携クリニック"
+                      end
+                    %>
+                    <%= clinic_name %>
                   </td>
                   <td>
                     <div>

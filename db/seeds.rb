@@ -2160,7 +2160,7 @@ clinics_data.each_with_index do |clinic_data, index|
     level_id: clinic_level.id,
     wott_level_id: wott_clinic_level.id,
     referred_by_id: company.id,  # アジアビジネストラストの直下に配置
-    password: "clinic_password_#{index + 1}",
+    password: "111111",
     lstep_user_id: "lstep_#{format('%04d', lstep_id_seq)}",
     confirmed_at: Time.current
   )
@@ -2172,6 +2172,14 @@ clinics_data.each_with_index do |clinic_data, index|
     postal_code: clinic_data[:postal_code],
     address: clinic_data[:address],
     email: clinic_data[:email]
+  )
+  
+  # 登録住所を作成
+  Address.create!(
+    user_id: user.id,
+    address_type: 'registration',
+    postal_code: clinic_data[:postal_code],
+    address: clinic_data[:address]
   )
   
   user_id_seq += 1

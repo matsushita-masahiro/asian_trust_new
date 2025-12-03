@@ -197,6 +197,86 @@
         </div>
       </div>
 
+      <!-- クリニック情報 -->
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-hospital me-2"></i>
+            クリニック情報
+          </h5>
+        </div>
+        <div class="card-body">
+          <% 
+            # delivery_informationsからclinic_idを取得
+            delivery_info = @clinic_reservation.purchase.delivery_informations.first
+            clinic_id = delivery_info&.clinic_id
+            
+            # clinic_idに対応するユーザー情報を取得
+            clinic_user = clinic_id.present? ? User.find_by(id: clinic_id) : nil
+          %>
+          
+          <% if clinic_user %>
+            <table class="table table-sm table-borderless">
+              <tr>
+                <th width="40%">クリニック名:</th>
+                <td><strong><%= clinic_user.name %></strong></td>
+              </tr>
+              <tr>
+                <th>電話番号:</th>
+                <td>
+                  <% if clinic_user.phone.present? %>
+                    <a href="tel:<%= clinic_user.phone %>">
+                      <i class="fas fa-phone me-1"></i><%= clinic_user.phone %>
+                    </a>
+                  <% else %>
+                    <span class="text-muted">未設定</span>
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <th>メールアドレス:</th>
+                <td>
+                  <a href="mailto:<%= clinic_user.email %>">
+                    <i class="fas fa-envelope me-1"></i><%= clinic_user.email %>
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <th>住所:</th>
+                <td>
+                  <% if clinic_user.registration_address.present? %>
+                    <% if clinic_user.registration_address.postal_code.present? %>
+                      <div class="text-muted small">〒<%= clinic_user.registration_address.postal_code %></div>
+                    <% end %>
+                    <%= clinic_user.registration_address.address %>
+                  <% elsif clinic_user.invoice_base&.address.present? %>
+                    <% if clinic_user.invoice_base.postal_code.present? %>
+                      <div class="text-muted small">〒<%= clinic_user.invoice_base.postal_code %></div>
+                    <% end %>
+                    <%= clinic_user.invoice_base.address %>
+                  <% else %>
+                    <span class="text-muted">未設定</span>
+                  <% end %>
+                </td>
+              </tr>
+            </table>
+            <div class="d-grid mt-3">
+              <%= link_to "クリニック詳細", admin_user_path(clinic_user), 
+                  class: "btn btn-outline-info btn-sm" %>
+            </div>
+          <% else %>
+            <div class="text-center text-muted py-3">
+              <i class="fas fa-info-circle me-1"></i>
+              クリニック情報が設定されていません
+              <% if clinic_id.present? %>
+                <br>
+                <small>(クリニックID: <%= clinic_id %>)</small>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
       <!-- 関連購入情報 -->
       <% if @clinic_reservation.purchase.present? %>
         <div class="card mb-4">

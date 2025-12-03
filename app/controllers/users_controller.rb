@@ -12,9 +12,14 @@ class UsersController < ApplicationController
 
     # アクセス権限チェック
     unless can_access_user?(@user)
-      redirect_to mypage_path, alert: "権限がありません。"
+      redirect_to mypage_users_path, alert: "権限がありません。"
       return
     end
+  end
+
+  def mypage
+    @user = current_user
+    render :show
   end
 
   # メールアドレス更新
@@ -45,7 +50,7 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
 
     unless can_access_user?(@user)
-      redirect_to mypage_path, alert: "権限がありません。"
+      redirect_to mypage_users_path, alert: "権限がありません。"
       return
     end
 

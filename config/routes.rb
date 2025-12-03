@@ -182,6 +182,7 @@ Rails.application.routes.draw do
     member do
       get :purchases  # /users/:id/purchases → 販売履歴
     end
+    get :mypage, on: :collection
     # 住所管理
     resources :addresses, only: [:create, :update, :destroy]
   end

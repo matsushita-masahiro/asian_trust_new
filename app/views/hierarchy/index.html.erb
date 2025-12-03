@@ -14,25 +14,25 @@
 
   <!-- 統計情報 -->
   <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-4 mb-3">
       <div class="card bg-primary text-white">
-        <div class="card-body text-center">
+        <div class="card-body text-center py-4">
           <h6 class="card-title">直下ユーザー数</h6>
           <h3 class="mb-0"><%= current_user.referrals.count %></h3>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-4 mb-3">
       <div class="card bg-success text-white">
-        <div class="card-body text-center">
+        <div class="card-body text-center py-4">
           <h6 class="card-title">全下位ユーザー数</h6>
           <h3 class="mb-0"><%= count_all_descendants(current_user) %></h3>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-4 mb-3">
       <div class="card bg-info text-white">
-        <div class="card-body text-center">
+        <div class="card-body text-center py-4">
           <h6 class="card-title">階層レベル</h6>
           <h3 class="mb-0"><%= current_user.level&.name || "未設定" %></h3>
         </div>

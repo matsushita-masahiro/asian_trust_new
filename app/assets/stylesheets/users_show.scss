@@ -165,6 +165,51 @@
   width: 250px;
 }
 
+/* Email and Phone Display - すべての横幅で編集ボタンを下に配置 */
+#email-display,
+#phone-display {
+  display: block !important;
+  width: 100%;
+}
+
+#email-display .email-phone-text,
+#phone-display .email-phone-text {
+  display: block !important;
+  width: 100%;
+  word-break: break-all;
+  margin-bottom: 0.5rem !important;
+}
+
+#email-display button,
+#phone-display button {
+  display: block !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  width: auto !important;
+}
+
+#email-edit form,
+#phone-edit form {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.email-input-field,
+#phone-edit input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+}
+
+@media (max-width: 768px) {
+  .email-input-field,
+  #phone-edit input[type="text"] {
+    width: 100% !important;
+    max-width: 100%;
+  }
+}
+
 /* Month Selector */
 .month-selector {
   width: 180px;

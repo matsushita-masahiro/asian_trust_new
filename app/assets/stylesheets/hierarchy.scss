@@ -126,28 +126,81 @@
 
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
-  .user-node {
-    width: 250px;
+  .hierarchy-container-vertical {
+    padding: 10px;
   }
 
-  .children-container {
+  .user-node {
+    width: 100%;
+    max-width: 280px;
+    font-size: 13px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+
+  .user-stats {
+    font-size: 10px;
+  }
+
+  /* 階層ごとに左マージンを増やして階層を視覚化 */
+  .level-0 {
+    margin-left: 0;
+  }
+
+  .level-1 {
     margin-left: 20px;
   }
 
-  .hierarchy-row {
-    flex-direction: column;
+  .level-2 {
+    margin-left: 40px;
   }
 
+  .level-3 {
+    margin-left: 60px;
+  }
+
+  .level-4 {
+    margin-left: 80px;
+  }
+
+  .level-5 {
+    margin-left: 100px;
+  }
+
+  .level-6 {
+    margin-left: 120px;
+  }
+
+  .level-7 {
+    margin-left: 140px;
+  }
+
+  /* 子要素のコンテナは左マージンをリセット */
   .children-container {
     margin-left: 0;
-    margin-top: 15px;
+    margin-top: 10px;
   }
 
+  /* 接続線は非表示 */
   .children-container::before {
     display: none;
   }
 
   .children-container .hierarchy-row::before {
     display: none;
+  }
+
+  /* 階層の視覚的な区切り線を追加 */
+  .hierarchy-row:not(.level-0)::after {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+    opacity: 0.5;
   }
 }

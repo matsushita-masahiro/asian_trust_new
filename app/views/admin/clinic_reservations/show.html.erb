@@ -63,32 +63,103 @@
             </div>
           </div>
           
-          <div class="row mb-3">
-            <div class="col-sm-3"><strong>第1希望:</strong></div>
-            <div class="col-sm-9">
-              <strong><%= @clinic_reservation.preferred_date_1&.strftime('%Y年%m月%d日') %></strong>
-              <%= @clinic_reservation.preferred_time_1 %>
-            </div>
-          </div>
-          
-          <% if @clinic_reservation.preferred_date_2.present? %>
+          <% if @clinic_reservation.pending? %>
+            <%= form_with url: confirm_with_selection_admin_clinic_reservation_path(@clinic_reservation), method: :patch, local: true do |f| %>
+              <div class="row mb-3">
+                <div class="col-sm-3"><strong>希望日時選択:</strong></div>
+                <div class="col-sm-9">
+                  <div class="form-check mb-2 p-3 border rounded" style="background-color: #f8f9fa;">
+                    <%= f.radio_button :selected_preference, 1, class: "form-check-input", id: "preference_1", checked: true %>
+                    <%= f.label :selected_preference, class: "form-check-label ms-2", for: "preference_1" do %>
+                      <strong>第1希望:</strong>
+                      <span class="text-primary"><%= @clinic_reservation.preferred_date_1&.strftime('%Y年%m月%d日') %></span>
+                      <span class="badge bg-primary"><%= @clinic_reservation.preferred_time_1 %></span>
+                    <% end %>
+                  </div>
+                  
+                  <% if @clinic_reservation.preferred_date_2.present? %>
+                    <div class="form-check mb-2 p-3 border rounded" style="background-color: #f8f9fa;">
+                      <%= f.radio_button :selected_preference, 2, class: "form-check-input", id: "preference_2" %>
+                      <%= f.label :selected_preference, class: "form-check-label ms-2", for: "preference_2" do %>
+                        <strong>第2希望:</strong>
+                        <span class="text-primary"><%= @clinic_reservation.preferred_date_2&.strftime('%Y年%m月%d日') %></span>
+                        <span class="badge bg-secondary"><%= @clinic_reservation.preferred_time_2 %></span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                  
+                  <% if @clinic_reservation.preferred_date_3.present? %>
+                    <div class="form-check mb-2 p-3 border rounded" style="background-color: #f8f9fa;">
+                      <%= f.radio_button :selected_preference, 3, class: "form-check-input", id: "preference_3" %>
+                      <%= f.label :selected_preference, class: "form-check-label ms-2", for: "preference_3" do %>
+                        <strong>第3希望:</strong>
+                        <span class="text-primary"><%= @clinic_reservation.preferred_date_3&.strftime('%Y年%m月%d日') %></span>
+                        <span class="badge bg-secondary"><%= @clinic_reservation.preferred_time_3 %></span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-sm-3"></div>
+                <div class="col-sm-9">
+                  <%= f.submit "選択した日時で予約確定", class: "btn btn-success", 
+                      data: { confirm: "選択した希望日時で予約を確定しますか？" } %>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <% # 予約確定後の表示 %>
+            <% if @clinic_reservation.confirmed_date.present? %>
+              <div class="row mb-3">
+                <div class="col-sm-3"><strong>予約確定日時:</strong></div>
+                <div class="col-sm-9">
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    <span><%= @clinic_reservation.confirmed_date&.strftime('%Y年%m月%d日') %></span>
+                    <span class="badge bg-success ms-2"><%= @clinic_reservation.confirmed_time %></span>
+                    <% if @clinic_reservation.confirmed_preference.present? %>
+                      <span class="text-muted ms-2 small">
+                        (第<%= @clinic_reservation.confirmed_preference %>希望で確定)
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+              
+              <hr class="my-3">
+            <% end %>
+            
+            <h6 class="text-muted mb-3">希望日時一覧</h6>
+            
             <div class="row mb-3">
-              <div class="col-sm-3"><strong>第2希望:</strong></div>
+              <div class="col-sm-3"><strong>第1希望:</strong></div>
               <div class="col-sm-9">
-                <%= @clinic_reservation.preferred_date_2&.strftime('%Y年%m月%d日') %>
-                <%= @clinic_reservation.preferred_time_2 %>
+                <strong><%= @clinic_reservation.preferred_date_1&.strftime('%Y年%m月%d日') %></strong>
+                <%= @clinic_reservation.preferred_time_1 %>
               </div>
             </div>
-          <% end %>
-          
-          <% if @clinic_reservation.preferred_date_3.present? %>
-            <div class="row mb-3">
-              <div class="col-sm-3"><strong>第3希望:</strong></div>
-              <div class="col-sm-9">
-                <%= @clinic_reservation.preferred_date_3&.strftime('%Y年%m月%d日') %>
-                <%= @clinic_reservation.preferred_time_3 %>
+            
+            <% if @clinic_reservation.preferred_date_2.present? %>
+              <div class="row mb-3">
+                <div class="col-sm-3"><strong>第2希望:</strong></div>
+                <div class="col-sm-9">
+                  <%= @clinic_reservation.preferred_date_2&.strftime('%Y年%m月%d日') %>
+                  <%= @clinic_reservation.preferred_time_2 %>
+                </div>
               </div>
-            </div>
+            <% end %>
+            
+            <% if @clinic_reservation.preferred_date_3.present? %>
+              <div class="row mb-3">
+                <div class="col-sm-3"><strong>第3希望:</strong></div>
+                <div class="col-sm-9">
+                  <%= @clinic_reservation.preferred_date_3&.strftime('%Y年%m月%d日') %>
+                  <%= @clinic_reservation.preferred_time_3 %>
+                </div>
+              </div>
+            <% end %>
           <% end %>
         </div>
       </div>
@@ -339,15 +410,6 @@
         <div class="card-body">
           <% if @clinic_reservation.pending? %>
             <div class="d-grid gap-2">
-              <%= link_to confirm_admin_clinic_reservation_path(@clinic_reservation), 
-                  method: :patch, 
-                  class: "btn btn-success",
-                  data: { 
-                    confirm: "この予約を確定しますか？\n\n予約者: #{@clinic_reservation.user.name}\n第1希望: #{@clinic_reservation.preferred_date_1&.strftime('%Y/%m/%d')} #{@clinic_reservation.preferred_time_1}" 
-                  } do %>
-                <i class="fas fa-check me-1"></i>予約を確定する
-              <% end %>
-              
               <%= link_to cancel_admin_clinic_reservation_path(@clinic_reservation), 
                   method: :patch, 
                   class: "btn btn-outline-danger",

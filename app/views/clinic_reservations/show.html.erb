@@ -1,4 +1,4 @@
-<div class="container mt-4">
+<div class="container mt-4 mb-5">
   <div class="row justify-content-center">
     <div class="col-md-8">
       <div class="card">
@@ -36,9 +36,29 @@
               <div class="row mb-3">
                 <div class="col-sm-4"><strong>ステータス:</strong></div>
                 <div class="col-sm-8">
-                  <span class="badge bg-warning"><%= @clinic_reservation.status_name %></span>
+                  <% if @clinic_reservation.confirmed? %>
+                    <span class="badge bg-success"><%= @clinic_reservation.status_name %></span>
+                  <% else %>
+                    <span class="badge bg-warning"><%= @clinic_reservation.status_name %></span>
+                  <% end %>
                 </div>
               </div>
+              
+              <% # 予約確定時の確定日時を表示 %>
+              <% if @clinic_reservation.confirmed? && @clinic_reservation.confirmed_date.present? %>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>予約確定日時:</strong></div>
+                  <div class="col-sm-8">
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-check-circle text-success me-2"></i>
+                      <span><%= @clinic_reservation.confirmed_date&.strftime('%Y年%m月%d日') %></span>
+                      <span class="badge bg-success ms-2"><%= @clinic_reservation.confirmed_time %></span>
+                    </div>
+                  </div>
+                </div>
+                
+                <hr class="my-3">
+              <% end %>
               
               <div class="row mb-3">
                 <div class="col-sm-4"><strong>施術方法:</strong></div>
@@ -51,6 +71,10 @@
                   <% end %>
                 </div>
               </div>
+              
+              <% if @clinic_reservation.confirmed? %>
+                <h6 class="text-muted mb-2 mt-3">希望日時一覧</h6>
+              <% end %>
               
               <div class="row mb-3">
                 <div class="col-sm-4"><strong>第1希望:</strong></div>

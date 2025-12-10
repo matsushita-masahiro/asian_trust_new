@@ -1,15 +1,20 @@
+<%
+  # ローカル変数またはインスタンス変数から取得
+  pi = defined?(purchase_invoice) ? purchase_invoice : @purchase_invoice
+%>
+
 <div class="header">
   <div class="title">領収書</div>
-  <div>領収書番号: <%= @purchase_invoice.invoice_number %>-R</div>
-  <div>発行日: <%= @purchase_invoice.receipt_sent_at&.strftime('%Y年%m月%d日') || Date.current.strftime('%Y年%m月%d日') %></div>
+  <div>領収書番号: <%= pi.invoice_number %>-R</div>
+  <div>発行日: <%= pi.receipt_sent_at&.strftime('%Y年%m月%d日') || Date.current.strftime('%Y年%m月%d日') %></div>
 </div>
 
 <div class="customer-info">
   <h3>お客様情報</h3>
   <p>
-    <%= @purchase_invoice.user.display_name %> 様<br>
-    <% if @purchase_invoice.user.addresses.any? %>
-      <% address = @purchase_invoice.user.addresses.first %>
+    <%= pi.user.display_name %> 様<br>
+    <% if pi.user.addresses.any? %>
+      <% address = pi.user.addresses.first %>
       <% if address.postal_code.present? %>
         〒<%= address.postal_code %><br>
       <% end %>
@@ -20,12 +25,12 @@
 
 <div class="receipt-amount">
   <% 
-    subtotal = (@purchase_invoice.total_amount || @purchase_invoice.purchase.total_price).to_i
-    shipping_fee = (@purchase_invoice.shipping_fee || @purchase_invoice.purchase.total_shipping_fees).to_i
-    admin_fee = (@purchase_invoice.admin_fee || 0).to_i
+    subtotal = (pi.total_amount || pi.purchase.total_price).to_i
+    shipping_fee = (pi.shipping_fee || pi.purchase.total_shipping_fees).to_i
+    admin_fee = (pi.admin_fee || 0).to_i
     subtotal_before_tax = subtotal + shipping_fee + admin_fee
-    tax_amount = (@purchase_invoice.tax_amount || (subtotal_before_tax * 0.1).round).to_i
-    total_with_tax = (@purchase_invoice.total_with_tax || (subtotal_before_tax + tax_amount)).to_i
+    tax_amount = (pi.tax_amount || (subtotal_before_tax * 0.1).round).to_i
+    total_with_tax = (pi.total_with_tax || (subtotal_before_tax + tax_amount)).to_i
   %>
   
   <h3>領収金額</h3>
@@ -46,7 +51,7 @@
       </tr>
     </thead>
     <tbody>
-      <% @purchase_invoice.purchase_items.each do |item| %>
+      <% pi.purchase_items.each do |item| %>
         <tr>
           <td><%= item.product.name %></td>
           <td style="text-align: right;"><%= item.quantity %></td>
@@ -99,11 +104,15 @@
 <div class="issuer-info" style="margin-top: 40px; text-align: right;">
   <h3>発行者</h3>
   <p>
-    <% if @invoice_recipient %>
-      <%= @invoice_recipient.name %><br>
-      <%= @invoice_recipient.address %><br>
-      <% if @invoice_recipient.tel.present? %>
-        TEL: <%= @invoice_recipient.tel %>
+    <% 
+      # ローカル変数またはインスタンス変数から取得
+      recipient = defined?(invoice_recipient) ? invoice_recipient : @invoice_recipient
+    %>
+    <% if recipient %>
+      <%= recipient.name %><br>
+      <%= recipient.address %><br>
+      <% if recipient.tel.present? %>
+        TEL: <%= recipient.tel %>
       <% end %>
     <% else %>
       株式会社アジアビジネストラスト<br>

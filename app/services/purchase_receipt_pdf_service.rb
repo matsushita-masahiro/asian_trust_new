@@ -10,8 +10,14 @@ class PurchaseReceiptPdfService
     # HTMLテンプレートからPDFを生成
     Rails.logger.info "Rendering HTML template..."
     
-    # 発行者情報を取得（user_id=1のInvoiceRecipient）
+    # 発行者情報を取得（user_id=1のInvoiceRecipient: アジアビジネストラスト）
     invoice_recipient = InvoiceRecipient.find_by(user_id: 1)
+    
+    if invoice_recipient
+      Rails.logger.info "Invoice recipient found: #{invoice_recipient.name}"
+    else
+      Rails.logger.warn "Invoice recipient not found for user_id=1"
+    end
     
     # コントローラーのコンテキストでレンダリング
     controller = ApplicationController.new
@@ -20,7 +26,11 @@ class PurchaseReceiptPdfService
     
     html = controller.render_to_string(
       template: 'purchase_invoices/pdf_receipt',
-      layout: 'pdf'
+      layout: 'pdf',
+      locals: {
+        purchase_invoice: @purchase_invoice,
+        invoice_recipient: invoice_recipient
+      }
     )
     Rails.logger.info "HTML template rendered successfully"
     

@@ -82,7 +82,7 @@ class PurchaseInvoicesController < ApplicationController
   end
 
   def send_invoice
-    # 管理者のみ実行可能
+    # 事務局のみ実行可能
     unless current_user.level&.value == 0  # アジアビジネストラスト
       redirect_to purchase_invoice_path(@purchase_invoice), alert: "権限がありません"
       return
@@ -111,7 +111,7 @@ class PurchaseInvoicesController < ApplicationController
   end
 
   def confirm_payment
-    # 管理者のみ実行可能
+    # 事務局のみ実行可能
     unless current_user.level&.value == 0  # アジアビジネストラスト
       redirect_to purchase_invoice_path(@purchase_invoice), alert: "権限がありません"
       return
@@ -146,14 +146,14 @@ class PurchaseInvoicesController < ApplicationController
     end
 
     if @purchase_invoice.receipt_requested!
-      redirect_to purchase_invoice_path(@purchase_invoice), notice: '領収書発行を依頼しました。管理者が確認後、領収書を発行いたします。'
+      redirect_to purchase_invoice_path(@purchase_invoice), notice: '領収書発行を依頼しました。事務局が確認後、領収書を発行いたします。'
     else
       redirect_to purchase_invoice_path(@purchase_invoice), alert: '領収書発行依頼に失敗しました。'
     end
   end
 
   def send_receipt
-    # 管理者のみ実行可能
+    # 事務局のみ実行可能
     unless current_user.level&.value == 0  # アジアビジネストラスト
       redirect_to purchase_invoice_path(@purchase_invoice), alert: "権限がありません"
       return
@@ -206,7 +206,7 @@ class PurchaseInvoicesController < ApplicationController
       # purchase_invoiceのステータスを支払確認依頼（2）に更新
       @purchase_invoice.payment_confirmation_request!
       
-      redirect_to purchase_invoice_path(@purchase_invoice), notice: '支払確認を依頼しました。管理者が確認後、正式に支払い完了となります。'
+      redirect_to purchase_invoice_path(@purchase_invoice), notice: '支払確認を依頼しました。事務局が確認後、正式に支払い完了となります。'
     rescue => e
       Rails.logger.error "Mark as paid error: #{e.message}"
       redirect_to purchase_invoice_path(@purchase_invoice), alert: "支払確認依頼に失敗しました。エラー: #{e.message}"
@@ -224,7 +224,7 @@ class PurchaseInvoicesController < ApplicationController
   end
 
   def can_access_purchase_invoice?
-    # 購入者または管理者のみアクセス可能
+    # 購入者または事務局のみアクセス可能
     @purchase_invoice.purchase.user == current_user || 
     current_user.level&.value == 0  # アジアビジネストラスト
   end
@@ -246,18 +246,30 @@ class PurchaseInvoicesController < ApplicationController
   end
 
   def render_receipt_pdf
-    # 領収書PDF生成（簡易版）
-    html = render_to_string(
-      template: 'purchase_invoices/pdf_receipt',
-      layout: 'pdf',
-      formats: [:html]
-    )
-    
-    pdf = WickedPdf.new.pdf_from_string(html)
-    
-    send_data pdf,
-      filename: "領収書_#{@purchase_invoice.invoice_number}.pdf",
-      type: 'application/pdf',
-      disposition: 'inline'
+    # Active Storageに保存されている領収書PDFがあればそれを表示
+    if @purchase_invoice.receipt_file.attached?
+      # Active Storageから直接リダイレクト
+      redirect_to rails_blob_path(@purchase_invoice.receipt_file, disposition: "inline"), allow_other_host: true
+    else
+      # 領収書がまだ生成されていない場合は、その場で生成
+      @invoice_recipient = InvoiceRecipient.find_by(user_id: 1)
+      
+      html = render_to_string(
+        template: 'purchase_invoices/pdf_receipt',
+        layout: 'pdf',
+        formats: [:html],
+        locals: {
+          purchase_invoice: @purchase_invoice,
+          invoice_recipient: @invoice_recipient
+        }
+      )
+      
+      pdf = WickedPdf.new.pdf_from_string(html)
+      
+      send_data pdf,
+        filename: "領収書_#{@purchase_invoice.invoice_number}.pdf",
+        type: 'application/pdf',
+        disposition: 'inline'
+    end
   end
 end

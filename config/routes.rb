@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :notifications, only: [:index, :show]
   # クリニック予約
   resources :purchases, only: [] do
     resources :clinic_reservations, only: [:new, :create]
@@ -42,13 +43,14 @@ Rails.application.routes.draw do
   get 'law',     to: 'home#law',     as: :law
 
   # お問い合わせ
-  resources :inquiries, only: [:new, :create]
+  resources :inquiries, only: [:new, :create, :index, :show]
 
   # 管理者画面
   namespace :admin do
     resources :clinic_reservations, only: [:index, :show, :edit, :update, :destroy] do
       member do
         patch :confirm
+        patch :confirm_with_selection
         patch :complete
         patch :cancel
       end

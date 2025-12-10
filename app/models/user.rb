@@ -39,6 +39,8 @@ class User < ApplicationRecord
   # 購入関連のリレーション
   has_many :purchases, class_name: 'Purchase', foreign_key: 'user_id'  # 自分の購入
   has_many :clinic_reservations, dependent: :destroy
+  has_many :notifications, dependent: :destroy
+  has_many :inquiries, dependent: :destroy
   
   # カート機能
   has_one :cart, dependent: :destroy

@@ -1,11 +1,26 @@
 # app/controllers/inquiries_controller.rb
 class InquiriesController < ApplicationController
+  before_action :authenticate_user!, only: [:index, :show]
+  
+  def index
+    @inquiries = current_user.inquiries.order(created_at: :desc)
+  end
+  
+  def show
+    @inquiry = current_user.inquiries.find(params[:id])
+  end
+  
   def new
     @inquiry = Inquiry.new
   end
 
   def create
     @inquiry = Inquiry.new(inquiry_params)
+    
+    # ログインユーザーの場合はuser_idを設定
+    if user_signed_in?
+      @inquiry.user_id = current_user.id
+    end
     
     # reCAPTCHAの検証
     Rails.logger.info "reCAPTCHA response: #{params['g-recaptcha-response']}"

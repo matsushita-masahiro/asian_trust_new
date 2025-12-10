@@ -15,10 +15,95 @@ class UsersController < ApplicationController
       redirect_to mypage_users_path, alert: "権限がありません。"
       return
     end
+    
+    # 自分自身のページを見ている場合、通知を作成
+    if @user == current_user
+      # クリニック予約が必要な購入の通知を作成
+      pending_purchases = current_user.purchases
+                                      .joins(:purchase_invoice, :delivery_informations)
+                                      .where(status: 'paid')
+                                      .where(purchase_invoices: { status: 3 })
+                                      .where(delivery_informations: { delivery_type: ['clinic', 'multiple'] })
+                                      .where.missing(:clinic_reservation)
+                                      .distinct
+      
+      pending_purchases.each do |purchase|
+        # 既に通知が存在しない場合のみ作成
+        unless current_user.notifications.exists?(
+          notification_type: Notification::CLINIC_RESERVATION_REQUIRED,
+          link_url: my_history_purchases_path
+        )
+          current_user.notifications.create!(
+            notification_type: Notification::CLINIC_RESERVATION_REQUIRED,
+            title: 'クリニック予約が必要です',
+            message: "購入ID: #{purchase.id} のクリニック予約をお願いします。",
+            link_url: my_history_purchases_path
+          )
+        end
+      end
+      
+      # クリニック予約確定済みの通知を作成
+      confirmed_reservations = current_user.clinic_reservations.where(status: 1)
+      confirmed_reservations.each do |reservation|
+        # 既に通知が存在しない場合のみ作成
+        unless current_user.notifications.exists?(
+          notification_type: Notification::CLINIC_RESERVATION_CONFIRMED,
+          link_url: my_history_purchases_path
+        )
+          current_user.notifications.create!(
+            notification_type: Notification::CLINIC_RESERVATION_CONFIRMED,
+            title: 'クリニック予約が確定しました',
+            message: "予約ID: #{reservation.id} の予約が確定しました。確定日時: #{reservation.confirmed_date&.strftime('%Y年%m月%d日')} #{reservation.confirmed_time}",
+            link_url: my_history_purchases_path
+          )
+        end
+      end
+    end
   end
 
   def mypage
     @user = current_user
+    
+    # 通知を作成（show アクションと同じロジック）
+    # クリニック予約が必要な購入の通知を作成
+    pending_purchases = current_user.purchases
+                                    .joins(:purchase_invoice, :delivery_informations)
+                                    .where(status: 'paid')
+                                    .where(purchase_invoices: { status: 3 })
+                                    .where(delivery_informations: { delivery_type: ['clinic', 'multiple'] })
+                                    .where.missing(:clinic_reservation)
+                                    .distinct
+    
+    pending_purchases.each do |purchase|
+      unless current_user.notifications.exists?(
+        notification_type: Notification::CLINIC_RESERVATION_REQUIRED,
+        link_url: my_history_purchases_path
+      )
+        current_user.notifications.create!(
+          notification_type: Notification::CLINIC_RESERVATION_REQUIRED,
+          title: 'クリニック予約が必要です',
+          message: "購入ID: #{purchase.id} のクリニック予約をお願いします。",
+          link_url: my_history_purchases_path
+        )
+      end
+    end
+    
+    # クリニック予約確定済みの通知を作成
+    confirmed_reservations = current_user.clinic_reservations.where(status: 1)
+    confirmed_reservations.each do |reservation|
+      unless current_user.notifications.exists?(
+        notification_type: Notification::CLINIC_RESERVATION_CONFIRMED,
+        link_url: my_history_purchases_path
+      )
+        current_user.notifications.create!(
+          notification_type: Notification::CLINIC_RESERVATION_CONFIRMED,
+          title: 'クリニック予約が確定しました',
+          message: "予約ID: #{reservation.id} の予約が確定しました。確定日時: #{reservation.confirmed_date&.strftime('%Y年%m月%d日')} #{reservation.confirmed_time}",
+          link_url: my_history_purchases_path
+        )
+      end
+    end
+    
     render :show
   end
 

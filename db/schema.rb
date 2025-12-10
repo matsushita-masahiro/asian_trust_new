@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_30_183723) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_05_143221) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -113,6 +113,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_30_183723) do
     t.integer "status"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "confirmed_preference"
+    t.date "confirmed_date"
+    t.string "confirmed_time"
     t.index ["purchase_id"], name: "index_clinic_reservations_on_purchase_id"
     t.index ["user_id"], name: "index_clinic_reservations_on_user_id"
   end
@@ -138,6 +141,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_30_183723) do
     t.text "message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["user_id"], name: "index_inquiries_on_user_id"
   end
 
   create_table "invoice_bases", force: :cascade do |t|
@@ -227,6 +232,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_30_183723) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["value"], name: "index_levels_on_value", unique: true
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "notification_type"
+    t.string "title"
+    t.text "message"
+    t.string "link_url"
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
   create_table "product_prices", force: :cascade do |t|
@@ -435,6 +452,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_30_183723) do
   add_foreign_key "clinic_reservations", "users"
   add_foreign_key "delivery_informations", "purchases"
   add_foreign_key "delivery_informations", "users", column: "clinic_id"
+  add_foreign_key "inquiries", "users"
   add_foreign_key "invoice_bases", "users"
   add_foreign_key "invoice_recipients", "users"
   add_foreign_key "invoices", "invoice_recipients"
@@ -443,6 +461,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_30_183723) do
   add_foreign_key "level_change_applications", "levels", column: "target_level_id"
   add_foreign_key "level_change_applications", "users"
   add_foreign_key "level_change_applications", "users", column: "applicant_id"
+  add_foreign_key "notifications", "users"
   add_foreign_key "product_prices", "levels"
   add_foreign_key "product_prices", "products"
   add_foreign_key "product_prices", "wott_levels"

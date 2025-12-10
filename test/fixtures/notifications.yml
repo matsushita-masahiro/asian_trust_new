@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  notification_type: MyString
+  title: MyString
+  message: MyText
+  link_url: MyString
+  read_at: 2025-12-04 11:38:22
+
+two:
+  user: two
+  notification_type: MyString
+  title: MyString
+  message: MyText
+  link_url: MyString
+  read_at: 2025-12-04 11:38:22

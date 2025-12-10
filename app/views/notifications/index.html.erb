@@ -1,0 +1,60 @@
+<div class="container mt-4 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-primary">
+          <i class="fas fa-bell me-2"></i>
+          事務局からのお知らせ
+        </h4>
+        <% if @unread_count > 0 %>
+          <span class="badge bg-danger fs-6"><%= @unread_count %>件未読</span>
+        <% end %>
+      </div>
+
+      <% if @notifications.any? %>
+        <div class="list-group">
+          <% @notifications.each do |notification| %>
+            <%= link_to notification_path(notification), class: "list-group-item list-group-item-action mb-2 #{notification.unread? ? 'list-group-item-light' : ''}" do %>
+              <div class="d-flex w-100 justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center mb-2">
+                    <% if notification.unread? %>
+                      <span class="badge bg-danger me-2">未読</span>
+                    <% end %>
+                    <h6 class="mb-0">
+                      <i class="fas fa-envelope me-1"></i>
+                      <%= notification.title %>
+                    </h6>
+                  </div>
+                  <% if notification.message.present? %>
+                    <p class="mb-2 text-muted"><%= truncate(notification.message, length: 100) %></p>
+                  <% end %>
+                  <small class="text-muted">
+                    <i class="fas fa-clock me-1"></i>
+                    <%= notification.created_at.strftime('%Y年%m月%d日 %H:%M') %>
+                  </small>
+                </div>
+                <div class="ms-3">
+                  <i class="fas fa-chevron-right text-muted"></i>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+
+        <div class="mt-4">
+          <%= paginate @notifications %>
+        </div>
+      <% else %>
+        <div class="alert alert-info text-center">
+          <i class="fas fa-info-circle me-2"></i>
+          お知らせはありません
+        </div>
+      <% end %>
+
+      <div class="mt-4 text-center">
+        <%= link_to "マイページに戻る", mypage_users_path, class: "btn btn-outline-primary" %>
+      </div>
+    </div>
+  </div>
+</div>

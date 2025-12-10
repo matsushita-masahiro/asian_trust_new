@@ -60,6 +60,44 @@ class Admin::ClinicReservationsController < ApplicationController
     redirect_to admin_clinic_reservation_path(@clinic_reservation), 
                 notice: '予約を確定しました。'
   end
+  
+  # 選択した希望日時で予約確定
+  def confirm_with_selection
+    @clinic_reservation = ClinicReservation.find(params[:id])
+    selected_preference = params[:selected_preference].to_i
+    
+    # 選択された希望番号を保存
+    @clinic_reservation.confirmed_preference = selected_preference
+    
+    # 選択された希望日時を確定日時として保存
+    case selected_preference
+    when 1
+      @clinic_reservation.confirmed_date = @clinic_reservation.preferred_date_1
+      @clinic_reservation.confirmed_time = @clinic_reservation.preferred_time_1
+    when 2
+      @clinic_reservation.confirmed_date = @clinic_reservation.preferred_date_2
+      @clinic_reservation.confirmed_time = @clinic_reservation.preferred_time_2
+    when 3
+      @clinic_reservation.confirmed_date = @clinic_reservation.preferred_date_3
+      @clinic_reservation.confirmed_time = @clinic_reservation.preferred_time_3
+    end
+    
+    # ステータスを確定に変更
+    @clinic_reservation.status = ClinicReservation::CONFIRMED
+    
+    if @clinic_reservation.save
+      preference_label = case selected_preference
+                        when 1 then "第1希望"
+                        when 2 then "第2希望"
+                        when 3 then "第3希望"
+                        end
+      redirect_to admin_clinic_reservation_path(@clinic_reservation), 
+                  notice: "予約を確定しました（#{preference_label}）。確定日時: #{@clinic_reservation.confirmed_date&.strftime('%Y年%m月%d日')} #{@clinic_reservation.confirmed_time}"
+    else
+      redirect_to admin_clinic_reservation_path(@clinic_reservation), 
+                  alert: '予約の確定に失敗しました。'
+    end
+  end
 
   def complete
     @clinic_reservation = ClinicReservation.find(params[:id])

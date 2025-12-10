@@ -1441,6 +1441,33 @@ sept_oct_purchases = Purchase.where('purchased_at >= ? AND purchased_at < ?', '2
 updated_count = sept_oct_purchases.update_all(status: 'paid', payment_type: 'credit')
 puts "✅ Updated #{updated_count} purchases (Sept/Oct) to paid status"
 
+# 全てのPurchaseに送料を設定（請求書作成の前に実行）
+puts "🚚 Setting shipping fees for all purchases..."
+
+Purchase.includes(:purchase_items, :shipping_fees).find_each do |purchase|
+  next if purchase.shipping_fees.exists? # 既に送料が設定されている場合はスキップ
+  
+  # 購入商品に基づいて送料を自動設定
+  shipping_types_used = []
+  
+  purchase.purchase_items.includes(:product).each do |item|
+    product = item.product
+    shipping_type = product.shipping_type
+    
+    # 同じ送料タイプが既に追加されていない場合のみ追加
+    unless shipping_types_used.include?(shipping_type)
+      purchase.shipping_fees.create!(
+        shipping_type: shipping_type,
+        amount: product.shipping_fee_amount
+      )
+      shipping_types_used << shipping_type
+      puts "  Added #{shipping_type} shipping (¥#{product.shipping_fee_amount}) to purchase #{purchase.id}"
+    end
+  end
+end
+
+puts "✅ Shipping fees set for all purchases"
+
 # 全てのPurchaseに対してpurchase_invoiceを作成
 puts "📄 Creating purchase invoices for all purchases..."
 
@@ -1473,12 +1500,32 @@ Purchase.includes(:purchase_items, :user).find_each do |purchase|
     invoice_paid_at = nil
   end
   
+  # 送料と事務手数料を計算
+  shipping_fee = purchase.total_shipping_fees || 0
+  admin_fee = 0  # 事務手数料は現在0
+  
+  # 税抜き小計を計算（商品代金 + 送料 + 事務手数料）
+  subtotal_before_tax = purchase.total_price + shipping_fee + admin_fee
+  
+  # 消費税を計算（10%）
+  tax_rate = 0.1
+  tax_amount = (subtotal_before_tax * tax_rate).round
+  
+  # 税込み合計を計算
+  total_with_tax = subtotal_before_tax + tax_amount
+  
   # 請求書を作成
   purchase_invoice = purchase.create_purchase_invoice!(
     invoice_number: invoice_number,
     invoice_date: purchase.purchased_at.to_date,
     due_date: purchase.purchased_at.to_date + 1.week,
     total_amount: purchase.total_price,
+    shipping_fee: shipping_fee,
+    admin_fee: admin_fee,
+    tax_amount: tax_amount,
+    tax_rate: tax_rate,
+    subtotal_before_tax: subtotal_before_tax,
+    total_with_tax: total_with_tax,
     status: invoice_status,
     sent_at: invoice_sent_at,
     confirmed_at: (invoice_status == 2 || invoice_status == 3 ? purchase.purchased_at : nil)
@@ -1495,31 +1542,6 @@ Purchase.includes(:purchase_items, :user).find_each do |purchase|
 end
 
 puts "✅ Created purchase invoices for all purchases (built→DRAFT, reserved→SENT, paid→CONFIRMED)"
-
-# 全てのPurchaseに送料を設定
-puts "🚚 Setting shipping fees for all purchases..."
-
-Purchase.includes(:purchase_items, :shipping_fees).find_each do |purchase|
-  next if purchase.shipping_fees.exists? # 既に送料が設定されている場合はスキップ
-  
-  # 購入商品に基づいて送料を自動設定
-  shipping_types_used = []
-  
-  purchase.purchase_items.includes(:product).each do |item|
-    product = item.product
-    shipping_type = product.shipping_type
-    
-    # 同じ送料タイプが既に追加されていない場合のみ追加
-    unless shipping_types_used.include?(shipping_type)
-      purchase.shipping_fees.create!(
-        shipping_type: shipping_type,
-        amount: product.shipping_fee_amount
-      )
-      shipping_types_used << shipping_type
-      puts "  Added #{shipping_type} shipping (¥#{product.shipping_fee_amount}) to purchase #{purchase.id}"
-    end
-  end
-end
 
 # InvoiceRecipientデータを作成（user_id = 1で株式会社アジアビジネストラスト）
 puts "🏢 Creating InvoiceRecipient data..."
@@ -1734,11 +1756,31 @@ Purchase.includes(:purchase_invoice, :shipping_fees).where(purchase_invoice: nil
     invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
   end
   
+  # 送料と事務手数料を計算
+  shipping_fee = purchase.total_shipping_fees || 0
+  admin_fee = 0  # 事務手数料は現在0
+  
+  # 税抜き小計を計算（商品代金 + 送料 + 事務手数料）
+  subtotal_before_tax = purchase.total_price + shipping_fee + admin_fee
+  
+  # 消費税を計算（10%）
+  tax_rate = 0.1
+  tax_amount = (subtotal_before_tax * tax_rate).round
+  
+  # 税込み合計を計算
+  total_with_tax = subtotal_before_tax + tax_amount
+  
   purchase.create_purchase_invoice!(
     invoice_number: invoice_number,
     invoice_date: purchase.purchased_at.to_date,
     due_date: purchase.purchased_at.to_date + 1.week,
     total_amount: purchase.total_price,
+    shipping_fee: shipping_fee,
+    admin_fee: admin_fee,
+    tax_amount: tax_amount,
+    tax_rate: tax_rate,
+    subtotal_before_tax: subtotal_before_tax,
+    total_with_tax: total_with_tax,
     status: invoice_status,
     sent_at: invoice_sent_at,
     confirmed_at: (invoice_status == 2 || invoice_status == 3 ? purchase.purchased_at : nil)
@@ -2081,11 +2123,31 @@ if mannersound_products.any?
     
     invoice_sent_at = purchase.status == 'built' ? nil : purchase.purchased_at
     
+    # 送料と事務手数料を計算
+    shipping_fee = purchase.total_shipping_fees || 0
+    admin_fee = 0  # 事務手数料は現在0
+    
+    # 税抜き小計を計算（商品代金 + 送料 + 事務手数料）
+    subtotal_before_tax = purchase.total_price + shipping_fee + admin_fee
+    
+    # 消費税を計算（10%）
+    tax_rate = 0.1
+    tax_amount = (subtotal_before_tax * tax_rate).round
+    
+    # 税込み合計を計算
+    total_with_tax = subtotal_before_tax + tax_amount
+    
     purchase.create_purchase_invoice!(
       invoice_number: invoice_number,
       invoice_date: purchase.purchased_at.to_date,
       due_date: purchase.purchased_at.to_date + 1.week,
       total_amount: purchase.total_price,
+      shipping_fee: shipping_fee,
+      admin_fee: admin_fee,
+      tax_amount: tax_amount,
+      tax_rate: tax_rate,
+      subtotal_before_tax: subtotal_before_tax,
+      total_with_tax: total_with_tax,
       status: invoice_status,
       sent_at: invoice_sent_at,
       confirmed_at: (invoice_status == 2 || invoice_status == 3 ? purchase.purchased_at : nil)

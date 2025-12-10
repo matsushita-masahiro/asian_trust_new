@@ -6,6 +6,16 @@
           <h4 class="text-primary me-3 user-name-horizontal"><%= @user.name.present? ? @user.display_name : @user.email %></h4>
         </div>
         <div class="mobile-nav-buttons">
+          <% # 事務局からのお知らせアラート %>
+          <% if @user == current_user %>
+            <% unread_notifications_count = current_user.notifications.unread.count %>
+            <% if unread_notifications_count > 0 %>
+              <%= link_to notifications_path, class: "btn me-2", style: "background-color: rgb(200, 230, 201); color: #000; border: 1px solid rgb(200, 230, 201);" do %>
+                <i class="fas fa-bell me-1"></i>事務局からのお知らせ: <%= unread_notifications_count %>件
+              <% end %>
+            <% end %>
+          <% end %>
+          
           <% # カートから遷移した場合のカートに戻るボタン %>
           <% if request.referer&.include?('/cart') || params[:from] == 'cart' %>
             <%= link_to cart_path, class: "btn btn-info me-2" do %>
@@ -29,7 +39,7 @@
 
   <!-- 基本情報 -->
   <div class="row mb-4 mobile-cards">
-    <div class="<%= @user.level.value.in?([4, 5, 7]) ? 'col-12' : 'col-md-6' %>">
+    <div class="<%= @user.level.value.in?([4, 5, 6, 7]) ? 'col-12' : 'col-md-6' %>">
       <div class="card">
         <div class="card-header">
           <h5 class="card-title mb-0">基本情報</h5>

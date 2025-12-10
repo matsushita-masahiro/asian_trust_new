@@ -17,6 +17,12 @@ class Admin::DashboardController < Admin::BaseController
     
     # WOTTレベル昇格申請の承認待ち件数を取得
     @wott_upgrade_requests_count = WottLevelUpgradeRequest.pending.count
+    
+    # 領収書発行依頼件数を取得（status = 4: RECEIPT_REQUESTED）
+    @receipt_requests_count = PurchaseInvoice.where(status: PurchaseInvoice::RECEIPT_REQUESTED).count
+    
+    # 未回答のお問合せ件数を取得
+    @unanswered_inquiries_count = Inquiry.left_joins(:answers).where(answers: { id: nil }).count
   end
 
   private

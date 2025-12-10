@@ -26,8 +26,8 @@ class ApplicationController < ActionController::Base
       Rails.logger.info "Admin user #{resource.email} redirected to admin dashboard"
       admin_root_path
     else
-      # 一般ユーザーは元のリダイレクト先を返す
-      stored_location_for(resource) || root_path
+      # 一般ユーザーはマイページにリダイレクト
+      stored_location_for(resource) || mypage_users_path
     end
   end
 

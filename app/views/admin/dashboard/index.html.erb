@@ -42,6 +42,18 @@
               未入金注文: <strong><%= @pending_payments_count %>件</strong>
             <% end %>
           <% end %>
+          <% if @receipt_requests_count > 0 %>
+            <%= link_to admin_purchase_invoices_path(status: PurchaseInvoice::RECEIPT_REQUESTED), class: "alert alert-danger text-white mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer; background-color: #dc3545; border-color: #dc3545;" do %>
+              <i class="fas fa-file-invoice"></i>
+              領収書発行依頼有り: <strong><%= @receipt_requests_count %>件</strong>
+            <% end %>
+          <% end %>
+          <% if @unanswered_inquiries_count > 0 %>
+            <%= link_to admin_inquiries_path, class: "alert alert-warning text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
+              <i class="fas fa-envelope"></i>
+              未回答お問合せ: <strong><%= @unanswered_inquiries_count %>件</strong>
+            <% end %>
+          <% end %>
 
           <div class="text-muted">
             <%= Time.current.strftime("%Y/%m/%d") %> (<%= %w[日 月 火 水 木 金 土][Time.current.wday] %>)

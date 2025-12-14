@@ -98,17 +98,22 @@ class PurchaseInvoice < ApplicationRecord
   
   # 請求書番号の自動生成
   def self.generate_invoice_number
-    date_prefix = Date.current.strftime("%Y%m")
-    last_invoice = where("invoice_number LIKE ?", "PI#{date_prefix}%").order(:invoice_number).last
+    # 年下2桁を取得（例：2025年 → 25）
+    year_suffix = Date.current.strftime("%y")
+    
+    # 同じ年の請求書の中で最大の連番を取得
+    last_invoice = where("invoice_number LIKE ?", "PI#{year_suffix}%").order(:invoice_number).last
     
     if last_invoice
-      last_number = last_invoice.invoice_number.gsub("PI#{date_prefix}", "").to_i
+      # 既存の請求書番号から連番部分を抽出（PI25001 → 001）
+      last_number = last_invoice.invoice_number.gsub("PI#{year_suffix}", "").to_i
       next_number = last_number + 1
     else
       next_number = 1
     end
     
-    "PI#{date_prefix}#{format('%04d', next_number)}"
+    # PI + 年下2桁 + 3桁連番（例：PI25001）
+    "PI#{year_suffix}#{format('%03d', next_number)}"
   end
   
   # 購入者情報の委譲

@@ -108,7 +108,7 @@ class OrdersController < ApplicationController
       @selected_address = address_type == 'shipping' ? current_user.shipping_address : current_user.registration_address
       
       if @selected_address.blank?
-        redirect_to cart_path, alert: '配送先住所を登録してください'
+        redirect_to cart_path, alert: 'マイアカウントで配送先住所を登録してください'
         return
       end
     end

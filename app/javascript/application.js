@@ -22,6 +22,9 @@ import PostalCodeManager from "postal_code_manager"
 let customDropdown = null;
 let postalCodeManager = null;
 
+// PostalCodeManagerをグローバルに公開
+window.postalCodeManager = null;
+
 // 初期化関数
 function initializeComponents() {
   try {
@@ -34,6 +37,7 @@ function initializeComponents() {
     // 郵便番号自動入力機能を初期化
     if (!postalCodeManager) {
       postalCodeManager = new PostalCodeManager();
+      window.postalCodeManager = postalCodeManager; // グローバルに公開
     }
     postalCodeManager.init();
     postalCodeManager.setupAddressEditListeners();

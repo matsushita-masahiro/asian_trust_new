@@ -1,3 +1,5 @@
+<%= javascript_import_module_tag "postal_code_manager" %>
+
 <div class="container-fluid mt-5">
   <div class="row">
     <div class="col-12">
@@ -524,10 +526,63 @@ function toggleAddressEdit(addressType) {
     // 編集モードに切り替え
     displayDiv.style.display = 'none';
     editDiv.style.display = 'block';
+    
+    // 郵便番号自動入力を設定
+    setTimeout(() => {
+      setupPostalCodeAutoFill(addressType);
+    }, 100);
   } else {
     // 表示モードに切り替え
     displayDiv.style.display = 'block';
     editDiv.style.display = 'none';
+  }
+}
+
+// 郵便番号自動入力を設定する関数
+function setupPostalCodeAutoFill(addressType) {
+  const postalCodeInput = document.querySelector(`input[data-address-type="${addressType}"].postal-code-input`);
+  const addressTextarea = document.querySelector(`textarea[data-address-type="${addressType}"].address-input`);
+  
+  if (postalCodeInput && addressTextarea && !postalCodeInput.dataset.autoFillSetup) {
+    postalCodeInput.dataset.autoFillSetup = 'true';
+    
+    postalCodeInput.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/[^\d]/g, ''); // 数字のみ
+      
+      // 7桁入力されたら住所を自動検索
+      if (value.length === 7) {
+        searchAddressByPostalCode(value, addressTextarea);
+      }
+    });
+    
+    console.log(`郵便番号自動入力を設定: ${addressType}`);
+  }
+}
+
+// 郵便番号から住所を自動入力する関数
+function searchAddressByPostalCode(postalCode, addressField) {
+  if (postalCode.length === 7) {
+    // zipcloud APIを使用して住所を取得
+    fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${postalCode}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 200 && data.results && data.results.length > 0) {
+          const result = data.results[0];
+          const fullAddress = result.address1 + result.address2 + result.address3;
+          addressField.value = fullAddress;
+          
+          // 視覚的フィードバック
+          addressField.style.backgroundColor = '#e8f5e8';
+          setTimeout(() => {
+            addressField.style.backgroundColor = '';
+          }, 1000);
+        } else {
+          console.log('住所が見つかりませんでした');
+        }
+      })
+      .catch(error => {
+        console.error('住所検索エラー:', error);
+      });
   }
 }
 
@@ -559,8 +614,9 @@ function togglePhoneEdit() {
   }
 }
 
-// 郵便番号の自動フォーマット
+// 郵便番号の自動フォーマットと自動入力
 document.addEventListener('DOMContentLoaded', function() {
+  // 郵便番号の自動フォーマット
   document.querySelectorAll('input[name*="postal_code"]').forEach(function(input) {
     input.addEventListener('input', function() {
       let value = this.value.replace(/\D/g, ''); // 数字以外を除去
@@ -569,6 +625,20 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       this.value = value;
     });
+  });
+  
+  // PostalCodeManagerの初期化（利用可能な場合）
+  if (window.postalCodeManager && typeof window.postalCodeManager.init === 'function') {
+    window.postalCodeManager.init();
+    window.postalCodeManager.setupAddressEditListeners();
+  }
+  
+  // 既に表示されている編集フォームがあれば郵便番号自動入力を設定
+  ['registration', 'shipping'].forEach(addressType => {
+    const editDiv = document.getElementById(addressType + '-address-edit');
+    if (editDiv && editDiv.style.display !== 'none') {
+      setupPostalCodeAutoFill(addressType);
+    }
   });
 
   // 電話番号の自動フォーマット

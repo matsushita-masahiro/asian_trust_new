@@ -4,12 +4,16 @@
   clinic_ids = []
   has_home_delivery = false
   
+  has_other_delivery = false
+  
   if @cart_items_with_delivery.present?
     @cart_items_with_delivery.each do |item_info|
       if item_info[:delivery_type] == 'clinic' && item_info[:clinic_id].present?
         clinic_ids << item_info[:clinic_id] unless clinic_ids.include?(item_info[:clinic_id])
       elsif item_info[:delivery_type] == 'home'
         has_home_delivery = true
+      elsif item_info[:delivery_type] == 'other'
+        has_other_delivery = true
       end
     end
     
@@ -49,11 +53,29 @@
         type: 'home'
       }
     end
+    
+    # その他配送先を追加
+    if has_other_delivery
+      other_items = @cart_items_with_delivery.select { |i| i[:delivery_type] == 'other' }
+      other_items.each do |item_info|
+        item = item_info[:item]
+        if item.other_postal_code.present? && item.other_address.present?
+          delivery_destinations << {
+            title: "#{item.other_recipient_name || 'その他お届け先'}（その他配送）",
+            icon: 'fas fa-map-marker-alt',
+            address: "〒#{item.other_postal_code}<br>#{item.other_address}".html_safe,
+            note: item.product.name,
+            phone: item.other_phone_number,
+            type: 'other'
+          }
+        end
+      end
+    end
   end
   
   # 配送先数を計算
   has_stem_cell_product = clinic_ids.any?
-  has_other_products = has_home_delivery
+  has_other_products = has_home_delivery || has_other_delivery
 %>
 
 <div class="container mt-4">
@@ -124,6 +146,20 @@
                             </div>
                           <% end %>
                         </div>
+                      <% elsif delivery_type == 'other' %>
+                        <div class="small">
+                          <i class="fas fa-map-marker-alt text-warning"></i>
+                          <strong><%= item.other_recipient_name || 'その他お届け先' %></strong>
+                          <% if item.other_postal_code.present? && item.other_address.present? %>
+                            <div class="text-muted" style="font-size: 0.85em;">
+                              〒<%= item.other_postal_code %><br>
+                              <%= item.other_address %>
+                              <% if item.other_phone_number.present? %>
+                                <br>TEL: <%= item.other_phone_number %>
+                              <% end %>
+                            </div>
+                          <% end %>
+                        </div>
                       <% else %>
                         <% 
                           selected_address = address_type == 'shipping' ? current_user.shipping_address : current_user.registration_address
@@ -167,11 +203,16 @@
               <small>
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>配送先数:</strong> <%= delivery_destinations.size %>箇所<br>
-                <% if has_stem_cell_product %>
-                  <i class="fas fa-hospital text-primary me-2"></i>クリニック配送あり<br>
-                <% end %>
-                <% if has_other_products %>
-                  <i class="fas fa-home text-success me-2"></i>住所配送あり
+                <% delivery_destinations.each_with_index do |dest, index| %>
+                  <% case dest[:type] %>
+                  <% when 'clinic' %>
+                    <i class="fas fa-hospital text-primary me-1"></i>
+                  <% when 'home' %>
+                    <i class="fas fa-home text-success me-1"></i>
+                  <% when 'other' %>
+                    <i class="fas fa-map-marker-alt text-warning me-1"></i>
+                  <% end %>
+                  <%= dest[:title] %><br>
                 <% end %>
               </small>
             </div>
@@ -204,21 +245,20 @@
             <span>商品代金:</span>
             <span>¥<%= number_with_delimiter(subtotal) %></span>
           </div>
-          <% if has_stem_cell_product && has_other_products %>
-            <!-- 複数配送先の場合：送料を2行で表示 -->
+          <!-- 配送先ごとに送料を表示 -->
+          <% delivery_destinations.each_with_index do |dest, index| %>
             <div class="d-flex justify-content-between mb-2">
-              <span>送料:</span>
+              <span>
+                <% case dest[:type] %>
+                <% when 'clinic' %>
+                  送料（クリニック配送）:
+                <% when 'home' %>
+                  送料（登録住所）:
+                <% when 'other' %>
+                  送料（その他お届け先）:
+                <% end %>
+              </span>
               <span>¥6,000</span>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-              <span>送料（骨髄別送）:</span>
-              <span>¥6,000</span>
-            </div>
-          <% else %>
-            <!-- 単一配送先の場合：従来通り -->
-            <div class="d-flex justify-content-between mb-2">
-              <span>送料 (<%= delivery_count %>箇所):</span>
-              <span>¥<%= number_with_delimiter(shipping_fee) %></span>
             </div>
           <% end %>
           <% if admin_fee > 0 %>
@@ -254,15 +294,9 @@
             <i class="fas fa-info-circle me-2"></i>
             <strong>料金について:</strong>
             <ul class="mb-0 mt-2">
-              <% if has_stem_cell_product && has_other_products %>
-                <li>送料: ご登録住所への配送 ¥6,000</li>
-                <li>送料（骨髄別送）: クリニックへの配送 ¥6,000</li>
+              <li>送料: 配送先1箇所につき ¥6,000（合計<%= delivery_count %>箇所 = ¥<%= number_with_delimiter(shipping_fee) %>）</li>
+              <% if admin_fee > 0 %>
                 <li class="text-warning">事務手数料: クリニック配送 ¥10,000</li>
-              <% elsif has_stem_cell_product %>
-                <li>送料（骨髄別送）: クリニックへの配送 ¥6,000</li>
-                <li class="text-warning">事務手数料: クリニック配送 ¥10,000</li>
-              <% else %>
-                <li>送料: 配送先1箇所につき ¥6,000</li>
               <% end %>
             </ul>
           </div>
@@ -273,9 +307,18 @@
                 # カートアイテムの配送先情報をパラメータとして渡す
                 payment_params = {}
                 @cart_items_with_delivery.each_with_index do |item_info, index|
-                  payment_params["items[#{item_info[:item].id}][delivery_type]"] = item_info[:delivery_type]
-                  payment_params["items[#{item_info[:item].id}][clinic_id]"] = item_info[:clinic_id] if item_info[:clinic_id].present?
-                  payment_params["items[#{item_info[:item].id}][address_type]"] = item_info[:address_type]
+                  item = item_info[:item]
+                  payment_params["items[#{item.id}][delivery_type]"] = item_info[:delivery_type]
+                  payment_params["items[#{item.id}][clinic_id]"] = item_info[:clinic_id] if item_info[:clinic_id].present?
+                  payment_params["items[#{item.id}][address_type]"] = item_info[:address_type]
+                  
+                  # その他配送の場合の追加情報
+                  if item_info[:delivery_type] == 'other'
+                    payment_params["items[#{item.id}][other_recipient_name]"] = item.other_recipient_name
+                    payment_params["items[#{item.id}][other_postal_code]"] = item.other_postal_code
+                    payment_params["items[#{item.id}][other_address]"] = item.other_address
+                    payment_params["items[#{item.id}][other_phone_number]"] = item.other_phone_number
+                  end
                 end
               %>
               <%= link_to "お支払い方法を選択する", select_method_payments_path(payment_params), 

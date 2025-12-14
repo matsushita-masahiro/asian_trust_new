@@ -47,7 +47,7 @@ class PurchaseInvoicePdfService
     
     # 税計算（外税）- 商品代金 + 送料 + 事務手数料
     product_amount = @purchase_invoice.total_amount.to_i  # 商品代金（税抜き）
-    shipping_fee = @purchase_invoice.shipping_fee.to_i    # 送料
+    shipping_fee = @purchase.total_shipping_fees.to_i     # 実際の送料合計を使用
     admin_fee = @purchase_invoice.admin_fee.to_i          # 事務手数料
     subtotal = product_amount + shipping_fee + admin_fee  # 税抜き合計
     tax_rate = ENV.fetch('TAX_RATE', '0.1').to_f          # 環境変数から消費税率を取得（デフォルト10%）
@@ -87,6 +87,9 @@ class PurchaseInvoicePdfService
       bank_account_name = company_name
     end
     
+    # 配送先情報を取得
+    delivery_informations = @purchase.delivery_informations.includes(:clinic)
+    
     # 実際のテンプレートを使用してPDFを生成
     html_content = controller.render_to_string(
       template: 'order_mailer/purchase_invoice_pdf',
@@ -105,6 +108,7 @@ class PurchaseInvoicePdfService
         tax: tax,
         tax_rate: tax_rate,
         total_with_tax: total_with_tax,
+        delivery_informations: delivery_informations,
         company_name: company_name,
         company_postal_code: company_postal_code,
         company_address: company_address,

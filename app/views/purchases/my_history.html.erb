@@ -79,22 +79,15 @@
                       </td>
                       <td>
                         <% 
-                          # purchase_invoiceがある場合は税込み金額を使用
-                          if purchase.purchase_invoice&.total_with_tax.present? && purchase.purchase_invoice.total_with_tax > 0
-                            total_amount = purchase.purchase_invoice.total_with_tax
-                            product_amount = purchase.purchase_invoice.total_amount
-                            shipping_fee = purchase.purchase_invoice.shipping_fee
-                            admin_fee = purchase.purchase_invoice.admin_fee
-                            tax_amount = purchase.purchase_invoice.tax_amount
-                          else
-                            # 従来の計算方法（税抜き）
-                            product_amount = purchase.total_price
-                            shipping_fee = purchase.total_shipping_fees
-                            admin_fee = purchase.purchase_invoice&.admin_fee || 0
-                            subtotal_before_tax = product_amount + shipping_fee + admin_fee
-                            tax_amount = calculate_tax(subtotal_before_tax)
-                            total_amount = subtotal_before_tax + tax_amount
-                          end
+                          # 実際の購入データから金額を計算
+                          product_amount = purchase.total_price
+                          shipping_fee = purchase.total_shipping_fees  # 実際の送料合計を使用
+                          admin_fee = purchase.purchase_invoice&.admin_fee || 0
+                          
+                          # 税込み金額の計算
+                          subtotal_before_tax = product_amount + shipping_fee + admin_fee
+                          tax_amount = calculate_tax(subtotal_before_tax)
+                          total_amount = subtotal_before_tax + tax_amount
                         %>
                         <div class="fw-bold text-success">¥<%= number_with_delimiter(total_amount) %></div>
                         <% if shipping_fee > 0 || admin_fee > 0 || tax_amount > 0 %>

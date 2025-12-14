@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_05_143221) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_14_053310) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -84,6 +84,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_05_143221) do
     t.string "delivery_type"
     t.integer "clinic_id"
     t.string "address_type"
+    t.string "other_recipient_name"
+    t.string "other_postal_code"
+    t.text "other_address"
+    t.string "other_phone_number"
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
     t.index ["product_id"], name: "index_cart_items_on_product_id"
   end
@@ -129,6 +133,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_05_143221) do
     t.text "delivery_notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "recipient_name"
+    t.string "postal_code"
+    t.string "phone_number"
     t.index ["clinic_id"], name: "index_delivery_informations_on_clinic_id"
     t.index ["purchase_id", "delivery_type"], name: "index_delivery_informations_on_purchase_id_and_delivery_type"
     t.index ["purchase_id"], name: "index_delivery_informations_on_purchase_id"

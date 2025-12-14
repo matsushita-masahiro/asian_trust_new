@@ -347,42 +347,85 @@
         <!-- 送料行を追加 -->
         <% if local_assigns[:shipping_fee] && local_assigns[:shipping_fee] > 0 %>
         <% 
-          # 骨髄幹細胞上清液（product.id = 1）が含まれているかチェック
-          has_bone_marrow_product = purchase_items.any? { |item| item.product_id == 1 }
-          has_other_products = purchase_items.any? { |item| item.product_id != 1 }
+          # 購入の配送先情報から実際の配送先名を取得
+          purchase_obj = local_assigns[:purchase]
+          delivery_informations = local_assigns[:delivery_informations] || purchase_obj&.delivery_informations || []
+          shipping_fees_data = purchase_obj&.shipping_fees || []
           
-          # 送料の表示パターンを決定
-          if has_bone_marrow_product && has_other_products
-            # 骨髄 + 他の商品：2行表示
+          # 配送先情報が存在する場合は実際の配送先名を使用
+          if delivery_informations.any?
+            delivery_informations.each_with_index do |delivery_info, index|
+              shipping_label = case delivery_info.delivery_type
+              when 'clinic'
+                clinic_name = delivery_info.clinic&.name || 'クリニック'
+                "送料（#{clinic_name}）"
+              when 'home'
+                address_type = delivery_info.address_type == 'shipping' ? '配送先住所' : '登録住所'
+                "送料（#{address_type}）"
+              when 'other'
+                recipient_name = delivery_info.recipient_name || 'その他お届け先'
+                "送料（#{recipient_name}）"
+              else
+                "送料（配送先#{index + 1}）"
+              end
         %>
         <tr>
-          <td>送料</td>
+          <td><%= shipping_label %></td>
           <td class="number">-</td>
           <td class="number">-</td>
           <td class="number">¥6,000</td>
         </tr>
+        <%   end %>
+        <% elsif shipping_fees_data.any? %>
+          <!-- 配送先情報がないが送料データがある場合 -->
+          <% shipping_fees_data.each_with_index do |shipping_fee_record, index| %>
+            <% 
+              shipping_label = case shipping_fee_record.shipping_type
+              when 'clinic_delivery'
+                "送料（クリニック配送）"
+              when 'home_delivery'
+                "送料（登録住所）"
+              when 'other_delivery'
+                "送料（その他お届け先）"
+              when 'bone_marrow'
+                "送料（骨髄別送）"
+              when 'standard'
+                "送料"
+              else
+                if shipping_fees_data.size == 1
+                  "送料"
+                else
+                  "送料（配送先#{index + 1}）"
+                end
+              end
+            %>
         <tr>
-          <td>送料（骨髄別送）</td>
+          <td><%= shipping_label %></td>
           <td class="number">-</td>
           <td class="number">-</td>
-          <td class="number">¥6,000</td>
+          <td class="number">¥<%= number_with_delimiter(shipping_fee_record.amount) %></td>
         </tr>
-        <% elsif has_bone_marrow_product %>
-          <!-- 骨髄のみ：送料として表示 -->
-        <tr>
-          <td>送料</td>
-          <td class="number">-</td>
-          <td class="number">-</td>
-          <td class="number">¥<%= number_with_delimiter(local_assigns[:shipping_fee]) %></td>
-        </tr>
+        <%   end %>
         <% else %>
-          <!-- 他の商品のみ：送料として表示 -->
+          <!-- 送料データがない場合は総額から計算 -->
+          <% 
+            shipping_fees_count = (local_assigns[:shipping_fee] / 6000).to_i
+            shipping_fees_count = 1 if shipping_fees_count == 0 && local_assigns[:shipping_fee] > 0
+            
+            shipping_fees_count.times do |index|
+              shipping_label = if shipping_fees_count == 1
+                "送料"
+              else
+                "送料（配送先#{index + 1}）"
+              end
+          %>
         <tr>
-          <td>送料</td>
+          <td><%= shipping_label %></td>
           <td class="number">-</td>
           <td class="number">-</td>
-          <td class="number">¥<%= number_with_delimiter(local_assigns[:shipping_fee]) %></td>
+          <td class="number">¥6,000</td>
         </tr>
+        <%   end %>
         <% end %>
         <% end %>
         <!-- 事務手数料行を追加 -->

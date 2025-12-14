@@ -73,17 +73,28 @@ class OrdersController < ApplicationController
     
     # カートアイテムから配送先情報を取得
     @cart_items_with_delivery = @cart.cart_items.map do |item|
-      {
+      delivery_info = {
         item: item,
         delivery_type: item.delivery_type || (item.product.id == 1 ? 'clinic' : 'home'),
         clinic_id: item.clinic_id,
         address_type: item.address_type || 'registration'
       }
+      
+      Rails.logger.info "=== CART ITEM DELIVERY DEBUG ==="
+      Rails.logger.info "Item ID: #{item.id}, Product: #{item.product.name}"
+      Rails.logger.info "Delivery Type: #{delivery_info[:delivery_type]}"
+      Rails.logger.info "Clinic ID: #{delivery_info[:clinic_id]}"
+      Rails.logger.info "Address Type: #{delivery_info[:address_type]}"
+      Rails.logger.info "Other Info: recipient=#{item.other_recipient_name}, postal=#{item.other_postal_code}, address=#{item.other_address}"
+      Rails.logger.info "================================="
+      
+      delivery_info
     end
     
     # 配送先の検証
     clinic_items = @cart_items_with_delivery.select { |i| i[:delivery_type] == 'clinic' }
     home_items = @cart_items_with_delivery.select { |i| i[:delivery_type] == 'home' }
+    other_items = @cart_items_with_delivery.select { |i| i[:delivery_type] == 'other' }
     
     # クリニック配送の商品でクリニックが未選択の場合
     if clinic_items.any? { |i| i[:clinic_id].blank? }
@@ -98,6 +109,20 @@ class OrdersController < ApplicationController
       
       if @selected_address.blank?
         redirect_to cart_path, alert: '配送先住所を登録してください'
+        return
+      end
+    end
+    
+    # その他配送の商品で必要情報が未入力の場合
+    if other_items.any?
+      incomplete_other_items = other_items.select do |i|
+        item = i[:item]
+        item.other_recipient_name.blank? || item.other_postal_code.blank? || 
+        item.other_address.blank? || item.other_phone_number.blank?
+      end
+      
+      if incomplete_other_items.any?
+        redirect_to cart_path, alert: 'その他配送を選択した商品は、すべての配送先情報を入力してください'
         return
       end
     end
@@ -174,54 +199,109 @@ class OrdersController < ApplicationController
   end
 
   def create_delivery_information(purchase)
-    delivery_type = params[:delivery_type] || 'home'
-    address_type = params[:address_type] || 'registration'
-    clinic_id = params[:clinic_id]
+    # 配送先ごとにグループ化して重複を避ける
+    delivery_destinations = {}
     
-    Rails.logger.info "=== CREATE DELIVERY INFORMATION DEBUG ==="
-    Rails.logger.info "Purchase ID: #{purchase.id}"
-    Rails.logger.info "Delivery type: #{delivery_type}"
-    Rails.logger.info "Address type: #{address_type}"
-    Rails.logger.info "Clinic ID: #{clinic_id}"
-    Rails.logger.info "============================================"
-    
-    # 配送先住所を取得してスナップショットとして保存
-    delivery_address = get_delivery_address(address_type, clinic_id)
-    
-    delivery_info = DeliveryInformation.create!(
-      purchase: purchase,
-      delivery_type: delivery_type,
-      clinic_id: clinic_id,
-      address_type: address_type,
-      delivery_address: delivery_address,
-      delivery_notes: params[:delivery_notes]
-    )
-    
-    Rails.logger.info "Created delivery_information: ID #{delivery_info.id}, Type: #{delivery_info.delivery_type}"
+    @cart.cart_items.each do |cart_item|
+      delivery_type = cart_item.delivery_type || (cart_item.product.id == 1 ? 'clinic' : 'home')
+      
+      # 配送先のキーを生成（同じ配送先をまとめるため）
+      destination_key = case delivery_type
+      when 'clinic'
+        "clinic_#{cart_item.clinic_id}"
+      when 'home'
+        "home_#{cart_item.address_type || 'registration'}"
+      when 'other'
+        "other_#{cart_item.other_postal_code}_#{cart_item.other_address}"
+      else
+        "unknown_#{cart_item.id}"
+      end
+      
+      # 既に同じ配送先がある場合はスキップ
+      next if delivery_destinations.key?(destination_key)
+      
+      Rails.logger.info "=== CREATE DELIVERY INFORMATION DEBUG ==="
+      Rails.logger.info "Purchase ID: #{purchase.id}"
+      Rails.logger.info "Destination Key: #{destination_key}"
+      Rails.logger.info "Delivery type: #{delivery_type}"
+      Rails.logger.info "============================================"
+      
+      # 配送先住所を取得してスナップショットとして保存
+      delivery_address = get_delivery_address_for_item(cart_item)
+      
+      # その他配送の場合の追加情報
+      recipient_name = nil
+      postal_code = nil
+      phone_number = nil
+      
+      if delivery_type == 'other'
+        recipient_name = cart_item.other_recipient_name
+        postal_code = cart_item.other_postal_code
+        phone_number = cart_item.other_phone_number
+        
+        Rails.logger.info "Other delivery info: recipient_name=#{recipient_name}, postal_code=#{postal_code}, phone_number=#{phone_number}"
+      end
+      
+      Rails.logger.info "Creating DeliveryInformation with: delivery_type=#{delivery_type}, delivery_address=#{delivery_address}, recipient_name=#{recipient_name}, postal_code=#{postal_code}, phone_number=#{phone_number}"
+      
+      delivery_info = DeliveryInformation.create!(
+        purchase: purchase,
+        delivery_type: delivery_type,
+        clinic_id: cart_item.clinic_id,
+        address_type: cart_item.address_type,
+        delivery_address: delivery_address,
+        recipient_name: recipient_name,
+        postal_code: postal_code,
+        phone_number: phone_number,
+        delivery_notes: params[:delivery_notes]
+      )
+      
+      # 作成した配送先を記録
+      delivery_destinations[destination_key] = delivery_info
+      
+      Rails.logger.info "Created delivery_information: ID #{delivery_info.id}, Type: #{delivery_info.delivery_type}"
+    end
   rescue => e
     Rails.logger.error "Failed to create delivery_information: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
     raise e
   end
 
-  def get_delivery_address(address_type, clinic_id)
-    addresses = []
+  def get_delivery_address_for_item(cart_item)
+    delivery_type = cart_item.delivery_type || (cart_item.product.id == 1 ? 'clinic' : 'home')
     
-    # 自宅配送の住所
-    if address_type == 'shipping' && current_user.shipping_address
-      addresses << "#{current_user.shipping_address.postal_code}|#{current_user.shipping_address.address}"
-    elsif current_user.registration_address
-      addresses << "#{current_user.registration_address.postal_code}|#{current_user.registration_address.address}"
-    end
-    
-    # クリニック配送の住所
-    if clinic_id.present?
-      clinic = User.joins(:invoice_base).find_by(id: clinic_id)
-      if clinic&.invoice_base
-        addresses << "#{clinic.invoice_base.postal_code}|#{clinic.invoice_base.address}|#{clinic.name}"
+    case delivery_type
+    when 'home'
+      # 自宅配送の住所
+      if cart_item.address_type == 'shipping' && current_user.shipping_address
+        "#{current_user.shipping_address.postal_code}|#{current_user.shipping_address.address}"
+      elsif current_user.registration_address
+        "#{current_user.registration_address.postal_code}|#{current_user.registration_address.address}"
+      else
+        ""
       end
+    when 'clinic'
+      # クリニック配送の住所
+      if cart_item.clinic_id.present?
+        clinic = User.joins(:invoice_base).find_by(id: cart_item.clinic_id)
+        if clinic&.invoice_base
+          "#{clinic.invoice_base.postal_code}|#{clinic.invoice_base.address}|#{clinic.name}"
+        else
+          ""
+        end
+      else
+        ""
+      end
+    when 'other'
+      # その他配送の住所
+      if cart_item.other_postal_code.present? && cart_item.other_address.present?
+        "#{cart_item.other_postal_code}|#{cart_item.other_address}"
+      else
+        Rails.logger.error "Other delivery info missing: postal_code=#{cart_item.other_postal_code}, address=#{cart_item.other_address}"
+        ""
+      end
+    else
+      ""
     end
-    
-    addresses.join("\n")
   end
 end

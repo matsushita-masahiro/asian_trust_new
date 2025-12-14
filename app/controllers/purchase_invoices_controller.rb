@@ -20,6 +20,9 @@ class PurchaseInvoicesController < ApplicationController
     # user_id=1のInvoiceRecipientから振込口座情報を取得
     @bank_info = InvoiceRecipient.find_by(user_id: 1)
     
+    # 配送先情報を取得
+    @delivery_informations = @purchase_invoice.purchase.delivery_informations.includes(:clinic)
+    
     respond_to do |format|
       format.html
       format.pdf do

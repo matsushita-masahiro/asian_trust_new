@@ -128,20 +128,45 @@ class Purchase < ApplicationRecord
     # 既に送料データが存在する場合は何もしない
     return if shipping_fees.exists?
     
-    # 購入商品に基づいて送料を自動設定
-    shipping_types_used = []
-    
-    purchase_items.includes(:product).each do |item|
-      product = item.product
-      shipping_type = product.shipping_type
-      
-      # 同じ送料タイプが既に追加されていない場合のみ追加
-      unless shipping_types_used.include?(shipping_type)
+    # 配送先情報に基づいて送料を計算
+    if delivery_informations.exists?
+      # 各配送情報レコードに対して送料を作成（1レコード = 1配送先 = 6,000円）
+      delivery_informations.each_with_index do |delivery_info, index|
+        shipping_type = case delivery_info.delivery_type
+        when 'clinic'
+          'clinic_delivery'
+        when 'home'
+          'home_delivery'
+        when 'other'
+          'other_delivery'
+        when 'multiple'
+          # 後方互換性のため（新規では使用しない）
+          'standard'
+        else
+          'standard'
+        end
+        
         shipping_fees.create!(
           shipping_type: shipping_type,
-          amount: product.shipping_fee_amount
+          amount: 6000
         )
-        shipping_types_used << shipping_type
+      end
+    else
+      # 配送先情報が存在しない場合は従来の方法（商品ベース）
+      shipping_types_used = []
+      
+      purchase_items.includes(:product).each do |item|
+        product = item.product
+        shipping_type = product.shipping_type
+        
+        # 同じ送料タイプが既に追加されていない場合のみ追加
+        unless shipping_types_used.include?(shipping_type)
+          shipping_fees.create!(
+            shipping_type: shipping_type,
+            amount: product.shipping_fee_amount
+          )
+          shipping_types_used << shipping_type
+        end
       end
     end
   end

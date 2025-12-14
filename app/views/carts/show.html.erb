@@ -1,3 +1,5 @@
+<%= javascript_import_module_tag "carts" %>
+
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3>カート</h3>
@@ -85,7 +87,7 @@
                                 checked: (default_delivery_type == 'clinic'),
                                 class: "form-check-input delivery-type-radio",
                                 data: { item_id: item.id },
-                                onchange: "this.form.submit();" %>
+                                onchange: "updateDeliveryType(this, #{item.id});" %>
                             <label class="form-check-label small">
                               <i class="fas fa-hospital text-primary"></i> クリニック
                             </label>
@@ -95,42 +97,114 @@
                                 checked: (default_delivery_type == 'home'),
                                 class: "form-check-input delivery-type-radio",
                                 data: { item_id: item.id },
-                                onchange: "this.form.submit();" %>
+                                onchange: "updateDeliveryType(this, #{item.id});" %>
                             <label class="form-check-label small">
                               <i class="fas fa-home text-success"></i> 住所
                             </label>
                           </div>
+                          <div class="form-check form-check-inline">
+                            <%= f.radio_button :delivery_type, 'other', 
+                                checked: (default_delivery_type == 'other'),
+                                class: "form-check-input delivery-type-radio",
+                                data: { item_id: item.id },
+                                onchange: "updateDeliveryType(this, #{item.id});" %>
+                            <label class="form-check-label small">
+                              <i class="fas fa-map-marker-alt text-warning"></i> その他へ送る
+                            </label>
+                          </div>
                         </div>
                         
-                        <% if default_delivery_type == 'clinic' %>
+                        <% 
+                          # クリニック情報を取得
+                          clinic_level = Level.find_by(name: 'クリニック')
+                          clinics = clinic_level ? User.joins(:invoice_base).where(level: clinic_level).includes(:invoice_base) : []
+                        %>
+                        
+                        <!-- クリニック選択 -->
+                        <div class="clinic-selection" id="clinic-selection-<%= item.id %>" style="<%= 'display: none;' unless default_delivery_type == 'clinic' %>">
+                          <%= f.select :clinic_id, 
+                              options_for_select(
+                                clinics.map { |c| [c.name, c.id] },
+                                item.clinic_id
+                              ),
+                              { prompt: 'クリニックを選択' },
+                              { class: "form-select form-select-sm", onchange: "this.form.submit();" } %>
+                        </div>
+                        
+                        <!-- 住所選択 -->
+                        <div class="address-selection" id="address-selection-<%= item.id %>" style="<%= 'display: none;' unless default_delivery_type == 'home' %>">
                           <% 
-                            # クリニック情報を取得
-                            clinic_level = Level.find_by(name: 'クリニック')
-                            clinics = clinic_level ? User.joins(:invoice_base).where(level: clinic_level).includes(:invoice_base) : []
+                            default_address_type = item.address_type || 'registration'
                           %>
-                          <div class="clinic-selection" id="clinic-selection-<%= item.id %>">
-                            <%= f.select :clinic_id, 
-                                options_for_select(
-                                  clinics.map { |c| [c.name, c.id] },
-                                  item.clinic_id
-                                ),
-                                { prompt: 'クリニックを選択' },
-                                { class: "form-select form-select-sm", onchange: "this.form.submit();" } %>
-                          </div>
-                        <% else %>
-                          <div class="address-selection" id="address-selection-<%= item.id %>">
+                          <%= f.select :address_type,
+                              options_for_select(
+                                [['登録住所', 'registration'], ['配送先住所', 'shipping']],
+                                default_address_type
+                              ),
+                              {},
+                              { class: "form-select form-select-sm", onchange: "this.form.submit();" } %>
+                        </div>
+                        
+                        <!-- その他の配送先入力 -->
+                        <div class="other-delivery-form" id="other-delivery-<%= item.id %>" style="<%= 'display: none;' unless default_delivery_type == 'other' %>">
+                          <div class="mt-2">
                             <% 
-                              default_address_type = item.address_type || 'registration'
+                              # その他配送が既に確定されているかチェック
+                              is_other_confirmed = default_delivery_type == 'other' && 
+                                                   item.other_recipient_name.present? && 
+                                                   item.other_postal_code.present? && 
+                                                   item.other_address.present? && 
+                                                   item.other_phone_number.present?
                             %>
-                            <%= f.select :address_type,
-                                options_for_select(
-                                  [['登録住所', 'registration'], ['配送先住所', 'shipping']],
-                                  default_address_type
-                                ),
-                                {},
-                                { class: "form-select form-select-sm", onchange: "this.form.submit();" } %>
+                            <div class="mb-2">
+                              <%= f.text_field :other_recipient_name, 
+                                  placeholder: "お届け先名", 
+                                  value: item.other_recipient_name,
+                                  class: "form-control form-control-sm other-delivery-input",
+                                  required: default_delivery_type == 'other',
+                                  readonly: is_other_confirmed %>
+                            </div>
+                            <div class="mb-2">
+                              <%= f.text_field :other_postal_code, 
+                                  placeholder: "郵便番号（例：1234567）", 
+                                  value: item.other_postal_code,
+                                  class: "form-control form-control-sm other-delivery-input",
+                                  pattern: "[0-9]{7}",
+                                  maxlength: "7",
+                                  required: default_delivery_type == 'other',
+                                  readonly: is_other_confirmed %>
+                            </div>
+                            <div class="mb-2">
+                              <%= f.text_area :other_address, 
+                                  placeholder: "住所", 
+                                  value: item.other_address,
+                                  class: "form-control form-control-sm other-delivery-input",
+                                  rows: 2,
+                                  required: default_delivery_type == 'other',
+                                  readonly: is_other_confirmed %>
+                            </div>
+                            <div class="mb-2">
+                              <%= f.text_field :other_phone_number, 
+                                  placeholder: "電話番号（例：090-1234-5678）", 
+                                  value: item.other_phone_number,
+                                  class: "form-control form-control-sm other-delivery-input",
+                                  required: default_delivery_type == 'other',
+                                  readonly: is_other_confirmed %>
+                            </div>
+                            <div>
+                              <% if is_other_confirmed %>
+                                <button type="button" class="btn btn-success btn-sm w-100" disabled>
+                                  <i class="fas fa-check me-1"></i>確定済み
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-1" onclick="enableOtherDeliveryEdit(<%= item.id %>)">
+                                  <i class="fas fa-edit me-1"></i>編集
+                                </button>
+                              <% else %>
+                                <%= f.submit "確定", class: "btn btn-primary btn-sm w-100", id: "confirm-btn-#{item.id}" %>
+                              <% end %>
+                            </div>
                           </div>
-                        <% end %>
+                        </div>
                       <% end %>
                     </td>
                     <td class="text-end">
@@ -145,28 +219,7 @@
               </tbody>
             </table>
             
-            <!-- JavaScriptで配送先選択を動的に切り替え -->
-            <script>
-              document.addEventListener('DOMContentLoaded', function() {
-                // 配送先タイプのラジオボタンにイベントリスナーを追加
-                document.querySelectorAll('.delivery-type-radio').forEach(function(radio) {
-                  radio.addEventListener('change', function() {
-                    const itemId = this.dataset.itemId;
-                    const deliveryType = this.value;
-                    const clinicSelection = document.getElementById('clinic-selection-' + itemId);
-                    const addressSelection = document.getElementById('address-selection-' + itemId);
-                    
-                    if (deliveryType === 'clinic') {
-                      if (clinicSelection) clinicSelection.style.display = 'block';
-                      if (addressSelection) addressSelection.style.display = 'none';
-                    } else {
-                      if (clinicSelection) clinicSelection.style.display = 'none';
-                      if (addressSelection) addressSelection.style.display = 'block';
-                    }
-                  });
-                });
-              });
-            </script>
+
             
             <!-- カート合計と購入ボタン -->
             <div class="row mt-4">
@@ -187,18 +240,67 @@
                       # 基本料金計算
                       subtotal = @cart.total_amount_for_user(current_user)
                       
-                      # 配送先数を計算
-                      stem_cell_items = @cart_items.select { |item| item.product.id == 1 }
-                      other_items = @cart_items.select { |item| item.product.id != 1 }
+                      # 配送先情報を計算（orders/checkoutと同じロジック）
+                      delivery_destinations = []
+                      clinic_ids = []
+                      has_home_delivery = false
+                      has_other_delivery = false
                       
-                      has_stem_cell_product = stem_cell_items.any?
-                      has_other_products = other_items.any?
+                      @cart_items.each do |item|
+                        delivery_type = item.delivery_type || (item.product.id == 1 ? 'clinic' : 'home')
+                        
+                        if delivery_type == 'clinic' && item.clinic_id.present?
+                          clinic_ids << item.clinic_id unless clinic_ids.include?(item.clinic_id)
+                        elsif delivery_type == 'home'
+                          has_home_delivery = true
+                        elsif delivery_type == 'other'
+                          has_other_delivery = true
+                        end
+                      end
                       
-                      delivery_destinations = 0
-                      delivery_destinations += 1 if has_stem_cell_product  # クリニック配送
-                      delivery_destinations += 1 if has_other_products     # 自宅配送
+                      # クリニック配送先を追加
+                      clinic_ids.each do |clinic_id|
+                        clinic = User.joins(:invoice_base).find_by(id: clinic_id)
+                        if clinic&.invoice_base
+                          delivery_destinations << {
+                            title: "#{clinic.name}（クリニック配送）",
+                            type: 'clinic'
+                          }
+                        end
+                      end
                       
-                      shipping_fee = delivery_destinations * 6000
+                      # 自宅配送先を追加
+                      if has_home_delivery
+                        delivery_destinations << {
+                          title: "登録住所（自宅配送）",
+                          type: 'home'
+                        }
+                      end
+                      
+                      # その他配送先を追加（重複を避けるため住所でグループ化）
+                      if has_other_delivery
+                        other_items = @cart_items.select { |item| item.delivery_type == 'other' }
+                        unique_other_addresses = {}
+                        
+                        other_items.each do |item|
+                          if item.other_postal_code.present? && item.other_address.present?
+                            address_key = "#{item.other_postal_code}_#{item.other_address}"
+                            unless unique_other_addresses.key?(address_key)
+                              unique_other_addresses[address_key] = {
+                                title: "#{item.other_recipient_name || 'その他お届け先'}（その他配送）",
+                                type: 'other'
+                              }
+                            end
+                          end
+                        end
+                        
+                        delivery_destinations.concat(unique_other_addresses.values)
+                      end
+                      
+                      # 配送先数と送料を計算
+                      delivery_count = delivery_destinations.size
+                      shipping_fee = delivery_count * 6000
+                      has_stem_cell_product = clinic_ids.any?
                       admin_fee = has_stem_cell_product ? 10000 : 0
                       
                       # 税抜き合計
@@ -242,6 +344,12 @@
                         <%= f.hidden_field "items[#{item.id}][delivery_type]", value: item.delivery_type || (item.product.id == 1 ? 'clinic' : 'home') %>
                         <%= f.hidden_field "items[#{item.id}][clinic_id]", value: item.clinic_id if item.clinic_id.present? %>
                         <%= f.hidden_field "items[#{item.id}][address_type]", value: item.address_type || 'registration' %>
+                        <% if item.delivery_type == 'other' %>
+                          <%= f.hidden_field "items[#{item.id}][other_recipient_name]", value: item.other_recipient_name %>
+                          <%= f.hidden_field "items[#{item.id}][other_postal_code]", value: item.other_postal_code %>
+                          <%= f.hidden_field "items[#{item.id}][other_address]", value: item.other_address %>
+                          <%= f.hidden_field "items[#{item.id}][other_phone_number]", value: item.other_phone_number %>
+                        <% end %>
                       <% end %>
                       <%= f.submit "購入手続きへ", class: "btn btn-success btn-lg w-100" %>
                     <% end %>

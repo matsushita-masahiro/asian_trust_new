@@ -74,27 +74,16 @@
               </tbody>
               <tfoot>
                 <% 
-                  # DBから保存された値を取得（新しいレコードの場合）
-                  if @purchase_invoice.total_with_tax.present? && @purchase_invoice.total_with_tax > 0
-                    # DBに保存された値を使用
-                    product_amount = @purchase_invoice.total_amount.to_i
-                    shipping_fee = @purchase_invoice.shipping_fee.to_i
-                    admin_fee = @purchase_invoice.admin_fee.to_i
-                    tax_amount = @purchase_invoice.tax_amount.to_i
-                    subtotal_before_tax = @purchase_invoice.subtotal_before_tax.to_i
-                    total_with_tax = @purchase_invoice.total_with_tax.to_i
-                    tax_rate_percent = (@purchase_invoice.tax_rate.to_f * 100).to_i
-                    
-                    # 配送先数を表示用に計算
-                    delivery_destinations = 0
-                    delivery_destinations += 1 if shipping_fee > 0 && admin_fee > 0  # クリニック配送
-                    delivery_destinations += 1 if shipping_fee > 6000  # 複数配送先
-                    delivery_destinations = 1 if delivery_destinations == 0 && shipping_fee > 0  # 単一配送先
+                  # 基本商品代金
+                  product_amount = @purchase_invoice.total_amount.to_i
+                  
+                  # 配送先情報に基づいて送料を再計算
+                  if @delivery_informations.present?
+                    # 実際の配送先数に基づいて送料を計算
+                    actual_delivery_count = @delivery_informations.count
+                    calculated_shipping_fee = actual_delivery_count * 6000
                   else
-                    # 既存レコード用：従来の計算方法
-                    product_amount = @purchase_invoice.total_amount.to_i
-                    
-                    # 商品別配送先判定
+                    # 配送先情報がない場合は従来の方法
                     purchase_items = @purchase_invoice.purchase.purchase_items
                     stem_cell_items = purchase_items.select { |item| item.product.name.include?('骨髄幹細胞培培養上清液') }
                     other_items = purchase_items.select { |item| !item.product.name.include?('骨髄幹細胞培培養上清液') }
@@ -102,13 +91,36 @@
                     has_stem_cell_product = stem_cell_items.any?
                     has_other_products = other_items.any?
                     
-                    # 配送先数を計算
-                    delivery_destinations = 0
-                    delivery_destinations += 1 if has_stem_cell_product  # クリニック配送
-                    delivery_destinations += 1 if has_other_products     # 自宅配送
+                    delivery_count = 0
+                    delivery_count += 1 if has_stem_cell_product  # クリニック配送
+                    delivery_count += 1 if has_other_products     # 自宅配送
                     
-                    shipping_fee = delivery_destinations * 6000
+                    calculated_shipping_fee = delivery_count * 6000
+                    actual_delivery_count = delivery_count
+                  end
+                  
+                  # DBに保存された値と計算値のどちらを使用するかを決定
+                  if @purchase_invoice.total_with_tax.present? && @purchase_invoice.total_with_tax > 0
+                    # DBに保存された値を基本とするが、送料は再計算した値を使用
+                    shipping_fee = calculated_shipping_fee
+                    admin_fee = @purchase_invoice.admin_fee.to_i
+                    tax_amount = @purchase_invoice.tax_amount.to_i
+                    subtotal_before_tax = product_amount + shipping_fee + admin_fee
+                    # 税額を再計算（送料が変わった場合）
+                    recalculated_tax = calculate_tax(subtotal_before_tax)
+                    total_with_tax = subtotal_before_tax + recalculated_tax
+                    tax_rate_percent = (@purchase_invoice.tax_rate.to_f * 100).to_i
+                    
+                    # 表示用の税額（再計算した値を使用）
+                    tax_amount = recalculated_tax
+                  else
+                    # 既存レコード用：全て再計算
+                    shipping_fee = calculated_shipping_fee
+                    
+                    # 事務手数料の計算
+                    has_stem_cell_product = @purchase_invoice.purchase.purchase_items.any? { |item| item.product_id == 1 }
                     admin_fee = has_stem_cell_product ? 10000 : 0
+                    
                     subtotal_before_tax = product_amount + shipping_fee + admin_fee
                     tax_amount = calculate_tax(subtotal_before_tax)
                     total_with_tax = subtotal_before_tax + tax_amount
@@ -120,35 +132,37 @@
                   <th class="text-end"><%= number_with_delimiter(product_amount) %>円</th>
                 </tr>
                 <% if shipping_fee > 0 %>
-                  <% 
-                    # 骨髄幹細胞上清液（product.id = 1）が含まれているかチェック
-                    has_bone_marrow_product = @purchase_invoice.purchase.purchase_items.any? { |item| item.product_id == 1 }
-                    has_other_products = @purchase_invoice.purchase.purchase_items.any? { |item| item.product_id != 1 }
-                    
-                    # 送料の表示パターンを決定
-                    if has_bone_marrow_product && has_other_products
-                      # 骨髄 + 他の商品：2行表示
-                  %>
-                  <tr>
-                    <th colspan="3" class="text-end">送料:</th>
-                    <th class="text-end">6,000円</th>
-                  </tr>
-                  <tr>
-                    <th colspan="3" class="text-end">送料（骨髄別送）:</th>
-                    <th class="text-end">6,000円</th>
-                  </tr>
-                  <% elsif has_bone_marrow_product %>
-                    <!-- 骨髄のみ：送料として表示 -->
-                  <tr>
-                    <th colspan="3" class="text-end">送料:</th>
-                    <th class="text-end"><%= number_with_delimiter(shipping_fee) %>円</th>
-                  </tr>
+                  <% if @delivery_informations.present? && @delivery_informations.count > 1 %>
+                    <!-- 複数配送先の場合：配送先ごとに表示 -->
+                    <% @delivery_informations.each_with_index do |delivery_info, index| %>
+                      <tr>
+                        <th colspan="3" class="text-end">
+                          送料 (<%= case delivery_info.delivery_type
+                          when 'clinic'
+                            delivery_info.clinic&.name || 'クリニック'
+                          when 'home'
+                            delivery_info.address_type == 'shipping' ? '配送先住所' : '登録住所'
+                          when 'other'
+                            delivery_info.recipient_name || 'その他お届け先'
+                          else
+                            "配送先#{index + 1}"
+                          end %>):
+                        </th>
+                        <th class="text-end">6,000円</th>
+                      </tr>
+                    <% end %>
+                  <% elsif @delivery_informations.present? && @delivery_informations.count == 1 %>
+                    <!-- 単一配送先の場合 -->
+                    <tr>
+                      <th colspan="3" class="text-end">送料 (1箇所):</th>
+                      <th class="text-end">6,000円</th>
+                    </tr>
                   <% else %>
-                    <!-- 他の商品のみ：送料として表示 -->
-                  <tr>
-                    <th colspan="3" class="text-end">送料:</th>
-                    <th class="text-end"><%= number_with_delimiter(shipping_fee) %>円</th>
-                  </tr>
+                    <!-- 配送先情報がない場合：計算された送料を表示 -->
+                    <tr>
+                      <th colspan="3" class="text-end">送料 (<%= actual_delivery_count %>箇所):</th>
+                      <th class="text-end"><%= number_with_delimiter(shipping_fee) %>円</th>
+                    </tr>
                   <% end %>
                 <% end %>
                 <% if admin_fee > 0 %>
@@ -172,6 +186,112 @@
               </tfoot>
             </table>
           </div>
+          
+          <!-- 配送先情報 -->
+          <% if @delivery_informations.present? %>
+            <hr>
+            <h5>配送先情報 (配送先数: <%= @delivery_informations.count %>)</h5>
+            <% @delivery_informations.each_with_index do |delivery_info, index| %>
+              <div class="card mb-3">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <h6 class="card-title">
+                        <% case delivery_info.delivery_type %>
+                        <% when 'clinic' %>
+                          <i class="fas fa-hospital text-primary me-2"></i>クリニック配送
+                        <% when 'home' %>
+                          <i class="fas fa-home text-success me-2"></i>
+                          <%= delivery_info.address_type == 'shipping' ? '配送先住所' : '登録住所' %>配送
+                        <% when 'other' %>
+                          <i class="fas fa-map-marker-alt text-warning me-2"></i>その他配送
+                        <% when 'multiple' %>
+                          <i class="fas fa-shipping-fast text-info me-2"></i>複数配送先
+                        <% else %>
+                          <i class="fas fa-truck me-2"></i>配送
+                        <% end %>
+                      </h6>
+                      
+                      <% if delivery_info.delivery_type == 'clinic' && delivery_info.clinic %>
+                        <p class="mb-1"><strong>配送先:</strong> <%= delivery_info.clinic.name %></p>
+                      <% elsif delivery_info.delivery_type == 'other' && delivery_info.recipient_name.present? %>
+                        <p class="mb-1"><strong>お届け先名:</strong> <%= delivery_info.recipient_name %></p>
+                      <% end %>
+                      
+                      <% if delivery_info.delivery_address.present? %>
+                        <% addresses = delivery_info.delivery_address.split("\n") %>
+                        <% addresses.each do |address| %>
+                          <% address_parts = address.split("|") %>
+                          <% if address_parts.size >= 2 %>
+                            <p class="mb-1">
+                              <strong>住所:</strong><br>
+                              〒<%= address_parts[0] %><br>
+                              <%= address_parts[1] %>
+                              <% if address_parts[2].present? %>
+                                <br><small class="text-muted">(<%= address_parts[2] %>)</small>
+                              <% end %>
+                            </p>
+                          <% end %>
+                        <% end %>
+                      <% end %>
+                      
+                      <% if delivery_info.delivery_type == 'other' %>
+                        <% if delivery_info.postal_code.present? %>
+                          <p class="mb-1"><strong>郵便番号:</strong> 〒<%= delivery_info.postal_code %></p>
+                        <% end %>
+                        <% if delivery_info.phone_number.present? %>
+                          <p class="mb-1"><strong>電話番号:</strong> <%= delivery_info.phone_number %></p>
+                        <% end %>
+                      <% end %>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <h6>配送商品</h6>
+                      <% 
+                        # この配送先に関連する商品を取得
+                        related_items = case delivery_info.delivery_type
+                        when 'clinic'
+                          @purchase_invoice.purchase_items.select { |item| item.product_id == 1 } # 骨髄幹細胞培養上清液
+                        when 'home', 'other'
+                          @purchase_invoice.purchase_items.select { |item| item.product_id != 1 } # その他の商品
+                        when 'multiple'
+                          @purchase_invoice.purchase_items # 全商品
+                        else
+                          @purchase_invoice.purchase_items
+                        end
+                      %>
+                      
+                      <% if related_items.any? %>
+                        <ul class="list-unstyled">
+                          <% related_items.each do |item| %>
+                            <% 
+                              display_quantity = (item.product_id == 1) ? (item.quantity / 5) : item.quantity
+                              display_unit = (item.product_id == 1) ? "10cc" : item.product.display_unit
+                            %>
+                            <li class="mb-1">
+                              <i class="fas fa-box text-muted me-1"></i>
+                              <%= item.product.name %>
+                              <small class="text-muted">× <%= display_quantity %><%= display_unit %></small>
+                            </li>
+                          <% end %>
+                        </ul>
+                      <% else %>
+                        <p class="text-muted">関連商品なし</p>
+                      <% end %>
+                    </div>
+                  </div>
+                  
+                  <% if delivery_info.delivery_notes.present? %>
+                    <hr>
+                    <p class="mb-0">
+                      <strong>配送メモ:</strong><br>
+                      <%= simple_format(delivery_info.delivery_notes) %>
+                    </p>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
           
           <% if @purchase_invoice.notes.present? %>
             <hr>

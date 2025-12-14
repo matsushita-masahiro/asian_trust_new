@@ -63,7 +63,7 @@
               <% unless current_user.admin? || current_user.level&.name == 'アドバイザー認定前' %>
                 <li><%= link_to "購入履歴", my_history_purchases_path, class: "custom-dropdown-item" %></li>
               <% end %>
-              <% if current_user&.level&.value && [1, 2, 3].include?(current_user.level.value) %>
+              <% if current_user.admin? || (current_user&.level&.value && [1, 2, 3].include?(current_user.level.value)) %>
                 <li><%= link_to "紹介機能", new_referral_invitation_path, class: "custom-dropdown-item" %></li>
               <% end %>
             </ul>

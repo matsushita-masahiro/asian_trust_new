@@ -87,13 +87,38 @@ class CartsController < ApplicationController
     clinic_id = params[:clinic_id]
     address_type = params[:address_type]
     
+    # その他配送の場合の追加パラメータ
+    other_recipient_name = params[:other_recipient_name]
+    other_postal_code = params[:other_postal_code]
+    other_address = params[:other_address]
+    other_phone_number = params[:other_phone_number]
+    
+    # その他配送の場合のバリデーション
+    if delivery_type == 'other'
+      if other_recipient_name.blank? || other_postal_code.blank? || other_address.blank? || other_phone_number.blank?
+        redirect_to cart_path, alert: 'その他配送を選択した場合は、すべての項目を入力してください。'
+        return
+      end
+      
+      # 郵便番号の形式チェック
+      unless other_postal_code.match?(/\A\d{7}\z/)
+        redirect_to cart_path, alert: '郵便番号は7桁の数字で入力してください。'
+        return
+      end
+    end
+    
     cart_item.update!(
       delivery_type: delivery_type,
       clinic_id: clinic_id,
-      address_type: address_type
+      address_type: address_type,
+      other_recipient_name: other_recipient_name,
+      other_postal_code: other_postal_code,
+      other_address: other_address,
+      other_phone_number: other_phone_number
     )
     
-    redirect_to cart_path, notice: '配送先を更新しました'
+    # flashメッセージなしでリダイレクト
+    redirect_to cart_path
   end
   
   private

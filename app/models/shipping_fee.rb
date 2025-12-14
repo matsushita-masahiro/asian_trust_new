@@ -3,8 +3,11 @@ class ShippingFee < ApplicationRecord
 
   # 送料タイプのenum
   enum :shipping_type, {
-    standard: 'standard',     # 通常配送
-    bone_marrow: 'bone_marrow' # 骨髄別送
+    standard: 'standard',         # 通常配送
+    bone_marrow: 'bone_marrow',   # 骨髄別送
+    clinic_delivery: 'clinic_delivery',     # クリニック配送
+    home_delivery: 'home_delivery',         # 自宅配送
+    other_delivery: 'other_delivery'        # その他配送
   }
 
   # バリデーション
@@ -21,6 +24,12 @@ class ShippingFee < ApplicationRecord
       '送料'
     when 'bone_marrow'
       '骨髄別送'
+    when 'clinic_delivery'
+      '送料（クリニック配送）'
+    when 'home_delivery'
+      '送料（登録住所）'
+    when 'other_delivery'
+      '送料（その他お届け先）'
     else
       shipping_type
     end

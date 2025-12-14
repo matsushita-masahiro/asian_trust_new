@@ -67,7 +67,8 @@ class Admin::InvoiceRecipientsController < Admin::BaseController
       address: nil,
       tel: nil,
       department: nil,
-      notes: nil
+      notes: nil,
+      invoice_registration_number: nil
     )
     redirect_to admin_invoice_recipients_path, notice: '請求先情報がクリアされました。'
   end
@@ -81,6 +82,6 @@ class Admin::InvoiceRecipientsController < Admin::BaseController
 
   def invoice_recipient_params
     # user_idは不要（会社全体で1つのため）
-    params.require(:invoice_recipient).permit(:name, :representative_name, :email, :postal_code, :address, :tel, :department, :notes, :bank_name, :bank_branch_name, :bank_account_type, :bank_account_number, :bank_account_name)
+    params.require(:invoice_recipient).permit(:name, :representative_name, :email, :postal_code, :address, :tel, :department, :notes, :bank_name, :bank_branch_name, :bank_account_type, :bank_account_number, :bank_account_name, :invoice_registration_number)
   end
 end

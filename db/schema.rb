@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_14_053310) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_14_193414) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -187,6 +187,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_14_053310) do
     t.string "bank_account_type"
     t.string "bank_account_number"
     t.string "bank_account_name"
+    t.string "invoice_registration_number"
     t.index ["user_id"], name: "index_invoice_recipients_on_user_id"
   end
 

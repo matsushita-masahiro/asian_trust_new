@@ -73,6 +73,15 @@
             </div>
 
             <div class="mb-3">
+              <%= f.label :invoice_registration_number, "インボイス登録番号", class: "form-label" %>
+              <%= f.text_field :invoice_registration_number, class: "form-control", placeholder: "T1234567890123", maxlength: 14 %>
+              <div class="form-text">
+                <i class="fas fa-info-circle text-info"></i>
+                適格請求書発行事業者の登録番号を入力してください（例：T1234567890123）
+              </div>
+            </div>
+
+            <div class="mb-3">
               <%= f.label :notes, "備考", class: "form-label" %>
               <%= f.text_area :notes, class: "form-control", rows: 3, placeholder: "その他の情報や備考を入力してください" %>
             </div>

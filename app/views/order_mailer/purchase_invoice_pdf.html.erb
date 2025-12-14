@@ -230,7 +230,13 @@
     company_tel = local_assigns[:company_tel] || "TEL:#{ENV['COMPANY_TEL'] || '03-5904-8148'}"
     company_email = local_assigns[:company_email] || "Email: #{ENV['COMPANY_EMAIL'] || 'abt1@asia-b-t.com'}"
     company_footer = local_assigns[:company_footer] || ENV['COMPANY_FOOTER'] || "アジアビジネストラスト 事務局"
-    registration_number = local_assigns[:registration_number] || ENV['COMPANY_REGISTRATION_NUMBER'] || "T4210001009156"
+    # インボイス登録番号：データベース優先、フォールバックで環境変数
+    admin_user = User.find_by(admin: true)
+    invoice_recipient = admin_user&.invoice_recipient
+    registration_number = local_assigns[:registration_number] || 
+                         invoice_recipient&.invoice_registration_number || 
+                         ENV['COMPANY_REGISTRATION_NUMBER'] || 
+                         "T4210001009156"
     
     bank_name = local_assigns[:bank_name] || ENV['BANK_NAME'] || "楽天銀行"
     bank_branch = local_assigns[:bank_branch] || ENV['BANK_BRANCH'] || "第三営業支店"

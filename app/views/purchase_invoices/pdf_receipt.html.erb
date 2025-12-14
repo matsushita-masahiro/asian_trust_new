@@ -112,12 +112,18 @@
       <%= recipient.name %><br>
       <%= recipient.address %><br>
       <% if recipient.tel.present? %>
-        TEL: <%= recipient.tel %>
+        TEL: <%= recipient.tel %><br>
+      <% end %>
+      <% if recipient.invoice_registration_number.present? %>
+        登録番号：<%= recipient.invoice_registration_number %>
+      <% else %>
+        登録番号：<%= ENV['COMPANY_REGISTRATION_NUMBER'] || 'T4210001009156' %>
       <% end %>
     <% else %>
       株式会社アジアビジネストラスト<br>
       〒000-0000 東京都○○区○○<br>
-      TEL: 000-0000-0000
+      TEL: 000-0000-0000<br>
+      登録番号：<%= ENV['COMPANY_REGISTRATION_NUMBER'] || 'T4210001009156' %>
     <% end %>
   </p>
 </div>

@@ -62,7 +62,8 @@ class PurchaseInvoicePdfService
       company_tel = invoice_base.tel.presence || "03-5904-8148"
       company_email = "Email: #{invoice_base.email.presence || 'abt1@asia-b-t.com'}"
       company_footer = "アジアビジネストラスト 事務局"
-      registration_number = "T4210001009156"
+      # インボイス登録番号：データベース優先、フォールバックで環境変数
+      registration_number = company_info&.invoice_registration_number || ENV['COMPANY_REGISTRATION_NUMBER'] || "T4210001009156"
       
       bank_name = invoice_base.bank_name.presence || "楽天銀行"
       bank_branch = invoice_base.bank_branch_name.presence || "第二営業支店"
@@ -77,7 +78,8 @@ class PurchaseInvoicePdfService
       company_tel = "03-5904-8148"
       company_email = "abt1@asia-b-t.com"
       company_footer = "アジアビジネストラスト 事務局"
-      registration_number = "T4210001009156"
+      # インボイス登録番号：データベース優先、フォールバックで環境変数
+      registration_number = ENV['COMPANY_REGISTRATION_NUMBER'] || "T4210001009156"
       
       bank_name = "楽天銀行"
       bank_branch = "第二営業支店"

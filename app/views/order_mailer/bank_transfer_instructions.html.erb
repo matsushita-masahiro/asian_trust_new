@@ -50,15 +50,31 @@
       width: 100%;
       border-collapse: collapse;
       margin: 15px 0;
+      table-layout: fixed;
     }
     th, td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid #dee2e6;
+      word-wrap: break-word;
+      word-break: break-all;
+      vertical-align: top;
     }
     th {
       background-color: #f8f9fa;
       font-weight: bold;
+    }
+    .product-name-col {
+      width: 40%;
+    }
+    .quantity-col {
+      width: 15%;
+    }
+    .price-col {
+      width: 22.5%;
+    }
+    .total-col {
+      width: 22.5%;
     }
     .text-right {
       text-align: right;
@@ -74,6 +90,29 @@
       border-top: 1px solid #dee2e6;
       font-size: 0.9em;
       color: #6c757d;
+    }
+    
+    /* モバイル対応 */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .content {
+        padding: 15px;
+      }
+      th, td {
+        padding: 8px 4px;
+        font-size: 12px;
+      }
+      .product-name-col {
+        width: 35%;
+      }
+      .quantity-col {
+        width: 12%;
+      }
+      .price-col, .total-col {
+        width: 26.5%;
+      }
     }
   </style>
 </head>
@@ -97,22 +136,22 @@
       <table>
         <thead>
           <tr>
-            <th>商品名</th>
-            <th class="text-right">数量</th>
-            <th class="text-right">単価</th>
-            <th class="text-right">小計</th>
+            <th class="product-name-col">商品名</th>
+            <th class="quantity-col text-right">数量</th>
+            <th class="price-col text-right">単価</th>
+            <th class="total-col text-right">小計</th>
           </tr>
         </thead>
         <tbody>
           <% @purchase_items.each do |item| %>
             <tr>
-              <td>
-                <%= item.product.name %><br>
+              <td class="product-name-col" style="word-break: break-word; overflow-wrap: break-word; line-height: 1.4;">
+                <div style="font-weight: bold; margin-bottom: 4px;"><%= item.product.name %></div>
                 <small style="color: #6c757d;">単位: <%= item.product.unit_label %></small>
               </td>
-              <td class="text-right"><%= item.quantity %></td>
-              <td class="text-right">¥<%= number_with_delimiter(item.unit_price) %></td>
-              <td class="text-right">¥<%= number_with_delimiter(item.unit_price * item.quantity) %></td>
+              <td class="quantity-col text-right"><%= item.quantity %></td>
+              <td class="price-col text-right">¥<%= number_with_delimiter(item.unit_price) %></td>
+              <td class="total-col text-right">¥<%= number_with_delimiter(item.unit_price * item.quantity) %></td>
             </tr>
           <% end %>
         </tbody>
@@ -182,11 +221,15 @@
       <table style="margin: 0;">
         <tr>
           <td style="border: none; padding: 8px 0;"><strong>銀行名:</strong></td>
-          <td style="border: none; padding: 8px 0;">三菱UFJ銀行</td>
+          <td style="border: none; padding: 8px 0;">楽天銀行</td>
         </tr>
         <tr>
           <td style="border: none; padding: 8px 0;"><strong>支店名:</strong></td>
-          <td style="border: none; padding: 8px 0;">新宿支店</td>
+          <td style="border: none; padding: 8px 0;">第二営業支店</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 8px 0;"><strong>支店番号:</strong></td>
+          <td style="border: none; padding: 8px 0;">252</td>
         </tr>
         <tr>
           <td style="border: none; padding: 8px 0;"><strong>口座種別:</strong></td>
@@ -194,7 +237,7 @@
         </tr>
         <tr>
           <td style="border: none; padding: 8px 0;"><strong>口座番号:</strong></td>
-          <td style="border: none; padding: 8px 0;">1234567</td>
+          <td style="border: none; padding: 8px 0;">7747552</td>
         </tr>
         <tr>
           <td style="border: none; padding: 8px 0;"><strong>口座名義:</strong></td>
@@ -236,10 +279,6 @@
         <p>請求書は経理処理等にご活用ください。</p>
       </div>
     <% end %>
-
-    <p>ご入金が確認でき次第、クリニックの予約ボタンをクリックできるように致しますのでクリニックの予約を完了させてください。</p>
-    
-    <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
 
     <div class="footer">
       <hr>

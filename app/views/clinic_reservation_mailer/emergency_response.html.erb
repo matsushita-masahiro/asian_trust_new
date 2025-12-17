@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #dc3545;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      border-radius: 5px 5px 0 0;
+    }
+    .content {
+      background-color: #f8f9fa;
+      padding: 30px;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+    }
+    .info-box {
+      background-color: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #dc3545;
+      border-radius: 4px;
+    }
+    .response-box {
+      background-color: #d1ecf1;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #0c5460;
+      border-radius: 4px;
+    }
+    .info-row {
+      margin: 10px 0;
+      padding: 8px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    .label {
+      font-weight: bold;
+      color: #495057;
+      display: inline-block;
+      width: 150px;
+    }
+    .value {
+      color: #212529;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #dee2e6;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: center;
+    }
+    .button {
+      display: inline-block;
+      background-color: #dc3545;
+      color: white;
+      padding: 12px 30px;
+      text-decoration: none;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>緊急予約の回答が届きました</h2>
+  </div>
+  
+  <div class="content">
+    <p><%= @user.name %> 様</p>
+    
+    <p>いつもAsia Business Trustをご利用いただき、誠にありがとうございます。</p>
+    
+    <p>緊急予約依頼について、事務局から回答がございます。</p>
+    
+    <div class="info-box">
+      <h3 style="margin-top: 0; color: #dc3545;">緊急予約依頼情報</h3>
+      
+      <div class="info-row">
+        <span class="label">購入ID:</span>
+        <span class="value">#<%= @purchase.id %></span>
+      </div>
+      
+      <% if @clinic.present? %>
+        <div class="info-row">
+          <span class="label">クリニック名:</span>
+          <span class="value"><%= @clinic.name %></span>
+        </div>
+        
+        <% if @clinic_address.present? %>
+          <div class="info-row">
+            <span class="label">クリニック住所:</span>
+            <span class="value">
+              〒<%= @clinic_address.postal_code %><br>
+              <%= @clinic_address.address %>
+            </span>
+          </div>
+        <% end %>
+      <% end %>
+      
+      <div class="info-row">
+        <span class="label">依頼日時:</span>
+        <span class="value"><%= @purchase.updated_at.strftime('%Y年%m月%d日 %H:%M') %></span>
+      </div>
+      
+      <% if @purchase.emergency_reservation_message.present? %>
+        <div class="info-row">
+          <span class="label">依頼内容:</span>
+          <span class="value"><%= simple_format(@purchase.emergency_reservation_message) %></span>
+        </div>
+      <% end %>
+    </div>
+    
+    <div class="response-box">
+      <h3 style="margin-top: 0; color: #0c5460;">事務局からの回答</h3>
+      <p style="white-space: pre-wrap; margin: 0;"><%= @purchase.emergency_reservation_response %></p>
+      <p style="margin-top: 15px; font-size: 12px; color: #6c757d;">
+        回答日時: <%= @purchase.emergency_reservation_responded_at.strftime('%Y年%m月%d日 %H:%M') %>
+      </p>
+    </div>
+    
+    <p style="margin-top: 30px;">
+      ご不明な点がございましたら、お気軽にお問い合わせください。
+    </p>
+  </div>
+  
+  <div class="footer">
+    <p>
+      <strong>株式会社アジアビジネストラスト</strong><br>
+      〒104-0061 東京都中央区銀座4丁目6-1 銀座医科ビル3階<br>
+      TEL: 03-5904-8148<br>
+      Email: abt1@asia-b-t.com
+    </p>
+  </div>
+</body>
+</html>

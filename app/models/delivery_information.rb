@@ -1,6 +1,6 @@
 class DeliveryInformation < ApplicationRecord
   belongs_to :purchase
-  belongs_to :clinic, class_name: 'User', optional: true
+  belongs_to :clinic, optional: true
 
   # バリデーション
   validates :delivery_type, presence: true, inclusion: { in: %w[home clinic multiple other] }

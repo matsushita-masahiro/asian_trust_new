@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+sunday_holiday:
+  clinic_id: 1
+  weekday: 0
+  reason: "定休日"
+
+new_year:
+  clinic_id: 1
+  date: <%= Date.new(Date.current.year + 1, 1, 1) %>
+  reason: "元日"

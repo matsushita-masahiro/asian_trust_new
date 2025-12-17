@@ -38,8 +38,6 @@
                 <span class="badge bg-warning fs-6">申込中</span>
               <% when ClinicReservation::CONFIRMED %>
                 <span class="badge bg-success fs-6">予約確定</span>
-              <% when ClinicReservation::COMPLETED %>
-                <span class="badge bg-info fs-6">施術完了</span>
               <% when ClinicReservation::CANCELLED %>
                 <span class="badge bg-danger fs-6">キャンセル</span>
               <% end %>
@@ -50,6 +48,24 @@
             <div class="col-sm-3"><strong>申込日時:</strong></div>
             <div class="col-sm-9"><%= @clinic_reservation.created_at.strftime("%Y年%m月%d日 %H:%M") %></div>
           </div>
+          
+          <% if @clinic_reservation.purchase&.emergency_reservation_requested? %>
+            <div class="row mb-3">
+              <div class="col-sm-3"><strong>緊急予約:</strong></div>
+              <div class="col-sm-9">
+                <div class="alert alert-danger mb-2">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  <strong>緊急予約依頼あり</strong>
+                </div>
+                <% if @clinic_reservation.purchase.emergency_reservation_message.present? %>
+                  <div class="border rounded p-3 bg-light">
+                    <strong>依頼内容:</strong><br>
+                    <%= simple_format(@clinic_reservation.purchase.emergency_reservation_message) %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
           
           <div class="row mb-3">
             <div class="col-sm-3"><strong>施術方法:</strong></div>
@@ -282,15 +298,16 @@
             delivery_info = @clinic_reservation.purchase.delivery_informations.first
             clinic_id = delivery_info&.clinic_id
             
-            # clinic_idに対応するユーザー情報を取得
-            clinic_user = clinic_id.present? ? User.find_by(id: clinic_id) : nil
+            # clinic_idに対応するクリニック情報を取得
+            clinic = clinic_id.present? ? Clinic.find_by(id: clinic_id) : nil
+            clinic_user = clinic&.user
           %>
           
-          <% if clinic_user %>
+          <% if clinic && clinic_user %>
             <table class="table table-sm table-borderless">
               <tr>
                 <th width="40%">クリニック名:</th>
-                <td><strong><%= clinic_user.name %></strong></td>
+                <td><strong><%= clinic&.name || clinic_user&.name %></strong></td>
               </tr>
               <tr>
                 <th>電話番号:</th>
@@ -408,8 +425,19 @@
           </h5>
         </div>
         <div class="card-body">
-          <% if @clinic_reservation.pending? %>
-            <div class="d-grid gap-2">
+          <div class="d-grid gap-2">
+            <% if @clinic_reservation.purchase&.emergency_reservation_requested? %>
+              <%= link_to resolve_emergency_admin_clinic_reservation_path(@clinic_reservation), 
+                  method: :patch, 
+                  class: "btn btn-danger",
+                  data: { 
+                    confirm: "緊急予約依頼を解決済みにしますか？\n\nユーザーに解決通知が送信されます。" 
+                  } do %>
+                <i class="fas fa-check me-1"></i>緊急予約依頼を解決
+              <% end %>
+            <% end %>
+            
+            <% if @clinic_reservation.pending? %>
               <%= link_to cancel_admin_clinic_reservation_path(@clinic_reservation), 
                   method: :patch, 
                   class: "btn btn-outline-danger",
@@ -418,24 +446,16 @@
                   } do %>
                 <i class="fas fa-times me-1"></i>予約をキャンセル
               <% end %>
-            </div>
-          <% elsif @clinic_reservation.confirmed? %>
-            <div class="d-grid gap-2">
-              <%= link_to complete_admin_clinic_reservation_path(@clinic_reservation), 
-                  method: :patch, 
-                  class: "btn btn-info",
-                  data: { 
-                    confirm: "施術完了にしますか？" 
-                  } do %>
-                <i class="fas fa-check-circle me-1"></i>施術完了にする
-              <% end %>
-            </div>
-          <% else %>
-            <div class="text-center text-muted">
-              <i class="fas fa-info-circle me-1"></i>
-              利用可能な操作はありません
-            </div>
-          <% end %>
+
+            <% end %>
+            
+            <% unless @clinic_reservation.pending? || @clinic_reservation.confirmed? || @clinic_reservation.purchase&.emergency_reservation_requested? %>
+              <div class="text-center text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                利用可能な操作はありません
+              </div>
+            <% end %>
+          </div>
         </div>
       </div>
     </div>

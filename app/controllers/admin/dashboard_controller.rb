@@ -23,6 +23,9 @@ class Admin::DashboardController < Admin::BaseController
     
     # 未回答のお問合せ件数を取得
     @unanswered_inquiries_count = Inquiry.left_joins(:answers).where(answers: { id: nil }).count
+    
+    # 緊急予約依頼件数を取得（未回答の緊急予約依頼のみ）
+    @emergency_reservation_count = Purchase.where(emergency_reservation_requested: true, emergency_reservation_responded_at: nil).count
   end
 
   private

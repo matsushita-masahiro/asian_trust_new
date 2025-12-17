@@ -346,7 +346,7 @@
                 confirm: "支払いが完了しましたか？管理者に支払確認を依頼します。" %>
           <% end %>
           
-          <%= link_to "一覧に戻る", purchase_invoices_path, class: "btn btn-secondary btn-sm w-100" %>
+          <%= link_to "購入履歴へ", my_history_purchases_path, class: "btn btn-secondary btn-sm w-100" %>
         </div>
       </div>
       
@@ -404,8 +404,23 @@
           <h6><i class="fas fa-calendar-alt me-2"></i>クリニック予約</h6>
         </div>
         <div class="card-body">
-          <% case @purchase_invoice.clinic_reservation_status %>
-          <% when :not_required %>
+          <% if @purchase_invoice.purchase.emergency_reservation_requested? %>
+            <div class="alert alert-danger mb-3">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>緊急予約依頼</strong>
+            </div>
+            <div class="mb-3">
+              <strong>依頼内容:</strong><br>
+              <div class="border p-2 bg-light rounded">
+                <%= simple_format(@purchase_invoice.purchase.emergency_reservation_message) %>
+              </div>
+            </div>
+            <div class="text-muted small">
+              事務局が確認後、ご連絡いたします。
+            </div>
+          <% else %>
+            <% case @purchase_invoice.clinic_reservation_status %>
+            <% when :not_required %>
             <div class="alert alert-secondary mb-0">
               <i class="fas fa-info-circle me-2"></i>
               この購入にはクリニック予約は不要です。
@@ -445,6 +460,7 @@
           <% when :not_reserved %>
             <%= link_to "クリニック予約", new_purchase_clinic_reservation_path(@purchase_invoice.purchase), 
                 class: "btn btn-primary btn-sm w-100" %>
+            <% end %>
           <% end %>
         </div>
       </div>

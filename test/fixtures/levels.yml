@@ -1,9 +1,16 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  id: 1
   name: "レベル1"
   value: 1
 
 two:
+  id: 2
   name: "レベル2"
   value: 2
+
+clinic:
+  id: 3
+  name: "クリニック"
+  value: 3

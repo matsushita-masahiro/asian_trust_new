@@ -52,8 +52,15 @@ class OrderMailer < ApplicationMailer
   def payment_confirmed(purchase)
     @purchase = purchase
     @user = purchase.user
-    @total_amount = purchase.total_price
     @purchase_items = purchase.purchase_items.includes(:product)
+    @purchase_invoice = purchase.purchase_invoice
+    
+    # 金額の詳細を設定
+    @subtotal = purchase.total_price
+    @shipping_fee = @purchase_invoice&.shipping_fee || purchase.total_shipping_fees
+    @admin_fee = @purchase_invoice&.admin_fee || 0
+    @tax_amount = @purchase_invoice&.tax_amount || 0
+    @total_amount = @purchase_invoice&.total_with_tax || purchase.total_price
     
     # 一時的な修正: Purchase ID 22の場合は正しいメールアドレスに送信
     recipient_email = if purchase.id == 22

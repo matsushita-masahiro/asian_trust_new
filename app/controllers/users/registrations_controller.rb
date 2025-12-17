@@ -8,7 +8,7 @@ class Users::RegistrationsController < ApplicationController
     end
     
     if params[:ref].blank?
-      redirect_to root_path, alert: '紹介者からの招待が必要です。'
+      redirect_to root_path, alert: 'ログインもしくは紹介者からの招待が必要です。'
       return
     end
     

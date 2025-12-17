@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #28a745;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      border-radius: 5px 5px 0 0;
+    }
+    .content {
+      background-color: #f8f9fa;
+      padding: 30px;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+    }
+    .info-box {
+      background-color: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #28a745;
+      border-radius: 4px;
+    }
+    .info-row {
+      margin: 10px 0;
+      padding: 8px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    .label {
+      font-weight: bold;
+      color: #495057;
+      display: inline-block;
+      width: 120px;
+    }
+    .value {
+      color: #212529;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #dee2e6;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>領収書を発行いたしました</h2>
+  </div>
+  
+  <div class="content">
+    <p><%= @user.name %> 様</p>
+    
+    <p>いつもAsia Business Trustをご利用いただき、誠にありがとうございます。</p>
+    
+    <p>ご注文いただきました商品の領収書を発行いたしました。</p>
+    
+    <div class="info-box">
+      <h3 style="margin-top: 0; color: #28a745;">領収書情報</h3>
+      
+      <div class="info-row">
+        <span class="label">購入ID:</span>
+        <span class="value">#<%= @purchase.id %></span>
+      </div>
+      
+      <div class="info-row">
+        <span class="label">購入日:</span>
+        <span class="value"><%= @purchase.purchased_at.strftime('%Y年%m月%d日') %></span>
+      </div>
+      
+      <div class="info-row">
+        <span class="label">商品:</span>
+        <span class="value">
+          <% @purchase.purchase_items.each do |item| %>
+            <%= item.product.name %> × <%= item.quantity %><br>
+          <% end %>
+        </span>
+      </div>
+      
+      <div class="info-row">
+        <span class="label">合計金額:</span>
+        <span class="value">¥<%= number_with_delimiter(@purchase_invoice.total_with_tax || @purchase_invoice.total_amount) %></span>
+      </div>
+      
+      <div class="info-row">
+        <span class="label">領収書発行日:</span>
+        <span class="value"><%= Date.current.strftime('%Y年%m月%d日') %></span>
+      </div>
+    </div>
+    
+    <p>
+      <strong>領収書PDFファイルを添付しております。</strong><br>
+      必要に応じて印刷してご利用ください。
+    </p>
+    
+    <p style="margin-top: 30px;">
+      ご不明な点がございましたら、お気軽にお問い合わせください。
+    </p>
+  </div>
+  
+  <div class="footer">
+    <% if @invoice_recipient.present? %>
+      <p>
+        <strong><%= @invoice_recipient.name %></strong><br>
+        〒<%= @invoice_recipient.postal_code %> <%= @invoice_recipient.address %><br>
+        <% if @invoice_recipient.tel.present? %>
+          TEL: <%= @invoice_recipient.tel %><br>
+        <% end %>
+        <% if @invoice_recipient.email.present? %>
+          Email: <%= @invoice_recipient.email %>
+        <% end %>
+      </p>
+    <% else %>
+      <p>
+        <strong>株式会社アジアビジネストラスト</strong><br>
+        〒104-0061 東京都中央区銀座4丁目8-1銀座穂月ビル3階<br>
+        TEL: 03-5904-8148<br>
+        Email: abt1@asia-b-t.com
+      </p>
+    <% end %>
+  </div>
+</body>
+</html>

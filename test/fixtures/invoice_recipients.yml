@@ -1,11 +1,29 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-# This model initially had no columns defined. If you add columns to the
-# model remove the "{}" from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-# column: value
+one:
+  id: 1
+  user_id: 1
+  name: "テスト請求先1"
+  email: "invoice1@example.com"
+  postal_code: "123-4567"
+  address: "東京都渋谷区渋谷1-1-1"
+  tel: "03-1234-5678"
+  department: "経理部"
+  notes: "テスト用請求先1"
+  representative_name: "代表者1"
+  created_at: <%= 1.day.ago %>
+  updated_at: <%= 1.day.ago %>
+
+two:
+  id: 2
+  user_id: 2
+  name: "テスト請求先2"
+  email: "invoice2@example.com"
+  postal_code: "987-6543"
+  address: "大阪府大阪市北区梅田2-2-2"
+  tel: "06-9876-5432"
+  department: "総務部"
+  notes: "テスト用請求先2"
+  representative_name: "代表者2"
+  created_at: <%= 1.day.ago %>
+  updated_at: <%= 1.day.ago %>

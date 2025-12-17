@@ -35,8 +35,8 @@ class PaymentsController < ApplicationController
     
     # クリニック配送先を追加
     clinic_ids.each do |clinic_id|
-      clinic = User.joins(:invoice_base).find_by(id: clinic_id)
-      if clinic&.invoice_base
+      clinic = Clinic.find_by(id: clinic_id)
+      if clinic
         @delivery_destinations << {
           title: "#{clinic.name}（クリニック配送）",
           type: 'clinic'
@@ -103,7 +103,7 @@ class PaymentsController < ApplicationController
         
         if invoice_recipient
           @company_info = {
-            name: invoice_recipient.company_name || ENV['COMPANY_NAME'] || "株式会社アジアビジネストラスト",
+            name: invoice_recipient.name || ENV['COMPANY_NAME'] || "株式会社アジアビジネストラスト",
             department: invoice_recipient.department || ENV['COMPANY_DEPARTMENT'] || "アジアビジネストラスト事業部",
             address: invoice_recipient.address || "〒#{ENV['COMPANY_POSTAL_CODE'] || '104-0061'} #{ENV['COMPANY_ADDRESS'] || '東京都中央区銀座4丁目6-1'}",
             building: ENV['COMPANY_BUILDING'] || "", # invoice_recipientにはbuilding項目がないため環境変数から取得
@@ -114,12 +114,12 @@ class PaymentsController < ApplicationController
           }
           
           @bank_info = {
-            name: invoice_base.bank_name || ENV['BANK_NAME'] || "楽天銀行",
-            branch: invoice_base.bank_branch_name || ENV['BANK_BRANCH'] || "第三営業支店",
+            name: invoice_base&.bank_name || ENV['BANK_NAME'] || "楽天銀行",
+            branch: invoice_base&.bank_branch_name || ENV['BANK_BRANCH'] || "第三営業支店",
             branch_code: ENV['BANK_BRANCH_CODE'] || "252", # 固定値（DBに項目がない）
-            account_type: invoice_base.bank_account_type || ENV['BANK_ACCOUNT_TYPE'] || "普通預金",
-            account_number: invoice_base.bank_account_number || ENV['BANK_ACCOUNT_NUMBER'] || "7247552",
-            account_name: invoice_base.bank_account_name || @company_info[:name]
+            account_type: invoice_base&.bank_account_type || ENV['BANK_ACCOUNT_TYPE'] || "普通預金",
+            account_number: invoice_base&.bank_account_number || ENV['BANK_ACCOUNT_NUMBER'] || "7247552",
+            account_name: invoice_base&.bank_account_name || @company_info[:name]
           }
         else
           # DBに情報がない場合はデフォルト値を使用
@@ -166,7 +166,7 @@ class PaymentsController < ApplicationController
         ).deliver_now
         
         Rails.logger.info "Bank transfer email sent successfully for Purchase #{@purchase.id}"
-        redirect_to my_history_purchases_path, notice: '注文が完了しました。銀行振込の詳細と請求書をメールでお送りしました。'
+        redirect_to my_history_purchases_path, notice: '注文が完了しました。請求書をメールでお送りしました。（購入履歴からも見れます）'
       rescue => e
         Rails.logger.error "Failed to send bank transfer email: #{e.message}"
         Rails.logger.error e.backtrace.join("\n")
@@ -277,9 +277,14 @@ class PaymentsController < ApplicationController
     when 'clinic'
       # クリニック配送の住所
       if cart_item.clinic_id.present?
-        clinic = User.joins(:invoice_base).find_by(id: cart_item.clinic_id)
-        if clinic&.invoice_base
-          "#{clinic.invoice_base.postal_code}|#{clinic.invoice_base.address}|#{clinic.name}"
+        clinic = Clinic.find_by(id: cart_item.clinic_id)
+        if clinic && clinic.user
+          # クリニックユーザーの登録住所を取得
+          if clinic.user.registration_address
+            "#{clinic.user.registration_address.postal_code}|#{clinic.user.registration_address.address}|#{clinic.name}"
+          else
+            "住所未登録|#{clinic.name}"
+          end
         else
           ""
         end

@@ -2,16 +2,16 @@
 
 one:
   referrer: one
-  referral_token: MyString
+  referral_token: "token123"
   target_level: one
-  passcode: MyString
-  expires_at: 2025-09-13 02:37:13
-  used_at: 2025-09-13 02:37:13
+  passcode: "pass123"
+  expires_at: <%= 1.month.from_now %>
+  used_at: <%= 1.day.ago %>
 
 two:
   referrer: two
-  referral_token: MyString
+  referral_token: "token456"
   target_level: two
-  passcode: MyString
-  expires_at: 2025-09-13 02:37:13
-  used_at: 2025-09-13 02:37:13
+  passcode: "pass456"
+  expires_at: <%= 1.month.from_now %>
+  used_at: <%= 1.day.ago %>

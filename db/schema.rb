@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_14_193414) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_16_033820) do
   create_table "access_logs", force: :cascade do |t|
     t.string "ip_address"
     t.string "path"
@@ -99,6 +99,37 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_14_193414) do
     t.index ["user_id"], name: "index_carts_on_user_id"
   end
 
+  create_table "clinic_break_times", force: :cascade do |t|
+    t.integer "clinic_id", null: false
+    t.integer "weekday", null: false
+    t.time "start_time", null: false
+    t.time "end_time", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["clinic_id"], name: "index_clinic_break_times_on_clinic_id"
+  end
+
+  create_table "clinic_business_hours", force: :cascade do |t|
+    t.integer "clinic_id", null: false
+    t.integer "weekday", null: false
+    t.time "start_time", null: false
+    t.time "end_time", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["clinic_id", "weekday"], name: "index_clinic_business_hours_on_clinic_id_and_weekday", unique: true
+    t.index ["clinic_id"], name: "index_clinic_business_hours_on_clinic_id"
+  end
+
+  create_table "clinic_holidays", force: :cascade do |t|
+    t.integer "clinic_id", null: false
+    t.date "date"
+    t.integer "weekday"
+    t.string "reason", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["clinic_id"], name: "index_clinic_holidays_on_clinic_id"
+  end
+
   create_table "clinic_reservations", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "purchase_id", null: false
@@ -122,6 +153,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_14_193414) do
     t.string "confirmed_time"
     t.index ["purchase_id"], name: "index_clinic_reservations_on_purchase_id"
     t.index ["user_id"], name: "index_clinic_reservations_on_user_id"
+  end
+
+  create_table "clinics", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "name", null: false
+    t.boolean "is_active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "holiday_closure_enabled", default: true
+    t.index ["user_id"], name: "index_clinics_on_user_id", unique: true
   end
 
   create_table "delivery_informations", force: :cascade do |t|
@@ -324,6 +365,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_14_193414) do
     t.datetime "updated_at", null: false
     t.string "payment_type", default: "cash", null: false
     t.string "status", default: "built", null: false
+    t.boolean "emergency_reservation_requested", default: false
+    t.text "emergency_reservation_message"
+    t.text "emergency_reservation_response"
+    t.datetime "emergency_reservation_responded_at"
+    t.integer "emergency_reservation_responded_by"
     t.index ["payment_type", "status"], name: "index_purchases_on_payment_type_and_status"
     t.index ["payment_type"], name: "index_purchases_on_payment_type"
     t.index ["status"], name: "index_purchases_on_status"
@@ -456,8 +502,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_14_193414) do
   add_foreign_key "cart_items", "carts"
   add_foreign_key "cart_items", "products"
   add_foreign_key "carts", "users"
+  add_foreign_key "clinic_break_times", "clinics"
+  add_foreign_key "clinic_business_hours", "clinics"
+  add_foreign_key "clinic_holidays", "clinics"
+  add_foreign_key "clinic_reservations", "clinics"
   add_foreign_key "clinic_reservations", "purchases"
   add_foreign_key "clinic_reservations", "users"
+  add_foreign_key "clinics", "users"
   add_foreign_key "delivery_informations", "purchases"
   add_foreign_key "delivery_informations", "users", column: "clinic_id"
   add_foreign_key "inquiries", "users"

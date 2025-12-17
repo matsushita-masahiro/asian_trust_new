@@ -1,35 +1,40 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  user: one
-  purchase: one
+  id: 1
+  user_id: 1
+  purchase_id: 1
   clinic_id: 1
-  treatment_methods: MyText
-  preferred_date_1: 2025-10-28
-  preferred_time_1: MyString
-  preferred_date_2: 2025-10-28
-  preferred_time_2: MyString
-  preferred_date_3: 2025-10-28
-  preferred_time_3: MyString
-  disease_name: MyText
-  current_treatment: MyText
-  current_condition: MyText
-  questions: MyText
-  status: 1
+  treatment_methods: "幹細胞治療"
+  preferred_date_1: <%= Date.current + 1.week %>
+  preferred_time_1: "10:00-11:00"
+  preferred_date_2: <%= Date.current + 2.weeks %>
+  preferred_time_2: "14:00-15:00"
+  preferred_date_3: <%= Date.current + 3.weeks %>
+  preferred_time_3: "16:00-17:00"
+  disease_name: "テスト疾患"
+  current_treatment: "現在の治療法"
+  current_condition: "現在の状態"
+  questions: "質問事項"
+  status: 0
 
 two:
-  user: two
-  purchase: two
+  id: 2
+  user_id: 2
+  purchase_id: 2
   clinic_id: 1
-  treatment_methods: MyText
-  preferred_date_1: 2025-10-28
-  preferred_time_1: MyString
-  preferred_date_2: 2025-10-28
-  preferred_time_2: MyString
-  preferred_date_3: 2025-10-28
-  preferred_time_3: MyString
-  disease_name: MyText
-  current_treatment: MyText
-  current_condition: MyText
-  questions: MyText
+  treatment_methods: "幹細胞治療"
+  preferred_date_1: <%= Date.current + 1.week %>
+  preferred_time_1: "11:00-12:00"
+  preferred_date_2: <%= Date.current + 2.weeks %>
+  preferred_time_2: "15:00-16:00"
+  preferred_date_3: <%= Date.current + 3.weeks %>
+  preferred_time_3: "17:00-18:00"
+  disease_name: "テスト疾患2"
+  current_treatment: "現在の治療法2"
+  current_condition: "現在の状態2"
+  questions: "質問事項2"
   status: 1
+  confirmed_preference: 1
+  confirmed_date: <%= Date.current + 1.week %>
+  confirmed_time: "11:00-12:00"

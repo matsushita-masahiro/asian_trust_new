@@ -46,26 +46,101 @@
       border-bottom: 1px solid #dee2e6;
       padding-bottom: 10px;
     }
-    .item-list {
+    .order-table {
+      width: 100%;
+      border-collapse: collapse;
       margin: 15px 0;
+      background-color: white;
+      table-layout: fixed;
     }
-    .item {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
+    .order-table th,
+    .order-table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+      vertical-align: top;
     }
-    .item:last-child {
-      border-bottom: none;
+    .order-table th {
+      background-color: #f8f9fa;
       font-weight: bold;
-      background-color: #e9ecef;
-      padding: 15px 10px;
-      margin-top: 10px;
+      color: #495057;
+      font-size: 14px;
+    }
+    .order-table .product-name {
+      width: 40%;
+      word-wrap: break-word;
+      word-break: break-all;
+      font-size: 13px;
+      line-height: 1.3;
+      max-width: 0;
+      overflow-wrap: break-word;
+    }
+    .order-table .quantity {
+      width: 12%;
+      text-align: center;
+    }
+    .order-table .price {
+      width: 24%;
+      text-align: right;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .order-table .total {
+      width: 24%;
+      text-align: right;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .order-table .text-right {
+      text-align: right;
+    }
+    .order-table .subtotal-row {
+      border-top: 2px solid #dee2e6;
+      background-color: #f8f9fa;
+    }
+    .order-table .total-row {
+      border-top: 2px solid #007bff;
+      background-color: #e3f2fd;
+      font-weight: bold;
+    }
+    .order-table .total-row td {
+      white-space: nowrap;
     }
     .total-amount {
-      font-size: 18px;
+      font-size: 16px;
       color: #28a745;
       font-weight: bold;
+      white-space: nowrap;
+    }
+    
+    /* モバイル対応 */
+    @media (max-width: 600px) {
+      .order-table {
+        font-size: 11px;
+      }
+      .order-table th,
+      .order-table td {
+        padding: 6px 3px;
+      }
+      .order-table .product-name {
+        width: 35%;
+        font-size: 10px;
+        word-break: break-all;
+        line-height: 1.2;
+      }
+      .order-table .quantity {
+        width: 10%;
+        font-size: 10px;
+      }
+      .order-table .price,
+      .order-table .total {
+        width: 27.5%;
+        font-size: 10px;
+        white-space: nowrap;
+      }
+      .total-amount {
+        font-size: 12px;
+      }
     }
     .next-steps {
       background-color: #d4edda;
@@ -118,35 +193,78 @@
         <p><strong>注文番号:</strong> #<%= @purchase.id %></p>
         <p><strong>注文日時:</strong> <%= @purchase.purchased_at.strftime('%Y年%m月%d日 %H:%M') %></p>
         
-        <div class="item-list">
-          <% @purchase_items.each do |item| %>
-            <div class="item">
-              <span><%= item.product.name %> × <%= item.quantity %></span>
-              <span>¥<%= number_with_delimiter(item.unit_price * item.quantity) %></span>
-            </div>
-          <% end %>
-          <div class="item">
-            <span>合計金額</span>
-            <span class="total-amount">¥<%= number_with_delimiter(@total_amount) %></span>
-          </div>
-        </div>
+        <table class="order-table">
+          <thead>
+            <tr>
+              <th class="product-name">商品名</th>
+              <th class="quantity">数量</th>
+              <th class="price">単価</th>
+              <th class="total">小計</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @purchase_items.each do |item| %>
+              <tr>
+                <td class="product-name">
+                  <% product_name = item.product.name %>
+                  <% if product_name.length > 20 %>
+                    <%= truncate(product_name, length: 20, omission: '...') %>
+                    <br><small style="color: #6c757d;"><%= product_name[20..-1] if product_name.length > 20 %></small>
+                  <% else %>
+                    <%= product_name %>
+                  <% end %>
+                </td>
+                <td class="quantity"><%= item.quantity %></td>
+                <td class="price">¥<%= number_with_delimiter(item.unit_price) %></td>
+                <td class="total">¥<%= number_with_delimiter(item.unit_price * item.quantity) %></td>
+              </tr>
+            <% end %>
+            
+            <!-- 小計 -->
+            <tr class="subtotal-row">
+              <td colspan="3"><strong>商品代金計</strong></td>
+              <td class="text-right"><strong>¥<%= number_with_delimiter(@subtotal) %></strong></td>
+            </tr>
+            
+            <!-- 送料 -->
+            <% if @shipping_fee && @shipping_fee > 0 %>
+              <tr>
+                <td colspan="3">送料</td>
+                <td class="text-right">¥<%= number_with_delimiter(@shipping_fee) %></td>
+              </tr>
+            <% end %>
+            
+            <!-- 事務手数料 -->
+            <% if @admin_fee && @admin_fee > 0 %>
+              <tr>
+                <td colspan="3">事務手数料</td>
+                <td class="text-right">¥<%= number_with_delimiter(@admin_fee) %></td>
+              </tr>
+            <% end %>
+            
+            <!-- 消費税 -->
+            <% if @tax_amount && @tax_amount > 0 %>
+              <tr>
+                <td colspan="3">消費税</td>
+                <td class="text-right">¥<%= number_with_delimiter(@tax_amount) %></td>
+              </tr>
+            <% end %>
+            
+            <!-- 合計金額 -->
+            <tr class="total-row">
+              <td colspan="3"><strong>合計金額</strong></td>
+              <td class="text-right total-amount">¥<%= number_with_delimiter(@total_amount) %></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div class="next-steps">
-        <h3>次のステップ</h3>
-        <p>入金確認が完了いたしました。マイページにログインして、クリニック予約を行ってください。</p>
-        <p>
-          <% begin %>
-            <a href="<%= new_user_registration_url %>" class="clinic-button">
-              マイページでクリニック予約
-            </a>
-          <% rescue => e %>
-            <a href="http://localhost:3000" class="clinic-button">
-              マイページでクリニック予約
-            </a>
-          <% end %>
-        </p>
-      </div>
+      <% if @purchase.purchase_invoice&.clinic_reservation_status == 'not_reserved' %>
+        <div class="next-steps">
+          <h3>次のステップ</h3>
+          <p>入金確認が完了いたしました。クリニック予約をしてください。</p>
+        </div>
+      <% end %>
 
       <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
     </div>

@@ -4,6 +4,9 @@ class Notification < ApplicationRecord
   # 通知タイプ
   CLINIC_RESERVATION_REQUIRED = 'clinic_reservation_required'  # クリニック予約必要
   CLINIC_RESERVATION_CONFIRMED = 'clinic_reservation_confirmed'  # クリニック予約確定
+  PAYMENT_CONFIRMED = 'payment_confirmed'  # 入金確認完了
+  RECEIPT_ISSUED = 'receipt_issued'  # 領収書発行完了
+  EMERGENCY_RESERVATION_REQUESTED = 'emergency_reservation_requested'  # 緊急予約依頼
   
   validates :notification_type, presence: true
   validates :title, presence: true

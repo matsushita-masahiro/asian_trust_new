@@ -3,8 +3,14 @@ Rails.application.routes.draw do
   # クリニック予約
   resources :purchases, only: [] do
     resources :clinic_reservations, only: [:new, :create]
+    member do
+      patch :request_emergency_reservation  # 緊急予約依頼
+    end
   end
   resources :clinic_reservations, only: [:index, :show, :edit, :update, :destroy]
+  
+  # 予約可能時間API
+  get 'available_times', to: 'available_times#index'
   get "carts/show"
   get "carts/add_item"
   get "carts/remove_item"
@@ -51,10 +57,21 @@ Rails.application.routes.draw do
       member do
         patch :confirm
         patch :confirm_with_selection
-        patch :complete
         patch :cancel
+        patch :resolve_emergency
+      end
+      collection do
+        patch 'respond_to_emergency/:id', to: 'clinic_reservations#respond_to_emergency', as: :respond_to_emergency
       end
     end
+    
+    # クリニック管理
+    resources :clinics, only: [:index, :show, :new, :create, :edit, :update, :destroy] do
+      collection do
+        post :enable_reservation
+      end
+    end
+    
     root to: 'dashboard#index'  # /admin → ダッシュボード
     resources :sales, only: [:index]
     resources :products, only: [:index, :edit, :update, :destroy] do

@@ -115,16 +115,15 @@
                         </div>
                         
                         <% 
-                          # クリニック情報を取得
-                          clinic_level = Level.find_by(name: 'クリニック')
-                          clinics = clinic_level ? User.joins(:invoice_base).where(level: clinic_level).includes(:invoice_base) : []
+                          # 新しいClinicテーブルから予約受付中のクリニックのみを取得
+                          clinics = Clinic.includes(:user).where(is_active: true).order(:name)
                         %>
                         
                         <!-- クリニック選択 -->
                         <div class="clinic-selection" id="clinic-selection-<%= item.id %>" style="<%= 'display: none;' unless default_delivery_type == 'clinic' %>">
                           <%= f.select :clinic_id, 
                               options_for_select(
-                                clinics.map { |c| [c.name, c.id] },
+                                clinics.map { |clinic| [clinic.name, clinic.id] },
                                 item.clinic_id
                               ),
                               { prompt: 'クリニックを選択' },
@@ -258,10 +257,24 @@
                         end
                       end
                       
+                      # デバッグ情報（開発環境でのみ表示）
+                      if Rails.env.development?
+                        Rails.logger.debug "=== カート送料計算デバッグ ==="
+                        @cart_items.each_with_index do |item, index|
+                          delivery_type = item.delivery_type || (item.product.id == 1 ? 'clinic' : 'home')
+                          Rails.logger.debug "商品#{index + 1}: #{item.product.name}"
+                          Rails.logger.debug "  配送タイプ: #{delivery_type}"
+                          Rails.logger.debug "  クリニックID: #{item.clinic_id}"
+                        end
+                        Rails.logger.debug "収集されたクリニックID: #{clinic_ids}"
+                        Rails.logger.debug "配送先数: #{clinic_ids.size + (has_home_delivery ? 1 : 0) + (has_other_delivery ? 1 : 0)}"
+                        Rails.logger.debug "=========================="
+                      end
+                      
                       # クリニック配送先を追加
                       clinic_ids.each do |clinic_id|
-                        clinic = User.joins(:invoice_base).find_by(id: clinic_id)
-                        if clinic&.invoice_base
+                        clinic = Clinic.find_by(id: clinic_id)
+                        if clinic
                           delivery_destinations << {
                             title: "#{clinic.name}（クリニック配送）",
                             type: 'clinic'

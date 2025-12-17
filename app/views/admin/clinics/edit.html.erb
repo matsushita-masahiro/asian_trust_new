@@ -1,0 +1,258 @@
+<div class="container-fluid mt-5 mb-5">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>
+          <i class="fas fa-edit me-2"></i>
+          クリニック設定編集: <%= @clinic.name %>
+        </h4>
+        <div>
+          <%= link_to "詳細に戻る", admin_clinic_path(@clinic), class: "btn btn-outline-secondary" %>
+          <%= link_to "一覧に戻る", admin_clinics_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+
+      <%= form_with model: [:admin, @clinic], local: true, class: "needs-validation", novalidate: true do |f| %>
+        <% if @clinic.errors.any? %>
+          <div class="alert alert-danger">
+            <h6>エラーが発生しました:</h6>
+            <ul class="mb-0">
+              <% @clinic.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <!-- 基本情報 -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              基本情報
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= f.label :name, "クリニック名", class: "form-label" %>
+                  <%= f.text_field :name, class: "form-control", required: true %>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= f.label :is_active, "ステータス", class: "form-label" %>
+                  <%= f.select :is_active, 
+                      options_for_select([
+                        ['アクティブ（予約受付中）', true],
+                        ['非アクティブ（予約停止中）', false]
+                      ], @clinic.is_active), 
+                      {}, 
+                      { class: "form-select" } %>
+                </div>
+                <div class="form-check">
+                  <%= f.check_box :holiday_closure_enabled, class: "form-check-input" %>
+                  <%= f.label :holiday_closure_enabled, "祝日を定休日にする", class: "form-check-label" %>
+                  <small class="text-muted d-block">祝日を自動的に休診日として扱います</small>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 営業時間設定 -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-clock me-2"></i>
+              営業時間設定
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">各曜日の営業時間を設定してください。営業しない曜日は空欄にしてください。</p>
+            
+            <% %w[日 月 火 水 木 金 土].each_with_index do |day_name, weekday| %>
+              <% business_hour = @clinic.clinic_business_hours.find { |bh| bh.weekday == weekday } %>
+              <div class="row mb-3">
+                <div class="col-md-2">
+                  <label class="form-label">
+                    <strong><%= day_name %>曜日</strong>
+                  </label>
+                </div>
+                <div class="col-md-4">
+                  <%= fields_for "clinic[clinic_business_hours_attributes][#{weekday}]", business_hour do |bh_f| %>
+                    <%= bh_f.hidden_field :id if business_hour&.persisted? %>
+                    <%= bh_f.hidden_field :weekday, value: weekday %>
+                    <%= bh_f.label :start_time, "開始時間", class: "form-label" %>
+                    <%= bh_f.select :start_time, 
+                        options_for_select([['', '']] + time_options_30min, business_hour&.start_time&.strftime("%H:%M")), 
+                        {}, 
+                        { class: "form-select" } %>
+                  <% end %>
+                </div>
+                <div class="col-md-4">
+                  <%= fields_for "clinic[clinic_business_hours_attributes][#{weekday}]", business_hour do |bh_f| %>
+                    <%= bh_f.label :end_time, "終了時間", class: "form-label" %>
+                    <%= bh_f.select :end_time, 
+                        options_for_select([['', '']] + time_options_30min, business_hour&.end_time&.strftime("%H:%M")), 
+                        {}, 
+                        { class: "form-select" } %>
+                  <% end %>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                  <small class="text-muted">空にすると休診日</small>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <!-- 休憩時間設定 -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-coffee me-2"></i>
+              休憩時間設定
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">休憩時間を設定してください。複数の休憩時間がある場合は「追加」ボタンで追加できます。</p>
+            
+            <div id="break-times-container">
+              <% @clinic.clinic_break_times.each_with_index do |break_time, index| %>
+                <div class="break-time-row row mb-3" data-break-time-id="<%= break_time.id %>">
+                  <input type="hidden" name="clinic[clinic_break_times_attributes][<%= index %>][id]" value="<%= break_time.id %>">
+                  <input type="hidden" name="clinic[clinic_break_times_attributes][<%= index %>][_destroy]" value="false" class="destroy-field">
+                  <div class="col-md-3">
+                    <label class="form-label">曜日</label>
+                    <select name="clinic[clinic_break_times_attributes][<%= index %>][weekday]" class="form-select">
+                      <option value="">選択してください</option>
+                      <% %w[日 月 火 水 木 金 土].each_with_index do |day, day_index| %>
+                        <option value="<%= day_index %>" <%= 'selected' if break_time.weekday == day_index %>><%= day %>曜日</option>
+                      <% end %>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">開始時間</label>
+                    <select name="clinic[clinic_break_times_attributes][<%= index %>][start_time]" class="form-select">
+                      <option value="">選択してください</option>
+                      <% time_options_30min.each do |label, value| %>
+                        <option value="<%= value %>" <%= 'selected' if break_time.start_time&.strftime('%H:%M') == value %>><%= label %></option>
+                      <% end %>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">終了時間</label>
+                    <select name="clinic[clinic_break_times_attributes][<%= index %>][end_time]" class="form-select">
+                      <option value="">選択してください</option>
+                      <% time_options_30min.each do |label, value| %>
+                        <option value="<%= value %>" <%= 'selected' if break_time.end_time&.strftime('%H:%M') == value %>><%= label %></option>
+                      <% end %>
+                    </select>
+                  </div>
+                  <div class="col-md-3 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-break-time">削除</button>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+            
+            <button type="button" id="add-break-time" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-plus me-1"></i>休憩時間を追加
+            </button>
+          </div>
+        </div>
+
+        <!-- 休日設定 -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-calendar-times me-2"></i>
+              休日設定
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">定期休日（毎週○曜日）や特定日の休日を設定してください。</p>
+            
+            <div id="holidays-container">
+              <% @clinic.clinic_holidays.each_with_index do |holiday, index| %>
+                <div class="holiday-row row mb-3" data-holiday-id="<%= holiday.id %>">
+                  <input type="hidden" name="clinic[clinic_holidays_attributes][<%= index %>][id]" value="<%= holiday.id %>">
+                  <input type="hidden" name="clinic[clinic_holidays_attributes][<%= index %>][_destroy]" value="false" class="destroy-field">
+                  <div class="col-md-2">
+                    <label class="form-label">種類</label>
+                    <select class="form-select holiday-type" data-holiday-type>
+                      <option value="weekday" <%= 'selected' if holiday.weekday.present? %>>定期休日</option>
+                      <option value="date" <%= 'selected' if holiday.date.present? %>>特定日</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3 weekday-field" style="<%= 'display: none;' if holiday.date.present? %>">
+                    <label class="form-label">曜日</label>
+                    <select name="clinic[clinic_holidays_attributes][<%= index %>][weekday]" class="form-select">
+                      <option value="">選択してください</option>
+                      <% %w[日 月 火 水 木 金 土].each_with_index do |day, day_index| %>
+                        <option value="<%= day_index %>" <%= 'selected' if holiday.weekday == day_index %>><%= day %>曜日</option>
+                      <% end %>
+                    </select>
+                  </div>
+                  <div class="col-md-3 date-field" style="<%= 'display: none;' if holiday.weekday.present? %>">
+                    <label class="form-label">日付</label>
+                    <input type="date" name="clinic[clinic_holidays_attributes][<%= index %>][date]" 
+                           value="<%= holiday.date&.strftime('%Y-%m-%d') %>" class="form-control">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">理由</label>
+                    <input type="text" name="clinic[clinic_holidays_attributes][<%= index %>][reason]" 
+                           value="<%= holiday.reason %>" class="form-control" placeholder="例: 定休日、臨時休診">
+                  </div>
+                  <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-holiday">削除</button>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+            
+            <button type="button" id="add-holiday" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-plus me-1"></i>休日を追加
+            </button>
+          </div>
+        </div>
+
+        <!-- 送信ボタン -->
+        <div class="d-flex justify-content-between">
+          <%= link_to "キャンセル", admin_clinic_path(@clinic), class: "btn btn-outline-secondary" %>
+          <%= f.submit "設定を保存", class: "btn btn-primary btn-sm px-5" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- データ属性でJavaScriptに値を渡す -->
+<div data-break-time-index="<%= @clinic.clinic_break_times.count %>" data-holiday-index="<%= @clinic.clinic_holidays.count %>" style="display: none;"></div>
+
+
+<style>
+/* このページでのFlashメッセージのスタイル調整 */
+.flash-message {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  z-index: 1050 !important;
+  margin-bottom: 20px;
+}
+
+.flash-message .alert {
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+.flash-message .btn-close {
+  position: relative !important;
+  z-index: 1051 !important;
+  pointer-events: auto !important;
+}
+</style>

@@ -1,0 +1,278 @@
+<div class="container-fluid mt-5 mb-5">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>
+          <i class="fas fa-hospital me-2"></i>
+          <%= @clinic.name %>
+        </h4>
+        <div>
+          <%= link_to "編集", edit_admin_clinic_path(@clinic), class: "btn btn-primary" %>
+          <%= link_to "一覧に戻る", admin_clinics_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+
+      <!-- 基本情報 -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            基本情報
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <dl class="row">
+                <dt class="col-sm-4">クリニック名:</dt>
+                <dd class="col-sm-8"><%= @clinic.name %></dd>
+                
+
+                <dt class="col-sm-4">ステータス:</dt>
+                <dd class="col-sm-8">
+                  <% if @clinic.is_active %>
+                    <span class="badge bg-success">アクティブ</span>
+                  <% else %>
+                    <span class="badge bg-secondary">非アクティブ</span>
+                  <% end %>
+                </dd>
+                
+                <dt class="col-sm-4">予約可能:</dt>
+                <dd class="col-sm-8">
+                  <% if @clinic.reservable? %>
+                    <span class="badge bg-success">可能</span>
+                  <% else %>
+                    <span class="badge bg-danger">不可</span>
+                  <% end %>
+                </dd>
+              </dl>
+            </div>
+            <div class="col-md-6">
+              <dl class="row">
+                <dt class="col-sm-4">登録日:</dt>
+                <dd class="col-sm-8"><%= @clinic.created_at.strftime("%Y年%m月%d日 %H:%M") %></dd>
+                
+                <dt class="col-sm-4">更新日:</dt>
+                <dd class="col-sm-8"><%= @clinic.updated_at.strftime("%Y年%m月%d日 %H:%M") %></dd>
+                
+                <dt class="col-sm-4">祝日休業:</dt>
+                <dd class="col-sm-8">
+                  <% if @clinic.holiday_closure_enabled? %>
+                    <span class="badge bg-info">有効</span>
+                    <small class="text-muted d-block">祝日は自動的に休診日になります</small>
+                  <% else %>
+                    <span class="badge bg-secondary">無効</span>
+                    <small class="text-muted d-block">祝日でも営業します</small>
+                  <% end %>
+                </dd>
+                
+                <dt class="col-sm-4">総予約数:</dt>
+                <dd class="col-sm-8">
+                  <span class="badge bg-primary"><%= @clinic.clinic_reservations.count %>件</span>
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 営業時間 -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-clock me-2"></i>
+            営業時間設定
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @business_hours.any? %>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>曜日</th>
+                    <th>開始時間</th>
+                    <th>終了時間</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @business_hours.each do |hour| %>
+                    <tr>
+                      <td>
+                        <%= %w[日 月 火 水 木 金 土][hour.weekday] %>曜日
+                      </td>
+                      <td><%= hour.start_time.strftime("%H:%M") %></td>
+                      <td><%= hour.end_time.strftime("%H:%M") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <i class="fas fa-clock fa-2x text-muted mb-3"></i>
+              <p class="text-muted">営業時間が設定されていません</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- 休憩時間 -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-coffee me-2"></i>
+            休憩時間設定
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @break_times.any? %>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>曜日</th>
+                    <th>開始時間</th>
+                    <th>終了時間</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @break_times.each do |break_time| %>
+                    <tr>
+                      <td>
+                        <%= %w[日 月 火 水 木 金 土][break_time.weekday] %>曜日
+                      </td>
+                      <td><%= break_time.start_time.strftime("%H:%M") %></td>
+                      <td><%= break_time.end_time.strftime("%H:%M") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <i class="fas fa-coffee fa-2x text-muted mb-3"></i>
+              <p class="text-muted">休憩時間が設定されていません</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- 休日設定 -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-calendar-times me-2"></i>
+            休日設定
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @holidays.any? %>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>種類</th>
+                    <th>日付/曜日</th>
+                    <th>理由</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @holidays.each do |holiday| %>
+                    <tr>
+                      <td>
+                        <% if holiday.date.present? %>
+                          <span class="badge bg-warning">特定日</span>
+                        <% else %>
+                          <span class="badge bg-info">定期休日</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if holiday.date.present? %>
+                          <%= holiday.date.strftime("%Y年%m月%d日") %>
+                          <%= holiday_badge(holiday.date) %>
+                          <%= holiday_info(holiday.date) %>
+                        <% else %>
+                          <%= %w[日 月 火 水 木 金 土][holiday.weekday] %>曜日
+                        <% end %>
+                      </td>
+                      <td><%= holiday.reason %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <i class="fas fa-calendar-times fa-2x text-muted mb-3"></i>
+              <p class="text-muted">休日が設定されていません</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- 祝日カレンダー -->
+      <%= render 'holiday_calendar' %>
+
+      <!-- 最近の予約 -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-calendar-check me-2"></i>
+            最近の予約 (最新10件)
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @reservations.any? %>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>予約者</th>
+                    <th>第1希望</th>
+                    <th>ステータス</th>
+                    <th>申込日</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @reservations.each do |reservation| %>
+                    <tr>
+                      <td>
+                        <%= reservation.user.name %>
+                        <br>
+                        <small class="text-muted">購入ID: <%= reservation.purchase.id %></small>
+                      </td>
+                      <td>
+                        <%= reservation.preferred_date_1&.strftime("%Y/%m/%d") %>
+                        <br>
+                        <small class="text-muted"><%= reservation.preferred_time_1 %></small>
+                      </td>
+                      <td>
+                        <span class="badge bg-<%= reservation.status == 0 ? 'warning' : reservation.status == 1 ? 'success' : 'secondary' %>">
+                          <%= reservation.status_name %>
+                        </span>
+                      </td>
+                      <td><%= reservation.created_at.strftime("%Y/%m/%d") %></td>
+                      <td>
+                        <%= link_to "詳細", admin_clinic_reservation_path(reservation), class: "btn btn-sm btn-outline-primary" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+            <div class="text-center mt-3">
+              <%= link_to "全ての予約を見る", admin_clinic_reservations_path(clinic_id: @clinic.id), class: "btn btn-outline-primary" %>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <i class="fas fa-calendar-check fa-2x text-muted mb-3"></i>
+              <p class="text-muted">予約がありません</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

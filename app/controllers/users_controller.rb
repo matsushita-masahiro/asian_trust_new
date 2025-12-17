@@ -31,13 +31,13 @@ class UsersController < ApplicationController
         # 既に通知が存在しない場合のみ作成
         unless current_user.notifications.exists?(
           notification_type: Notification::CLINIC_RESERVATION_REQUIRED,
-          link_url: my_history_purchases_path
+          link_url: new_purchase_clinic_reservation_path(purchase)
         )
           current_user.notifications.create!(
             notification_type: Notification::CLINIC_RESERVATION_REQUIRED,
             title: 'クリニック予約が必要です',
             message: "購入ID: #{purchase.id} のクリニック予約をお願いします。",
-            link_url: my_history_purchases_path
+            link_url: new_purchase_clinic_reservation_path(purchase)
           )
         end
       end
@@ -48,13 +48,13 @@ class UsersController < ApplicationController
         # 既に通知が存在しない場合のみ作成
         unless current_user.notifications.exists?(
           notification_type: Notification::CLINIC_RESERVATION_CONFIRMED,
-          link_url: my_history_purchases_path
+          link_url: clinic_reservations_path
         )
           current_user.notifications.create!(
             notification_type: Notification::CLINIC_RESERVATION_CONFIRMED,
             title: 'クリニック予約が確定しました',
             message: "予約ID: #{reservation.id} の予約が確定しました。確定日時: #{reservation.confirmed_date&.strftime('%Y年%m月%d日')} #{reservation.confirmed_time}",
-            link_url: my_history_purchases_path
+            link_url: clinic_reservations_path
           )
         end
       end
@@ -77,13 +77,13 @@ class UsersController < ApplicationController
     pending_purchases.each do |purchase|
       unless current_user.notifications.exists?(
         notification_type: Notification::CLINIC_RESERVATION_REQUIRED,
-        link_url: my_history_purchases_path
+        link_url: new_purchase_clinic_reservation_path(purchase)
       )
         current_user.notifications.create!(
           notification_type: Notification::CLINIC_RESERVATION_REQUIRED,
           title: 'クリニック予約が必要です',
           message: "購入ID: #{purchase.id} のクリニック予約をお願いします。",
-          link_url: my_history_purchases_path
+          link_url: new_purchase_clinic_reservation_path(purchase)
         )
       end
     end
@@ -93,13 +93,13 @@ class UsersController < ApplicationController
     confirmed_reservations.each do |reservation|
       unless current_user.notifications.exists?(
         notification_type: Notification::CLINIC_RESERVATION_CONFIRMED,
-        link_url: my_history_purchases_path
+        link_url: clinic_reservations_path
       )
         current_user.notifications.create!(
           notification_type: Notification::CLINIC_RESERVATION_CONFIRMED,
           title: 'クリニック予約が確定しました',
           message: "予約ID: #{reservation.id} の予約が確定しました。確定日時: #{reservation.confirmed_date&.strftime('%Y年%m月%d日')} #{reservation.confirmed_time}",
-          link_url: my_history_purchases_path
+          link_url: clinic_reservations_path
         )
       end
     end

@@ -1,0 +1,171 @@
+<div class="container-fluid mt-5 mb-5">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>
+            新しいクリニックを追加
+          </h4>
+        </div>
+        <div class="card-body">
+          <%= form_with model: [:admin, @clinic], local: true, class: "needs-validation", novalidate: true do |f| %>
+            <% if @clinic.errors.any? %>
+              <div class="alert alert-danger">
+                <h6>エラーが発生しました:</h6>
+                <ul class="mb-0">
+                  <% @clinic.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <!-- 基本情報 -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= f.label :user_id, "クリニックユーザー", class: "form-label" %>
+                  <span class="text-danger">*</span>
+                  <%= f.select :user_id, 
+                      options_from_collection_for_select(@available_clinic_users, :id, :name), 
+                      { prompt: "クリニックユーザーを選択してください" }, 
+                      { class: "form-select", required: true } %>
+                  <div class="invalid-feedback">
+                    クリニックユーザーを選択してください。
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <%= f.label :name, "クリニック名", class: "form-label" %>
+                  <span class="text-danger">*</span>
+                  <%= f.text_field :name, class: "form-control", placeholder: "クリニック名を入力", required: true %>
+                  <div class="invalid-feedback">
+                    クリニック名を入力してください。
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="form-check mb-3">
+                  <%= f.check_box :is_active, class: "form-check-input", checked: true %>
+                  <%= f.label :is_active, "予約受付中", class: "form-check-label" %>
+                  <small class="text-muted d-block">チェックを外すと予約を受け付けなくなります</small>
+                </div>
+                <div class="form-check">
+                  <%= f.check_box :holiday_closure_enabled, class: "form-check-input", checked: true %>
+                  <%= f.label :holiday_closure_enabled, "祝日を定休日にする", class: "form-check-label" %>
+                  <small class="text-muted d-block">祝日を自動的に休診日として扱います</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- 営業時間設定 -->
+            <div class="mb-4">
+              <h5 class="border-bottom pb-2 mb-3">
+                <i class="fas fa-clock me-2"></i>
+                営業時間設定
+              </h5>
+              
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <thead class="table-light">
+                    <tr>
+                      <th>曜日</th>
+                      <th>営業開始時間</th>
+                      <th>営業終了時間</th>
+                      <th>休診日</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% %w[日 月 火 水 木 金 土].each_with_index do |day_name, weekday| %>
+                      <% business_hour = @clinic.clinic_business_hours.find { |bh| bh.weekday == weekday } %>
+                      <tr>
+                        <td class="align-middle">
+                          <strong><%= day_name %>曜日</strong>
+                        </td>
+                        <td>
+                          <%= fields_for "clinic[clinic_business_hours_attributes][#{weekday}]", business_hour do |bh_f| %>
+                            <%= bh_f.hidden_field :weekday, value: weekday %>
+                            <%= bh_f.select :start_time, 
+                                options_for_select([['', '']] + time_options_30min, business_hour&.start_time&.strftime("%H:%M")), 
+                                {}, 
+                                { class: "form-select" } %>
+                          <% end %>
+                        </td>
+                        <td>
+                          <%= fields_for "clinic[clinic_business_hours_attributes][#{weekday}]", business_hour do |bh_f| %>
+                            <%= bh_f.select :end_time, 
+                                options_for_select([['', '']] + time_options_30min, business_hour&.end_time&.strftime("%H:%M")), 
+                                {}, 
+                                { class: "form-select" } %>
+                          <% end %>
+                        </td>
+                        <td class="text-center align-middle">
+                          <small class="text-muted">開始・終了時間を空にすると休診日になります</small>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+              
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>営業時間の設定方法:</strong>
+                <ul class="mb-0 mt-2">
+                  <li>営業日: 開始時間と終了時間の両方を入力してください</li>
+                  <li>休診日: 開始時間と終了時間を空のままにしてください</li>
+                  <li>時間は24時間形式で入力してください（例: 09:00, 18:30）</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- ボタン -->
+            <div class="d-flex justify-content-between">
+              <%= link_to "キャンセル", admin_clinics_path, class: "btn btn-outline-secondary" %>
+              <%= f.submit "クリニックを作成", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// フォームバリデーション
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    var forms = document.getElementsByClassName('needs-validation');
+    var validation = Array.prototype.filter.call(forms, function(form) {
+      form.addEventListener('submit', function(event) {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  }, false);
+})();
+
+// ユーザー選択時にクリニック名を自動入力
+document.addEventListener('DOMContentLoaded', function() {
+  const userSelect = document.querySelector('#clinic_user_id');
+  const nameField = document.querySelector('#clinic_name');
+  
+  if (userSelect && nameField) {
+    userSelect.addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+      if (selectedOption.value && selectedOption.text) {
+        nameField.value = selectedOption.text;
+      }
+    });
+  }
+});
+</script>

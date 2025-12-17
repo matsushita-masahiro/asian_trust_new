@@ -126,7 +126,12 @@
             <!-- (2) 施術希望日を教えてください -->
             <div class="mb-4">
               <div class="bg-info text-white p-3 mb-3">
-                <h5 class="mb-0">(2) 施術希望日を教えてください</h5>
+                <h5 class="mb-0">
+                  (2) 施術希望日を教えてください
+                  <% if @clinic %>
+                    <span class="ms-3 badge bg-light text-dark"><%= @clinic.name %></span>
+                  <% end %>
+                </h5>
               </div>
               
               <% min_date = (Date.current + 1.week).strftime("%Y-%m-%d") %>
@@ -142,15 +147,72 @@
                 </div>
                 <div class="mb-2">
                   <i class="fas fa-calendar text-warning me-2"></i>
-                  <strong>選択可能日：<%= (Date.current + 1.week).strftime("%Y年%m月%d日") %>以降</strong>
+                  <% if @purchase.emergency_reservation_requested? %>
+                    <strong>選択可能日：<%= (Date.current + 1.day).strftime("%Y年%m月%d日") %>以降（緊急予約）</strong>
+                  <% else %>
+                    <strong>選択可能日：<%= (Date.current + 1.week).strftime("%Y年%m月%d日") %>以降</strong>
+                  <% end %>
                 </div>
               </div>
               
-              <div class="mb-3">
-                <strong>《診療時間》</strong><br>
-                10:00～18:30　※昼休憩13:00～15:00<br>
-                休診日／日曜・祝日
-              </div>
+              <% if @clinic %>
+                <div class="card mb-3">
+                  <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                      <i class="fas fa-hospital me-2"></i>
+                      <strong>《<%= @clinic.name %> 診療時間》</strong>
+                    </h6>
+                    <% if @purchase.emergency_reservation_requested? %>
+                      <div class="alert alert-danger mt-2 mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>緊急予約依頼済み</strong><br>
+                        <small>事務局が確認後、ご連絡いたします。</small>
+                      </div>
+                    <% end %>
+                    <% if @purchase.emergency_reservation_requested? %>
+                      <button type="button" class="btn btn-outline-danger btn-sm" disabled>
+                        <i class="fas fa-check me-1"></i>緊急予約依頼済み
+                      </button>
+                    <% else %>
+                      <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#emergencyReservationModal">
+                        <i class="fas fa-exclamation-triangle me-1"></i>緊急
+                      </button>
+                    <% end %>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <strong>営業時間:</strong><br>
+                        <% if @clinic.clinic_business_hours.any? %>
+                          <%= format_clinic_business_hours(@clinic) %>
+                        <% else %>
+                          <span class="text-muted">営業時間未設定</span>
+                        <% end %>
+                      </div>
+                      <div class="col-md-6">
+                        <% break_times = format_clinic_break_times(@clinic) %>
+                        <% if break_times %>
+                          <strong>休憩時間:</strong><br>
+                          <%= break_times %>
+                        <% end %>
+                        
+                        <% holidays = format_clinic_holidays(@clinic) %>
+                        <% if holidays %>
+                          <div class="mt-2">
+                            <strong>休診日:</strong><br>
+                            <span class="text-danger"><%= holidays %></span>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% else %>
+                <div class="mb-3">
+                  <strong>《診療時間》</strong><br>
+                  <span class="text-muted">クリニック情報を取得中...</span>
+                </div>
+              <% end %>
               
               <!-- 第1希望 -->
               <div class="row mb-3">
@@ -160,8 +222,8 @@
                     <strong>第1希望</strong>
                     <span class="badge bg-danger ms-1">必須</span>
                   </label>
-                  <%= f.date_field :preferred_date_1, class: "form-control", placeholder: "日付選択", required: true, min: min_date %>
-                  <small class="text-muted">↑ タップするとカレンダーが表示されます（<%= (Date.current + 1.week).strftime("%m/%d") %>以降選択可能）</small>
+                  <%= f.date_field :preferred_date_1, class: "form-control clinic-date-field", placeholder: "営業日を選択", required: true, min: min_date, data: { target: "time_1" } %>
+                  <small class="text-muted">↑ 営業日のみ選択可能です（休診日は自動的にクリアされます）</small>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">
@@ -169,18 +231,9 @@
                     <span class="badge bg-danger ms-1">必須</span>
                   </label>
                   <%= f.select :preferred_time_1, 
-                      options_for_select([
-                        ['選択してください', ''],
-                        ['10:00-11:00', '10:00-11:00'],
-                        ['11:00-12:00', '11:00-12:00'],
-                        ['12:00-13:00', '12:00-13:00'],
-                        ['15:00-16:00', '15:00-16:00'],
-                        ['16:00-17:00', '16:00-17:00'],
-                        ['17:00-18:00', '17:00-18:00'],
-                        ['18:00-18:30', '18:00-18:30']
-                      ]), 
+                      options_for_select([['まず日付を選択してください', '']]), 
                       {}, 
-                      { class: "form-select", required: true } %>
+                      { class: "form-select clinic-time-field", required: true, id: "time_1" } %>
                 </div>
               </div>
               
@@ -192,8 +245,8 @@
                     <strong>第2希望</strong>
                     <span class="badge bg-danger ms-1">必須</span>
                   </label>
-                  <%= f.date_field :preferred_date_2, class: "form-control", placeholder: "日付選択", min: min_date %>
-                  <small class="text-muted">↑ タップするとカレンダーが表示されます（<%= (Date.current + 1.week).strftime("%m/%d") %>以降選択可能）</small>
+                  <%= f.date_field :preferred_date_2, class: "form-control clinic-date-field", placeholder: "営業日を選択", min: min_date, data: { target: "time_2" } %>
+                  <small class="text-muted">↑ 営業日のみ選択可能です（休診日は自動的にクリアされます）</small>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">
@@ -201,18 +254,9 @@
                     <span class="badge bg-danger ms-1">必須</span>
                   </label>
                   <%= f.select :preferred_time_2, 
-                      options_for_select([
-                        ['選択してください', ''],
-                        ['10:00-11:00', '10:00-11:00'],
-                        ['11:00-12:00', '11:00-12:00'],
-                        ['12:00-13:00', '12:00-13:00'],
-                        ['15:00-16:00', '15:00-16:00'],
-                        ['16:00-17:00', '16:00-17:00'],
-                        ['17:00-18:00', '17:00-18:00'],
-                        ['18:00-18:30', '18:00-18:30']
-                      ]), 
+                      options_for_select([['まず日付を選択してください', '']]), 
                       {}, 
-                      { class: "form-select" } %>
+                      { class: "form-select clinic-time-field", id: "time_2" } %>
                 </div>
               </div>
               
@@ -224,8 +268,8 @@
                     <strong>第3希望</strong>
                     <span class="badge bg-danger ms-1">必須</span>
                   </label>
-                  <%= f.date_field :preferred_date_3, class: "form-control", placeholder: "日付選択", min: min_date %>
-                  <small class="text-muted">↑ タップするとカレンダーが表示されます（<%= (Date.current + 1.week).strftime("%m/%d") %>以降選択可能）</small>
+                  <%= f.date_field :preferred_date_3, class: "form-control clinic-date-field", placeholder: "営業日を選択", min: min_date, data: { target: "time_3" } %>
+                  <small class="text-muted">↑ 営業日のみ選択可能です（休診日は自動的にクリアされます）</small>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">
@@ -233,18 +277,9 @@
                     <span class="badge bg-danger ms-1">必須</span>
                   </label>
                   <%= f.select :preferred_time_3, 
-                      options_for_select([
-                        ['選択してください', ''],
-                        ['10:00-11:00', '10:00-11:00'],
-                        ['11:00-12:00', '11:00-12:00'],
-                        ['12:00-13:00', '12:00-13:00'],
-                        ['15:00-16:00', '15:00-16:00'],
-                        ['16:00-17:00', '16:00-17:00'],
-                        ['17:00-18:00', '17:00-18:00'],
-                        ['18:00-18:30', '18:00-18:30']
-                      ]), 
+                      options_for_select([['まず日付を選択してください', '']]), 
                       {}, 
-                      { class: "form-select" } %>
+                      { class: "form-select clinic-time-field", id: "time_3" } %>
                 </div>
               </div>
             </div>
@@ -305,44 +340,766 @@
   </div>
 </div>
 
+<!-- クリニックスケジュールデータ -->
+<% if @clinic %>
+  <script type="application/json" id="clinic-schedule-data">
+    <%= clinic_schedule_json(@clinic) %>
+  </script>
+<% end %>
+
+<!-- 祝日データ -->
+<% if @holidays %>
+  <script type="application/json" id="holidays-data">
+    <%= @holidays.to_json.html_safe %>
+  </script>
+<% end %>
+
 <script>
-// Turbo対応のイベントリスナー
-function initializeTreatmentToggle() {
-  const stemCellSection = document.getElementById('stem-cell-section');
-  
-  if (!stemCellSection) return; // 要素が存在しない場合は何もしない
-  
-  function toggleStemCellSection() {
-    // data-stem-cell="true"の選択肢でテキスト入力欄を表示
-    const checkedRadio = document.querySelector('.treatment-radio:checked');
+// クリニック予約の日付・時間制御
+class ClinicReservationController {
+  constructor() {
+    this.clinicSchedule = null;
+    this.holidays = [];
     
-    if (checkedRadio && checkedRadio.dataset.stemCell === 'true') {
-      stemCellSection.style.display = 'block';
+    // 最小日付を安全に設定（緊急予約の場合は制限を緩和）
+    try {
+      this.minDate = new Date();
+      <% if @purchase.emergency_reservation_requested? %>
+        this.minDate.setDate(this.minDate.getDate() + 1); // 緊急予約：翌日から
+      <% else %>
+        this.minDate.setDate(this.minDate.getDate() + 7); // 通常予約：1週間後
+      <% end %>
+      
+      // 日付の有効性をチェック
+      if (isNaN(this.minDate.getTime())) {
+        console.error('Failed to create valid minDate, using fallback');
+        <% if @purchase.emergency_reservation_requested? %>
+          this.minDate = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000); // 緊急予約：翌日
+        <% else %>
+          this.minDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 通常予約：1週間後
+        <% end %>
+      }
+    } catch (error) {
+      console.error('Error setting minDate:', error);
+      <% if @purchase.emergency_reservation_requested? %>
+        this.minDate = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000); // 緊急予約フォールバック
+      <% else %>
+        this.minDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 通常予約フォールバック
+      <% end %>
+    }
+    
+    this.intervals = []; // インターバルを管理
+    this.isValidating = false; // 検証中フラグ
+    
+    this.loadClinicSchedule();
+    this.loadHolidays();
+    this.initializeDateFields();
+    this.initializeEventListeners();
+  }
+  
+  loadClinicSchedule() {
+    const scheduleElement = document.getElementById('clinic-schedule-data');
+    if (scheduleElement) {
+      try {
+        this.clinicSchedule = JSON.parse(scheduleElement.textContent);
+      } catch (e) {
+        console.error('Failed to parse clinic schedule:', e);
+      }
+    }
+  }
+  
+  loadHolidays() {
+    const holidaysElement = document.getElementById('holidays-data');
+    
+    if (holidaysElement) {
+      try {
+        this.holidays = JSON.parse(holidaysElement.textContent);
+      } catch (e) {
+        console.error('祝日データの解析に失敗:', e);
+        this.holidays = [];
+      }
     } else {
-      stemCellSection.style.display = 'none';
+      this.holidays = [];
     }
   }
   
-  // イベント委譲を使用してTurbo対応
-  document.removeEventListener('change', handleTreatmentChange);
-  document.addEventListener('change', handleTreatmentChange);
+  initializeDateFields() {
+    // 既存のインターバルをクリア
+    this.intervals.forEach(interval => clearInterval(interval));
+    this.intervals = [];
+    
+    const dateFields = document.querySelectorAll('.clinic-date-field');
+    
+    dateFields.forEach((field, index) => {
+      // 既に初期化済みの場合はスキップ
+      if (field.hasAttribute('data-initialized')) {
+        return;
+      }
+      field.setAttribute('data-initialized', 'true');
+      
+      // イベントリスナーを追加
+      const handleDateChange = (e) => {
+        if (this.isValidating) return;
+        this.handleDateFieldChange(e.target);
+      };
+      
+      field.addEventListener('change', handleDateChange);
+      field.addEventListener('input', handleDateChange);
+      field.addEventListener('blur', handleDateChange);
+      
+      // 定期的に値をチェック
+      let lastValue = field.value;
+      const checkInterval = setInterval(() => {
+        if (this.isValidating) return;
+        if (field.value !== lastValue) {
+          lastValue = field.value;
+          this.handleDateFieldChange(field);
+        }
+      }, 500);
+      
+      this.intervals.push(checkInterval);
+      
+      // 日付フィールドの制約を設定
+      this.setDateConstraints(field);
+    });
+  }
   
-  function handleTreatmentChange(event) {
-    if (event.target.classList.contains('treatment-radio')) {
-      toggleStemCellSection();
+  handleDateFieldChange(field) {
+    if (this.isValidating) return;
+    
+    if (field.value) {
+      // 即座に検証して無効な場合はクリア
+      if (!this.validateDateSelection(field)) {
+        // 無効な日付は即座にクリア
+        setTimeout(() => {
+          field.value = '';
+          field.blur();
+        }, 50);
+      } else {
+        this.updateTimeOptions(field);
+      }
     }
   }
   
-  // 初期状態をチェック
-  toggleStemCellSection();
+  initializeEventListeners() {
+    // 治療方法選択の既存機能
+    this.initializeTreatmentToggle();
+  }
+  
+  // クリーンアップメソッド
+  cleanup() {
+    this.intervals.forEach(interval => clearInterval(interval));
+    this.intervals = [];
+  }
+  
+  setDateConstraints(dateField) {
+    // 日付の有効性をチェック
+    if (!this.minDate || isNaN(this.minDate.getTime())) {
+      console.error('Invalid minDate:', this.minDate);
+      return;
+    }
+    
+    // 最小日付を設定
+    try {
+      const minDateStr = this.formatDateForComparison(this.minDate);
+      if (minDateStr) {
+        dateField.setAttribute('min', minDateStr);
+      }
+    } catch (error) {
+      console.error('Error setting min date:', error);
+    }
+    
+    // 最大日付を設定（1年後まで）
+    try {
+      const maxDate = new Date(this.minDate);
+      maxDate.setFullYear(maxDate.getFullYear() + 1);
+      
+      // 最大日付の有効性もチェック
+      if (!isNaN(maxDate.getTime())) {
+        const maxDateStr = this.formatDateForComparison(maxDate);
+        if (maxDateStr) {
+          dateField.setAttribute('max', maxDateStr);
+        }
+      }
+    } catch (error) {
+      console.error('Error setting max date:', error);
+    }
+    
+    // 日付ピッカーでの選択を制御
+    this.setupDatePickerControl(dateField);
+    
+    // フォーム送信時の検証
+    if (dateField.form && !dateField.form.hasAttribute('data-validation-added')) {
+      dateField.form.setAttribute('data-validation-added', 'true');
+      dateField.form.addEventListener('submit', (e) => {
+        const allDateFields = dateField.form.querySelectorAll('.clinic-date-field');
+        let hasInvalidDate = false;
+        
+        const invalidFields = [];
+        allDateFields.forEach(field => {
+          if (field.value && !this.isValidDateForSubmission(field)) {
+            hasInvalidDate = true;
+            // フィールドのラベルを取得
+            const label = field.closest('.row')?.querySelector('label')?.textContent?.trim() || 'Unknown';
+            invalidFields.push(`${label}: ${field.value}`);
+          }
+        });
+        
+        if (hasInvalidDate) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Invalid date fields:', invalidFields);
+          alert(`無効な日付が選択されています。営業日を選択してください。\n\n無効な日付:\n${invalidFields.join('\n')}`);
+        }
+      });
+    }
+  }
+  
+  setupDatePickerControl(dateField) {
+    // 日付ピッカーが開かれる前に無効な日付を制御
+    dateField.addEventListener('focus', () => {
+      this.updateDatePickerConstraints(dateField);
+    });
+    
+    // キーボード入力を制御
+    dateField.addEventListener('keydown', (e) => {
+      // 特定のキー（Tab, Escape, Enter, Backspace, Delete, Arrow keys）は許可
+      const allowedKeys = ['Tab', 'Escape', 'Enter', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+      if (allowedKeys.includes(e.key)) {
+        return;
+      }
+      
+      // 数字とハイフンのみ許可
+      if (!/[0-9\-]/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+  }
+  
+  updateDatePickerConstraints(dateField) {
+    try {
+      // より厳密な最小日付を設定（営業日のみ）
+      const nextBusinessDay = this.findNextBusinessDay(this.minDate);
+      if (nextBusinessDay) {
+        const nextBusinessDayStr = this.formatDateForComparison(nextBusinessDay);
+        if (nextBusinessDayStr) {
+          dateField.setAttribute('min', nextBusinessDayStr);
+        }
+      }
+    } catch (error) {
+      console.error('Error in updateDatePickerConstraints:', error);
+    }
+  }
+  
+  findNextBusinessDay(startDate) {
+    try {
+      if (!startDate || isNaN(startDate.getTime())) {
+        console.error('Invalid startDate passed to findNextBusinessDay:', startDate);
+        return null;
+      }
+      
+      let currentDate = new Date(startDate);
+      let attempts = 0;
+      const maxAttempts = 30; // 最大30日先まで検索
+      
+      while (attempts < maxAttempts) {
+        // 日付の有効性をチェック
+        if (isNaN(currentDate.getTime())) {
+          console.error('Invalid date during findNextBusinessDay iteration:', currentDate);
+          return null;
+        }
+        
+        if (this.isBusinessDay(currentDate)) {
+          return currentDate;
+        }
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+        attempts++;
+      }
+      
+      return null; // 営業日が見つからない場合
+    } catch (error) {
+      console.error('Error in findNextBusinessDay:', error, startDate);
+      return null;
+    }
+  }
+  
+  validateDateSelection(dateField) {
+    if (this.isValidating) {
+      return false;
+    }
+    
+    this.isValidating = true;
+    
+    try {
+      if (!dateField.value) {
+        this.clearDateError(dateField);
+        return true;
+      }
+      
+      // タイムゾーンの問題を避けるため、ローカル日付として作成
+      const selectedDate = this.createLocalDate(dateField.value);
+      
+      // createLocalDateがnullを返した場合（無効な日付）
+      if (!selectedDate) {
+        this.clearAndShowError(dateField, '無効な日付形式です');
+        return false;
+      }
+      
+      if (selectedDate < this.minDate) {
+        <% if @purchase.emergency_reservation_requested? %>
+          this.clearAndShowError(dateField, '緊急予約は翌日以降の日付を選択してください');
+        <% else %>
+          this.clearAndShowError(dateField, '予約は1週間後以降の日付を選択してください');
+        <% end %>
+        return false;
+      }
+      
+      const isBusinessDay = this.isBusinessDay(selectedDate);
+      
+      if (!isBusinessDay) {
+        const reason = this.getClosedReason(selectedDate);
+        this.clearAndShowError(dateField, `選択された日は休診日です（${reason}）`);
+        return false;
+      }
+      
+      dateField.setCustomValidity('');
+      this.clearDateError(dateField);
+      return true;
+    } finally {
+      // 検証完了フラグをリセット
+      setTimeout(() => {
+        this.isValidating = false;
+      }, 100);
+    }
+  }
+  
+  // フォーム送信時専用の日付検証（isValidatingフラグを使わない）
+  isValidDateForSubmission(dateField) {
+    if (!dateField.value) {
+      return true; // 空の場合は有効とする（必須チェックは別途）
+    }
+    
+    try {
+      // タイムゾーンの問題を避けるため、ローカル日付として作成
+      const selectedDate = this.createLocalDate(dateField.value);
+      
+      // createLocalDateがnullを返した場合（無効な日付）
+      if (!selectedDate) {
+        return false;
+      }
+      
+      // 最小日付チェック
+      if (selectedDate < this.minDate) {
+        return false;
+      }
+      
+      // 営業日チェック
+      return this.isBusinessDay(selectedDate);
+    } catch (error) {
+      console.error('Error in isValidDateForSubmission:', error);
+      return false;
+    }
+  }
+  
+  clearAndShowError(dateField, message) {
+    // 値をクリア
+    dateField.value = '';
+    
+    // 対応する時間フィールドもクリア
+    const targetTimeFieldId = dateField.dataset.target;
+    const timeField = document.getElementById(targetTimeFieldId);
+    if (timeField) {
+      timeField.value = '';
+      this.clearTimeOptions(timeField, '選択された日は休診日です');
+    }
+    
+    // エラー表示
+    dateField.setCustomValidity(message);
+    this.showDateError(dateField, message);
+    
+    // フォーカスを外す
+    if (document.activeElement === dateField) {
+      dateField.blur();
+    }
+  }
+  
+  getClosedReason(date) {
+    const weekday = date.getDay();
+    const dateStr = this.formatDateForComparison(date);
+    
+    // 祝日チェック（最優先）
+    if (this.clinicSchedule.holidays.holiday_closure_enabled && this.holidays.includes(dateStr)) {
+      return '祝日のため休診です';
+    }
+    
+    // 営業時間が設定されていない曜日
+    if (!this.clinicSchedule.business_hours[weekday]) {
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      return `${dayNames[weekday]}曜日は営業日ではありません`;
+    }
+    
+    // 定期休日
+    if (this.clinicSchedule.holidays.weekdays.includes(weekday)) {
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      return `${dayNames[weekday]}曜日は定休日です`;
+    }
+    
+    // 特定日休日
+    if (this.clinicSchedule.holidays.dates.includes(dateStr)) {
+      return '特定日休日です';
+    }
+    
+    return '休診日です';
+  }
+  
+  showDateError(dateField, message) {
+    // 既存のエラーメッセージを削除
+    this.clearDateError(dateField);
+    
+    // エラーメッセージを表示
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'invalid-feedback d-block';
+    errorDiv.textContent = message;
+    errorDiv.setAttribute('data-date-error', 'true');
+    
+    dateField.parentNode.appendChild(errorDiv);
+    dateField.classList.add('is-invalid');
+  }
+  
+  clearDateError(dateField) {
+    const errorElements = dateField.parentNode.querySelectorAll('[data-date-error="true"]');
+    errorElements.forEach(el => el.remove());
+    dateField.classList.remove('is-invalid');
+  }
+  
+  isBusinessDay(date) {
+    if (!this.clinicSchedule) {
+      return true;
+    }
+    
+    // 日付の有効性をチェック
+    if (!date || isNaN(date.getTime())) {
+      console.error('Invalid date passed to isBusinessDay:', date);
+      return false;
+    }
+    
+    const weekday = date.getDay();
+    const dateStr = this.formatDateForComparison(date);
+    
+    // 祝日チェック（最優先）
+    if (this.clinicSchedule.holidays.holiday_closure_enabled && this.holidays.includes(dateStr)) {
+      return false;
+    }
+    
+    // 営業時間が設定されていない曜日は休診日
+    if (!this.clinicSchedule.business_hours[weekday]) {
+      return false;
+    }
+    
+    // 定期休日をチェック
+    if (this.clinicSchedule.holidays.weekdays.includes(weekday)) {
+      return false;
+    }
+    
+    // 特定日休日をチェック
+    if (this.clinicSchedule.holidays.dates.includes(dateStr)) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  // タイムゾーンの問題を避けるため、ローカル日付を YYYY-MM-DD 形式で取得
+  formatDateForComparison(date) {
+    // 日付の有効性をチェック
+    if (!date || isNaN(date.getTime())) {
+      console.error('Invalid date passed to formatDateForComparison:', date);
+      return '';
+    }
+    
+    try {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Error formatting date:', error, date);
+      return '';
+    }
+  }
+  
+  // タイムゾーンの問題を避けるため、YYYY-MM-DD文字列からローカル日付を作成
+  createLocalDate(dateString) {
+    if (!dateString || typeof dateString !== 'string') {
+      console.error('Invalid dateString passed to createLocalDate:', dateString);
+      return null;
+    }
+    
+    const parts = dateString.split('-');
+    if (parts.length !== 3) {
+      console.error('Invalid date format in createLocalDate:', dateString);
+      return null;
+    }
+    
+    const [year, month, day] = parts.map(Number);
+    
+    // 数値の有効性をチェック
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      console.error('Invalid date components in createLocalDate:', { year, month, day });
+      return null;
+    }
+    
+    // 日付の範囲をチェック
+    if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
+      console.error('Date components out of range in createLocalDate:', { year, month, day });
+      return null;
+    }
+    
+    try {
+      const date = new Date(year, month - 1, day); // monthは0ベースなので-1
+      
+      // 作成された日付が有効かチェック
+      if (isNaN(date.getTime())) {
+        console.error('Created invalid date in createLocalDate:', dateString);
+        return null;
+      }
+      
+      return date;
+    } catch (error) {
+      console.error('Error creating date in createLocalDate:', error, dateString);
+      return null;
+    }
+  }
+  
+  updateTimeOptions(dateField) {
+    try {
+      const targetTimeFieldId = dateField.dataset.target;
+      const timeField = document.getElementById(targetTimeFieldId);
+      
+      if (!timeField || !this.clinicSchedule) return;
+      
+      if (!dateField.value) {
+        this.clearTimeOptions(timeField, 'まず日付を選択してください');
+        return;
+      }
+      
+      const selectedDate = new Date(dateField.value);
+      
+      // 日付の有効性をチェック
+      if (isNaN(selectedDate.getTime())) {
+        console.error('Invalid date in updateTimeOptions:', dateField.value);
+        this.clearTimeOptions(timeField, '無効な日付です');
+        return;
+      }
+      
+      if (!this.isBusinessDay(selectedDate)) {
+        this.clearTimeOptions(timeField, '選択された日は休診日です');
+        return;
+      }
+      
+      const weekday = selectedDate.getDay();
+      const businessHour = this.clinicSchedule.business_hours[weekday];
+      
+      if (!businessHour) {
+        this.clearTimeOptions(timeField, '営業時間が設定されていません');
+        return;
+      }
+      
+      const timeSlots = this.generateTimeSlots(weekday, businessHour);
+      this.populateTimeOptions(timeField, timeSlots);
+    } catch (error) {
+      console.error('Error in updateTimeOptions:', error, dateField.value);
+      const targetTimeFieldId = dateField.dataset.target;
+      const timeField = document.getElementById(targetTimeFieldId);
+      if (timeField) {
+        this.clearTimeOptions(timeField, 'エラーが発生しました');
+      }
+    }
+  }
+  
+  generateTimeSlots(weekday, businessHour) {
+    const slots = [];
+    const startTime = this.parseTime(businessHour.start);
+    const endTime = this.parseTime(businessHour.end);
+    const breakTimes = this.clinicSchedule.break_times[weekday] || [];
+    
+    let currentTime = startTime;
+    
+    while (currentTime < endTime) {
+      const slotEnd = Math.min(currentTime + 60, endTime); // 1時間スロット
+      
+      // 休憩時間と重複しないかチェック
+      const isBreakTime = breakTimes.some(breakTime => {
+        const breakStart = this.parseTime(breakTime.start);
+        const breakEnd = this.parseTime(breakTime.end);
+        return currentTime < breakEnd && slotEnd > breakStart;
+      });
+      
+      if (!isBreakTime && slotEnd > currentTime) {
+        const startStr = this.formatTime(currentTime);
+        const endStr = this.formatTime(slotEnd);
+        slots.push({
+          value: `${startStr}-${endStr}`,
+          label: `${startStr}-${endStr}`
+        });
+      }
+      
+      currentTime += 60; // 1時間ずつ進める
+    }
+    
+    return slots;
+  }
+  
+  parseTime(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes; // 分単位で返す
+  }
+  
+  formatTime(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+  
+  populateTimeOptions(timeField, slots) {
+    timeField.innerHTML = '<option value="">選択してください</option>';
+    
+    slots.forEach(slot => {
+      const option = document.createElement('option');
+      option.value = slot.value;
+      option.textContent = slot.label;
+      timeField.appendChild(option);
+    });
+    
+    if (slots.length === 0) {
+      timeField.innerHTML = '<option value="">利用可能な時間がありません</option>';
+    }
+  }
+  
+  clearTimeOptions(timeField, message = 'まず日付を選択してください') {
+    timeField.innerHTML = `<option value="">${message}</option>`;
+  }
+  
+  // 既存の治療方法選択機能
+  initializeTreatmentToggle() {
+    const stemCellSection = document.getElementById('stem-cell-section');
+    
+    if (!stemCellSection) return;
+    
+    const toggleStemCellSection = () => {
+      const checkedRadio = document.querySelector('.treatment-radio:checked');
+      
+      if (checkedRadio && checkedRadio.dataset.stemCell === 'true') {
+        stemCellSection.style.display = 'block';
+      } else {
+        stemCellSection.style.display = 'none';
+      }
+    };
+    
+    document.addEventListener('change', (event) => {
+      if (event.target.classList.contains('treatment-radio')) {
+        toggleStemCellSection();
+      }
+    });
+    
+    toggleStemCellSection();
+  }
 }
 
-// 複数のイベントに対応
-document.addEventListener('DOMContentLoaded', initializeTreatmentToggle);
-document.addEventListener('turbo:load', initializeTreatmentToggle);
-document.addEventListener('turbo:frame-load', initializeTreatmentToggle);
+// グローバル変数でコントローラーを管理
+let clinicReservationController = null;
 
-// ページが表示された時にも実行（Turboキャッシュ対応）
-document.addEventListener('turbo:render', initializeTreatmentToggle);
+// 初期化
+function initializeClinicReservation() {
+  // 既存のコントローラーがあればクリーンアップ
+  if (clinicReservationController) {
+    clinicReservationController.cleanup();
+  }
+  
+  clinicReservationController = new ClinicReservationController();
+}
+
+// ページ離脱時のクリーンアップ
+window.addEventListener('beforeunload', () => {
+  if (clinicReservationController) {
+    clinicReservationController.cleanup();
+  }
+});
+
+// 複数のイベントに対応
+document.addEventListener('DOMContentLoaded', initializeClinicReservation);
+document.addEventListener('turbo:load', initializeClinicReservation);
+document.addEventListener('turbo:frame-load', initializeClinicReservation);
+document.addEventListener('turbo:render', initializeClinicReservation);
 </script>
+
+<style>
+/* 日付フィールドのスタイル調整 */
+.clinic-date-field {
+  position: relative;
+}
+
+.clinic-date-field:invalid {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* 日付ピッカーで無効な日付を視覚的に示す */
+.clinic-date-field:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* 無効な日付選択時のエラー表示 */
+.clinic-date-field.is-invalid {
+  border-color: #dc3545;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+</style>
+
+<!-- 緊急予約モーダル -->
+<div class="modal fade" id="emergencyReservationModal" tabindex="-1" aria-labelledby="emergencyReservationModalLabel" aria-hidden="true">
+  <div class="modal-dialog mt-5 pt-5">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="emergencyReservationModalLabel">
+          <i class="fas fa-exclamation-triangle me-2"></i>緊急予約の方
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_with model: @purchase, url: request_emergency_reservation_purchase_path(@purchase), method: :patch, local: true, id: "emergency-reservation-form", data: { turbo: false } do |f| %>
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>緊急予約について</strong><br>
+            1週間以内など、通常より早い日程での予約をご希望の場合は、下記に詳細をご記入ください。事務局が優先的に対応いたします。
+          </div>
+          
+          <div class="mb-3">
+            <label for="emergency_message" class="form-label">
+              <strong>緊急予約の理由・希望日時など</strong>
+              <span class="text-danger">*</span>
+            </label>
+            <%= f.text_area :emergency_reservation_message, 
+                class: "form-control", 
+                id: "emergency_message",
+                rows: 5, 
+                placeholder: "緊急予約が必要な理由、希望日時、その他ご要望などをご記入ください。",
+                required: true %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+          <%= f.submit "緊急予約を依頼する", class: "btn btn-danger" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+
 

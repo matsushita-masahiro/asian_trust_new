@@ -77,6 +77,7 @@ gem 'aws-sdk-s3', require: false
 gem 'wicked_pdf'
 gem 'rqrcode'
 gem 'kaminari'
+gem 'holiday_jp'
 
 group :development do
   gem 'wkhtmltopdf-binary'

@@ -16,7 +16,12 @@
             <div class="card-body p-3">
               <div class="row align-items-center">
                 <div class="col-8">
-                  <h6 class="mb-1 text-success">購入 #<%= purchase.id %></h6>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <h6 class="mb-0 text-success">購入 #<%= purchase.id %></h6>
+                    <% if purchase.emergency_reservation_requested? %>
+                      <span class="badge bg-danger small">緊急予約依頼済み</span>
+                    <% end %>
+                  </div>
                   <small class="text-muted d-block mb-2"><%= purchase.purchased_at.strftime('%Y/%m/%d') %></small>
                   
                   <div class="mb-2">
@@ -30,7 +35,7 @@
                   
                   <% delivery_info = purchase.delivery_informations.where(delivery_type: ['clinic', 'multiple']).first %>
                   <% if delivery_info&.clinic_id.present? %>
-                    <% clinic = User.find_by(id: delivery_info.clinic_id) %>
+                    <% clinic = Clinic.find_by(id: delivery_info.clinic_id) %>
                     <small class="text-primary">
                       <i class="fas fa-hospital me-1"></i>
                       <%= clinic&.name || "クリニック情報なし" %>
@@ -38,8 +43,14 @@
                   <% end %>
                 </div>
                 <div class="col-4 text-end">
-                  <%= link_to "予約する", new_purchase_clinic_reservation_path(purchase), 
-                      class: "btn btn-success btn-sm w-100" %>
+                  <% if purchase.emergency_reservation_requested? %>
+                    <%= link_to "予約する", new_purchase_clinic_reservation_path(purchase), 
+                        class: "btn btn-outline-danger btn-sm w-100" %>
+                    <small class="text-danger d-block mt-1">緊急予約依頼中</small>
+                  <% else %>
+                    <%= link_to "予約する", new_purchase_clinic_reservation_path(purchase), 
+                        class: "btn btn-success btn-sm w-100" %>
+                  <% end %>
                 </div>
               </div>
             </div>
@@ -58,19 +69,96 @@
       </h5>
     </div>
     <div class="card-body p-2">
+      <!-- 緊急予約依頼中の購入 -->
+      <% @emergency_pending_purchases.each do |purchase| %>
+        <div class="card mb-3 border-danger">
+          <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h6 class="mb-0 text-danger">緊急予約依頼中 - 購入 #<%= purchase.id %></h6>
+                <span class="badge bg-danger small">緊急予約依頼中</span>
+              </div>
+              <% if purchase.emergency_reservation_responded? %>
+                <span class="badge bg-success">回答受信</span>
+              <% else %>
+                <span class="badge bg-warning">事務局確認中</span>
+              <% end %>
+            </div>
+            
+            <div class="mb-2">
+              <small class="text-muted">依頼日: <%= purchase.updated_at.strftime('%Y/%m/%d') %></small>
+            </div>
+            
+            <!-- 緊急予約の理由 -->
+            <% if purchase.emergency_reservation_message.present? %>
+              <div class="mb-2">
+                <small class="text-muted d-block"><strong>依頼内容:</strong></small>
+                <small class="text-dark"><%= truncate(purchase.emergency_reservation_message, length: 100) %></small>
+              </div>
+            <% end %>
+            
+            <!-- 購入商品 -->
+            <div class="mb-2">
+              <% purchase.purchase_items.each do |item| %>
+                <small class="d-block text-dark">
+                  <i class="fas fa-box me-1"></i>
+                  <%= truncate(item.product.name, length: 25) %> × <%= item.quantity %>
+                </small>
+              <% end %>
+            </div>
+            
+            <!-- クリニック情報 -->
+            <% delivery_info = purchase.delivery_informations.where(delivery_type: ['clinic', 'multiple']).first %>
+            <% if delivery_info&.clinic_id.present? %>
+              <% clinic = Clinic.find_by(id: delivery_info.clinic_id) %>
+              <small class="text-primary">
+                <i class="fas fa-hospital me-1"></i>
+                <%= clinic&.name || "クリニック情報なし" %>
+              </small>
+            <% end %>
+            
+            <!-- 事務局からの回答 -->
+            <% if purchase.emergency_reservation_responded? %>
+              <div class="alert alert-info mt-3 mb-2">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <strong class="text-info">
+                    <i class="fas fa-reply me-1"></i>
+                    事務局からの回答
+                  </strong>
+                  <small class="text-muted">
+                    <%= purchase.emergency_reservation_responded_at.strftime('%m/%d %H:%M') %>
+                  </small>
+                </div>
+                <div class="text-dark">
+                  <%= simple_format(purchase.emergency_reservation_response) %>
+                </div>
+              </div>
+            <% else %>
+              <div class="text-end mt-2">
+                <small class="text-muted">事務局が確認後、ご連絡いたします</small>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+      
+      <!-- 通常のクリニック予約 -->
       <% if @clinic_reservations.any? %>
         <% @clinic_reservations.each do |reservation| %>
           <div class="card mb-3">
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-start mb-2">
-                <h6 class="mb-0 text-primary">予約 #<%= reservation.id %></h6>
+                <div>
+                  <h6 class="mb-0 text-primary">予約 #<%= reservation.id %></h6>
+                  <% if reservation.purchase&.emergency_reservation_requested? %>
+                    <span class="badge bg-danger small">緊急予約依頼中</span>
+                  <% end %>
+                </div>
                 <% case reservation.status %>
                 <% when ClinicReservation::PENDING %>
                   <span class="badge bg-warning">予約申込中</span>
                 <% when ClinicReservation::CONFIRMED %>
                   <span class="badge bg-success">予約確定</span>
-                <% when ClinicReservation::COMPLETED %>
-                  <span class="badge bg-info">施術完了</span>
                 <% when ClinicReservation::CANCELLED %>
                   <span class="badge bg-danger">キャンセル</span>
                 <% end %>
@@ -124,16 +212,18 @@
           </div>
         <% end %>
       <% else %>
-        <div class="text-center py-5">
-          <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-          <h6 class="text-muted">予約はまだありません</h6>
-          <% if @unreserved_purchases.empty? %>
-            <p class="text-muted small">商品を購入後、クリニック予約を行ってください。</p>
-            <%= link_to "商品を見る", orders_products_path, class: "btn btn-primary btn-sm" %>
-          <% else %>
-            <p class="text-muted small">上記の購入からクリニック予約を行ってください。</p>
-          <% end %>
-        </div>
+        <% if @emergency_pending_purchases.empty? %>
+          <div class="text-center py-5">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h6 class="text-muted">予約はまだありません</h6>
+            <% if @unreserved_purchases.empty? %>
+              <p class="text-muted small">商品を購入後、クリニック予約を行ってください。</p>
+              <%= link_to "商品を見る", orders_products_path, class: "btn btn-primary btn-sm" %>
+            <% else %>
+              <p class="text-muted small">上記の購入からクリニック予約を行ってください。</p>
+            <% end %>
+          </div>
+        <% end %>
       <% end %>
     </div>
   </div>

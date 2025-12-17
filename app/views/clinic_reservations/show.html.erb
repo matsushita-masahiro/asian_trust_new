@@ -2,22 +2,34 @@
   <div class="row justify-content-center">
     <div class="col-md-8">
       <div class="card">
-        <div class="card-header bg-success text-white">
+        <div class="card-header <%= @clinic_reservation.confirmed? ? 'bg-success' : 'bg-info' %> text-white">
           <h4 class="mb-0">
-            <i class="fas fa-check-circle me-2"></i>
-            クリニック予約完了
+            <i class="fas fa-<%= @clinic_reservation.confirmed? ? 'check-circle' : 'clock' %> me-2"></i>
+            クリニック予約
           </h4>
         </div>
         <div class="card-body">
-          <div class="alert alert-success">
-            <h5 class="alert-heading">
-              <i class="fas fa-thumbs-up me-2"></i>
-              予約申込みが完了しました
-            </h5>
-            <p class="mb-0">
-              クリニックより確定のご連絡をお待ちください。
-            </p>
-          </div>
+          <% if @clinic_reservation.confirmed? %>
+            <div class="alert alert-success">
+              <h5 class="alert-heading">
+                <i class="fas fa-thumbs-up me-2"></i>
+                予約確定しました
+              </h5>
+              <p class="mb-0">
+                予約確定日時にクリニックに必ず来院してください。
+              </p>
+            </div>
+          <% else %>
+            <div class="alert alert-info">
+              <h5 class="alert-heading">
+                <i class="fas fa-clock me-2"></i>
+                予約申込しました
+              </h5>
+              <p class="mb-0">
+                事務局からのご連絡をお待ちください。
+              </p>
+            </div>
+          <% end %>
 
           <!-- 予約内容 -->
           <div class="card mb-4">
@@ -43,6 +55,30 @@
                   <% end %>
                 </div>
               </div>
+              
+              <% if @clinic_reservation.clinic.present? %>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>クリニック名:</strong></div>
+                  <div class="col-sm-8">
+                    <i class="fas fa-hospital text-primary me-2"></i>
+                    <%= @clinic_reservation.clinic.name %>
+                  </div>
+                </div>
+                
+                <% if @clinic_reservation.confirmed? %>
+                  <% clinic_address = @clinic_reservation.clinic.user.addresses.find_by(address_type: 'registration') %>
+                  <% if clinic_address.present? %>
+                    <div class="row mb-3">
+                      <div class="col-sm-4"><strong>クリニック住所:</strong></div>
+                      <div class="col-sm-8">
+                        <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                        〒<%= clinic_address.postal_code %><br>
+                        <%= clinic_address.address %>
+                      </div>
+                    </div>
+                  <% end %>
+                <% end %>
+              <% end %>
               
               <% # 予約確定時の確定日時を表示 %>
               <% if @clinic_reservation.confirmed? && @clinic_reservation.confirmed_date.present? %>

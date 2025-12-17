@@ -18,6 +18,36 @@
             <% end %>
           <% end %>
           
+          <% # クリニック予約確定通知アラート %>
+          <% if @user == current_user %>
+            <% clinic_confirmation_notifications = current_user.notifications.unread.where(notification_type: Notification::CLINIC_RESERVATION_CONFIRMED) %>
+            <% if clinic_confirmation_notifications.any? %>
+              <%= link_to clinic_reservations_path, class: "btn me-2", style: "background-color: #e3f2fd; color: #1976d2; border: 1px solid #1976d2;" do %>
+                <i class="fas fa-calendar-check me-1"></i>クリニック予約確定しました
+              <% end %>
+            <% end %>
+          <% end %>
+          
+          <% # 入金確認通知アラート %>
+          <% if @user == current_user %>
+            <% payment_confirmation_notifications = current_user.notifications.unread.where(notification_type: Notification::PAYMENT_CONFIRMED) %>
+            <% if payment_confirmation_notifications.any? %>
+              <%= link_to purchase_invoices_path, class: "btn me-2", style: "background-color: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32;" do %>
+                <i class="fas fa-check-circle me-1"></i>ご入金を確認いたしました
+              <% end %>
+            <% end %>
+          <% end %>
+          
+          <% # 領収書発行通知アラート %>
+          <% if @user == current_user %>
+            <% receipt_issued_notifications = current_user.notifications.unread.where(notification_type: Notification::RECEIPT_ISSUED) %>
+            <% if receipt_issued_notifications.any? %>
+              <%= link_to purchase_invoices_path, class: "btn me-2", style: "background-color: #fff3e0; color: #f57c00; border: 1px solid #f57c00;" do %>
+                <i class="fas fa-receipt me-1"></i>領収書が発行されました
+              <% end %>
+            <% end %>
+          <% end %>
+          
           <% # カートから遷移した場合のカートに戻るボタン %>
           <% if request.referer&.include?('/cart') || params[:from] == 'cart' %>
             <%= link_to cart_path, class: "btn btn-info me-2" do %>
@@ -41,7 +71,7 @@
 
   <!-- 基本情報 -->
   <div class="row mb-4 mobile-cards">
-    <div class="<%= @user.level.value.in?([4, 5, 6, 7]) ? 'col-12' : 'col-md-6' %>">
+    <div class="<%= @user.level.value.in?([4, 6, 7, 8]) ? 'col-12' : 'col-md-6' %>">
       <div class="card">
         <div class="card-header">
           <h5 class="card-title mb-0">基本情報</h5>

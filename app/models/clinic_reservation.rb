@@ -1,12 +1,12 @@
 class ClinicReservation < ApplicationRecord
   belongs_to :user
   belongs_to :purchase
+  belongs_to :clinic, optional: true
   
   # ステータス定数
   PENDING = 0      # 予約申込中
   CONFIRMED = 1    # 予約確定
-  COMPLETED = 2    # 施術完了
-  CANCELLED = 3    # キャンセル
+  CANCELLED = 2    # キャンセル
   
   validates :treatment_methods, presence: true
   validates :preferred_date_1, presence: true
@@ -54,10 +54,6 @@ class ClinicReservation < ApplicationRecord
     status == CONFIRMED
   end
   
-  def completed?
-    status == COMPLETED
-  end
-  
   def cancelled?
     status == CANCELLED
   end
@@ -66,8 +62,7 @@ class ClinicReservation < ApplicationRecord
   def status_name
     case status
     when PENDING then '予約申込中'
-    when CONFIRMED then '予約確定'
-    when COMPLETED then '施術完了'
+    when CONFIRMED then '回答済み'
     when CANCELLED then 'キャンセル'
     else '不明'
     end

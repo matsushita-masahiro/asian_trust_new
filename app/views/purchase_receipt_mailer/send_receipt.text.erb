@@ -1,0 +1,35 @@
+<%= @user.name %> 様
+
+いつもAsia Business Trustをご利用いただき、誠にありがとうございます。
+
+ご注文いただきました商品の領収書を発行いたしました。
+
+■ 領収書情報
+購入ID: #<%= @purchase.id %>
+購入日: <%= @purchase.purchased_at.strftime('%Y年%m月%d日') %>
+
+商品:
+<% @purchase.purchase_items.each do |item| %>
+- <%= item.product.name %> × <%= item.quantity %>
+<% end %>
+
+合計金額: ¥<%= number_with_delimiter(@purchase_invoice.total_with_tax || @purchase_invoice.total_amount) %>
+領収書発行日: <%= Date.current.strftime('%Y年%m月%d日') %>
+
+領収書PDFファイルを添付しております。
+必要に応じて印刷してご利用ください。
+
+ご不明な点がございましたら、お気軽にお問い合わせください。
+
+---
+<% if @invoice_recipient.present? %>
+<%= @invoice_recipient.name %>
+〒<%= @invoice_recipient.postal_code %> <%= @invoice_recipient.address %>
+<% if @invoice_recipient.tel.present? %>TEL: <%= @invoice_recipient.tel %><% end %>
+<% if @invoice_recipient.email.present? %>Email: <%= @invoice_recipient.email %><% end %>
+<% else %>
+株式会社アジアビジネストラスト
+〒104-0061 東京都中央区銀座4丁目8-1銀座穂月ビル3階
+TEL: 03-5904-8148
+Email: abt1@asia-b-t.com
+<% end %>

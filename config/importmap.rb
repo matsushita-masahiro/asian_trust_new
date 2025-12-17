@@ -23,5 +23,8 @@ pin "carts", to: "carts.js"
 pin "postal_code_auto_fill", to: "postal_code_auto_fill.js"
 pin "custom_dropdown", to: "custom_dropdown.js"
 pin "postal_code_manager", to: "postal_code_manager.js"
+pin "clinic_reservations", to: "clinic_reservations.js"
+pin "admin_clinic_edit", to: "admin_clinic_edit.js"
+
 
 

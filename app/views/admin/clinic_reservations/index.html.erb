@@ -1,4 +1,4 @@
-<div class="container-fluid" style="padding-top: 100px;">
+<div class="container-fluid mt-5 mb-5" style="padding-top: 100px;">
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
@@ -16,20 +16,28 @@
   <!-- フィルター -->
   <div class="card mb-4">
     <div class="card-body">
-      <%= form_with url: admin_clinic_reservations_path, method: :get, local: true, class: "row g-3" do |f| %>
-        <div class="col-md-3">
+      <%= form_with url: admin_clinic_reservations_path, method: :get, local: true, class: "row g-3", id: "clinic-reservation-filter-form" do |f| %>
+        <div class="col-md-2">
           <%= f.select :status, 
               options_for_select([
                 ['全てのステータス', ''],
                 ['申込中', ClinicReservation::PENDING],
-                ['予約確定', ClinicReservation::CONFIRMED],
-                ['施術完了', ClinicReservation::COMPLETED],
+                ['回答済み', ClinicReservation::CONFIRMED],
                 ['キャンセル', ClinicReservation::CANCELLED]
               ], params[:status]), 
               {}, 
-              { class: "form-select" } %>
+              { class: "form-select auto-submit" } %>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-2">
+          <%= f.select :emergency, 
+              options_for_select([
+                ['全ての予約', ''],
+                ['緊急予約のみ', 'true']
+              ], params[:emergency]), 
+              {}, 
+              { class: "form-select auto-submit" } %>
+        </div>
+        <div class="col-md-3">
           <%= f.text_field :search, 
               placeholder: "ユーザー名・メールアドレスで検索", 
               value: params[:search], 
@@ -38,17 +46,178 @@
         <div class="col-md-2">
           <%= f.submit "検索", class: "btn btn-primary" %>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-1">
           <%= link_to "リセット", admin_clinic_reservations_path, class: "btn btn-outline-secondary" %>
         </div>
       <% end %>
     </div>
   </div>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('clinic-reservation-filter-form');
+      const autoSubmitSelects = document.querySelectorAll('.auto-submit');
+      
+      autoSubmitSelects.forEach(function(select) {
+        select.addEventListener('change', function() {
+          form.submit();
+        });
+      });
+    });
+  </script>
+
+  <!-- 統計情報 -->
+  <div class="row mb-4">
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title text-primary"><%= @stats[:total] %></h5>
+          <p class="card-text small">総予約数</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title text-warning"><%= @stats[:pending] %></h5>
+          <p class="card-text small">申込中</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title text-success"><%= @stats[:confirmed] %></h5>
+          <p class="card-text small">回答済み</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title text-secondary"><%= @stats[:cancelled] %></h5>
+          <p class="card-text small">キャンセル</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center border-danger">
+        <div class="card-body">
+          <h5 class="card-title text-danger"><%= @stats[:emergency] %></h5>
+          <p class="card-text small">緊急予約</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 緊急予約回答モーダル -->
+  <% @emergency_pending_purchases.each do |purchase| %>
+    <% unless purchase.emergency_reservation_responded? %>
+      <div class="modal fade" id="responseModal<%= purchase.id %>" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <%= form_with model: purchase, url: respond_to_emergency_admin_clinic_reservations_path(purchase), method: :patch, local: true do |f| %>
+              <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">緊急予約回答 - 購入ID #<%= purchase.id %></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <strong>ユーザー:</strong> <%= purchase.user.name %><br>
+                  <strong>クリニック:</strong> 
+                  <% delivery_info = purchase.delivery_informations.where(delivery_type: ['clinic', 'multiple']).first %>
+                  <% if delivery_info&.clinic_id.present? %>
+                    <% clinic = Clinic.find_by(id: delivery_info.clinic_id) %>
+                    <%= clinic&.name || "クリニック情報なし" %>
+                  <% end %>
+                </div>
+                
+                <div class="alert alert-warning">
+                  <strong>緊急予約依頼内容:</strong><br>
+                  <%= simple_format(purchase.emergency_reservation_message) %>
+                </div>
+                
+                <div class="mb-3">
+                  <%= f.label :emergency_reservation_response, "事務局からの回答", class: "form-label" %>
+                  <%= f.text_area :emergency_reservation_response, 
+                      class: "form-control", 
+                      rows: 6, 
+                      placeholder: "日時調整、対応方法、注意事項などを記入してください。\n\n例：\n・12月20日（金）14:00からご対応可能です\n・事前に○○をご準備ください\n・当日は○○分前にお越しください",
+                      required: true %>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <%= f.submit "回答を送信", class: "btn btn-primary" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+
+  <!-- 緊急予約回答表示モーダル -->
+  <% @emergency_responded_purchases.each do |purchase| %>
+      <div class="modal fade" id="viewResponseModal<%= purchase.id %>" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+              <h5 class="modal-title">緊急予約回答内容 - 購入ID #<%= purchase.id %></h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <strong>ユーザー:</strong> <%= purchase.user.name %><br>
+                <strong>クリニック:</strong> 
+                <% delivery_info = purchase.delivery_informations.where(delivery_type: ['clinic', 'multiple']).first %>
+                <% if delivery_info&.clinic_id.present? %>
+                  <% clinic = Clinic.find_by(id: delivery_info.clinic_id) %>
+                  <%= clinic&.name || "クリニック情報なし" %>
+                <% end %>
+              </div>
+              
+              <div class="alert alert-warning mb-3">
+                <strong>緊急予約依頼内容:</strong><br>
+                <%= simple_format(purchase.emergency_reservation_message) %>
+              </div>
+              
+              <div class="alert alert-success">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <strong class="text-success">
+                    <i class="fas fa-reply me-1"></i>
+                    事務局からの回答
+                  </strong>
+                  <small class="text-muted">
+                    回答日時: <%= purchase.emergency_reservation_responded_at.strftime('%Y/%m/%d %H:%M') %>
+                  </small>
+                </div>
+                <div class="text-dark">
+                  <%= simple_format(purchase.emergency_reservation_response) %>
+                </div>
+                <% if purchase.emergency_reservation_responded_by.present? %>
+                  <% responder = User.find_by(id: purchase.emergency_reservation_responded_by) %>
+                  <small class="text-muted">
+                    回答者: <%= responder&.name || "不明" %>
+                  </small>
+                <% end %>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+          </div>
+        </div>
+      </div>
+  <% end %>
+
   <!-- 予約一覧 -->
   <div class="card">
     <div class="card-body">
-      <% if @clinic_reservations.any? %>
+      <% if @clinic_reservations.any? || @emergency_pending_purchases.any? || @emergency_responded_purchases.any? %>
         <div class="table-responsive">
           <table class="table table-hover">
             <thead class="table-light">
@@ -64,10 +233,101 @@
               </tr>
             </thead>
             <tbody>
-              <% @clinic_reservations.each do |reservation| %>
-                <tr style="cursor: pointer;" onclick="window.location='<%= admin_clinic_reservation_path(reservation) %>'">
+              <!-- 緊急予約の購入データ（未回答） -->
+              <% @emergency_pending_purchases.each do |purchase| %>
+                <tr style="background-color: #f8d7da;">
+                  <td>
+                    <strong>購入 #<%= purchase.id %></strong>
+                    <br><span class="badge bg-danger small">緊急依頼</span>
+                  </td>
+                  <td>
+                    <div>
+                      <strong><%= purchase.user.name %></strong><br>
+                      <small class="text-muted"><%= purchase.user.email %></small>
+                    </div>
+                  </td>
+                  <td>
+                    <% delivery_info = purchase.delivery_informations.where(delivery_type: ['clinic', 'multiple']).first %>
+                    <% if delivery_info&.clinic_id.present? %>
+                      <% clinic = Clinic.find_by(id: delivery_info.clinic_id) %>
+                      <%= clinic&.name || "クリニック情報なし" %>
+                    <% else %>
+                      <span class="text-muted">未設定</span>
+                    <% end %>
+                  </td>
+                  <td colspan="2">
+                    <% if purchase.emergency_reservation_message.present? %>
+                      <%= truncate(purchase.emergency_reservation_message, length: 100) %>
+                    <% else %>
+                      <span class="text-muted">メッセージなし</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <span class="badge bg-warning">申込中</span>
+                  </td>
+                  <td>
+                    <%= purchase.updated_at.strftime('%Y/%m/%d %H:%M') %>
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#responseModal<%= purchase.id %>">
+                      回答する
+                    </button>
+                  </td>
+                </tr>
+              <% end %>
+              
+              <!-- 緊急予約の購入データ（回答済み） -->
+              <% @emergency_responded_purchases.each do |purchase| %>
+                <tr style="background-color: #f8d7da;">
+                  <td>
+                    <strong>購入 #<%= purchase.id %></strong>
+                    <br><span class="badge bg-danger small">緊急依頼</span>
+                  </td>
+                  <td>
+                    <div>
+                      <strong><%= purchase.user.name %></strong><br>
+                      <small class="text-muted"><%= purchase.user.email %></small>
+                    </div>
+                  </td>
+                  <td>
+                    <% delivery_info = purchase.delivery_informations.where(delivery_type: ['clinic', 'multiple']).first %>
+                    <% if delivery_info&.clinic_id.present? %>
+                      <% clinic = Clinic.find_by(id: delivery_info.clinic_id) %>
+                      <%= clinic&.name || "クリニック情報なし" %>
+                    <% else %>
+                      <span class="text-muted">未設定</span>
+                    <% end %>
+                  </td>
+                  <td colspan="2">
+                    <% if purchase.emergency_reservation_message.present? %>
+                      <%= truncate(purchase.emergency_reservation_message, length: 100) %>
+                    <% else %>
+                      <span class="text-muted">メッセージなし</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <span class="badge bg-success">回答済み</span>
+                  </td>
+                  <td>
+                    <%= purchase.emergency_reservation_responded_at.strftime('%Y/%m/%d %H:%M') %>
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewResponseModal<%= purchase.id %>">
+                      回答を見る
+                    </button>
+                  </td>
+                </tr>
+              <% end %>
+              
+              <!-- 通常のクリニック予約 -->
+              <% unless params[:emergency] == 'true' %>
+                <% @clinic_reservations.each do |reservation| %>
+                <tr style="cursor: pointer; <%= 'background-color: #f8d7da;' if reservation.purchase&.emergency_reservation_requested? %>" onclick="window.location='<%= admin_clinic_reservation_path(reservation) %>'">
                   <td>
                     <strong>#<%= reservation.id %></strong>
+                    <% if reservation.purchase&.emergency_reservation_requested? %>
+                      <br><span class="badge bg-danger">緊急</span>
+                    <% end %>
                   </td>
                   <td>
                     <div>
@@ -76,25 +336,11 @@
                     </div>
                   </td>
                   <td>
-                    <% 
-                      # delivery_informationsからclinic_idを取得
-                      delivery_info = reservation.purchase.delivery_informations.first
-                      clinic_id = delivery_info&.clinic_id
-                      
-                      clinic_names = {
-                        111 => "銀座中央クリニック",
-                        112 => "大阪クリニック",
-                        113 => "名古屋クリニック",
-                        114 => "福岡クリニック"
-                      }
-                      
-                      if clinic_id.present?
-                        clinic_name = clinic_names[clinic_id] || "クリニックID: #{clinic_id}"
-                      else
-                        clinic_name = "提携クリニック"
-                      end
-                    %>
-                    <%= clinic_name %>
+                    <% if reservation.clinic.present? %>
+                      <%= reservation.clinic.name %>
+                    <% else %>
+                      <span class="text-muted">クリニック未設定</span>
+                    <% end %>
                   </td>
                   <td>
                     <div>
@@ -118,9 +364,7 @@
                     <% when ClinicReservation::PENDING %>
                       <span class="badge bg-warning">申込中</span>
                     <% when ClinicReservation::CONFIRMED %>
-                      <span class="badge bg-success">予約確定</span>
-                    <% when ClinicReservation::COMPLETED %>
-                      <span class="badge bg-info">施術完了</span>
+                      <span class="badge bg-success">回答済み</span>
                     <% when ClinicReservation::CANCELLED %>
                       <span class="badge bg-danger">キャンセル</span>
                     <% end %>
@@ -132,6 +376,7 @@
                     <%= link_to "詳細", admin_clinic_reservation_path(reservation), class: "btn btn-sm btn-outline-primary" %>
                   </td>
                 </tr>
+                <% end %>
               <% end %>
             </tbody>
           </table>
@@ -144,9 +389,17 @@
       <% else %>
         <div class="text-center py-5">
           <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-          <h5 class="text-muted">予約がありません</h5>
+          <h5 class="text-muted">
+            <% if params[:emergency] == 'true' %>
+              緊急予約がありません
+            <% else %>
+              予約がありません
+            <% end %>
+          </h5>
           <p class="text-muted">
-            <% if params[:status].present? || params[:search].present? %>
+            <% if params[:emergency] == 'true' %>
+              現在、緊急予約依頼はありません。
+            <% elsif params[:status].present? || params[:search].present? %>
               検索条件に一致する予約が見つかりませんでした。
             <% else %>
               まだクリニック予約がありません。

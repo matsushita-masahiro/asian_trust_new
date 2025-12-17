@@ -157,8 +157,8 @@ end
 
 # Product fixturesを読み込み
 puts "📦 Loading product fixtures..."
-SeedFu.fixture_paths = [Rails.root.join('db', 'fixtures')]
-SeedFu.seed
+# SeedFu.fixture_paths = [Rails.root.join('db', 'fixtures')]
+# SeedFu.seed
 
 # Productデータを取得（ID 2,3,4の商品を使用）
 product1 = Product.find_by(id: 1) # 骨髄幹細胞培培養上清液
@@ -1702,8 +1702,8 @@ if wott_product
     end
   end
   
-  # アジアビジネストラストの直下のクリニック（銀座中央クリニック）がWOTT購入
-  clinic = User.find_by(name: "銀座中央クリニック")
+  # アジアビジネストラストの直下のクリニック（渋谷中央クリニック）がWOTT購入
+  clinic = User.find_by(name: "渋谷中央クリニック")
   if clinic && clinic.referred_by_id == company.id && clinic.level&.name == 'クリニック'
     purchase = Purchase.create!(
       user_id: clinic.id,
@@ -2072,14 +2072,14 @@ if mannersound_products.any?
     end
   end
   
-  # 銀座中央クリニック（クリニック）のMANNERSOUND購入
-  ginza_clinic = User.find_by(name: "銀座中央クリニック")
+  # 渋谷中央クリニック（クリニック）のMANNERSOUND購入
+  ginza_clinic = User.find_by(name: "渋谷中央クリニック")
   if ginza_clinic
     # 2025年11月に購入
     purchase = Purchase.create!(
       user_id: ginza_clinic.id,
       purchased_at: "2025-11-11 09:00:00",
-      status: 'reserved'  # 銀座中央クリニックのMANNERSOUND購入は予約完了
+      status: 'reserved'  # 渋谷中央クリニックのMANNERSOUND購入は予約完了
     )
     
     # MANNERSOUND STANDARD（ID: 8）を2個購入
@@ -2184,7 +2184,7 @@ wott_clinic_level = wott_levels["クリニック"]
 
 clinics_data = [
   {
-    name: "銀座中央クリニック",
+    name: "渋谷中央クリニック",
     postal_code: "104-0061",
     address: "東京都中央区銀座７丁目８−８ Isgビル 7F",
     phone: "03-6280-6901",

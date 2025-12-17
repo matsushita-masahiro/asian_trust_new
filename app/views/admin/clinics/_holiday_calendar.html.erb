@@ -1,0 +1,55 @@
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="fas fa-calendar-alt me-2"></i>
+      今年の祝日一覧
+    </h5>
+  </div>
+  <div class="card-body">
+    <% 
+      require 'holiday_jp'
+      current_year = Date.current.year
+      holidays = HolidayJp.between(Date.new(current_year, 1, 1), Date.new(current_year, 12, 31))
+    %>
+    
+    <% if holidays.any? %>
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>祝日休業設定:</strong>
+        <% if @clinic.holiday_closure_enabled? %>
+          有効 - 以下の祝日は自動的に休診日になります
+        <% else %>
+          無効 - 祝日でも通常通り営業します
+        <% end %>
+      </div>
+      
+      <div class="row">
+        <% holidays.each do |holiday| %>
+          <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card <%= @clinic.holiday_closure_enabled? ? 'border-danger' : 'border-secondary' %>">
+              <div class="card-body p-3">
+                <h6 class="card-title mb-1">
+                  <%= holiday.name %>
+                  <% if @clinic.holiday_closure_enabled? %>
+                    <span class="badge bg-danger ms-1">休診</span>
+                  <% end %>
+                </h6>
+                <p class="card-text mb-0">
+                  <small class="text-muted">
+                    <%= holiday.date.strftime("%Y年%m月%d日") %>
+                    (<%= %w[日 月 火 水 木 金 土][holiday.date.wday] %>)
+                  </small>
+                </p>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-center py-4">
+        <i class="fas fa-calendar-alt fa-2x text-muted mb-3"></i>
+        <p class="text-muted">今年の祝日情報を取得できませんでした</p>
+      </div>
+    <% end %>
+  </div>
+</div>

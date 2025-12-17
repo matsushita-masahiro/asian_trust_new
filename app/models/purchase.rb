@@ -106,6 +106,16 @@ class Purchase < ApplicationRecord
     end
   end
 
+  # 緊急予約関連のメソッド
+  def emergency_reservation_responded?
+    emergency_reservation_responded_at.present?
+  end
+
+  def emergency_reservation_responder
+    return nil unless emergency_reservation_responded_by.present?
+    User.find_by(id: emergency_reservation_responded_by)
+  end
+
   private
 
   def set_initial_status

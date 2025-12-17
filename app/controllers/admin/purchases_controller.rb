@@ -1,4 +1,6 @@
 class Admin::PurchasesController < Admin::BaseController
+  include ActionView::Helpers::NumberHelper
+  
   before_action :set_purchase, only: [:show, :edit, :update, :confirm_payment]
 #   before_action :authenticate_purchase_creation, only: [:new, :create]
 
@@ -179,6 +181,9 @@ class Admin::PurchasesController < Admin::BaseController
         @purchase.purchase_invoice.update!(status: 3, confirmed_at: Time.current)
       end
       
+      # 入金確認通知を作成
+      send_payment_confirmation_notification(@purchase)
+      
       # 購入月を取得してリダイレクト先に含める
       purchase_month = @purchase.purchased_at.strftime('%Y-%m')
       
@@ -216,6 +221,44 @@ class Admin::PurchasesController < Admin::BaseController
   end
 
   private
+
+  def send_payment_confirmation_notification(purchase)
+    # 入金確認通知の送信
+    begin
+      # 通知レコードの作成
+      notification = Notification.create!(
+        user: purchase.user,
+        title: 'ご入金を確認いたしました',
+        message: build_payment_confirmation_message(purchase),
+        notification_type: Notification::PAYMENT_CONFIRMED,
+        link_url: my_history_purchases_path
+      )
+      
+      Rails.logger.info "Payment confirmation notification sent to user #{purchase.user.id} for purchase #{purchase.id}"
+    rescue => e
+      Rails.logger.error "Failed to send payment confirmation notification: #{e.message}"
+    end
+  end
+  
+  def build_payment_confirmation_message(purchase)
+    total_amount = if purchase.purchase_invoice&.total_with_tax.present? && purchase.purchase_invoice.total_with_tax > 0
+      purchase.purchase_invoice.total_with_tax
+    else
+      seller_price_total = purchase.purchase_items.sum { |item| item.quantity * item.unit_price }
+      shipping_fee = purchase.total_shipping_fees
+      admin_fee = purchase.purchase_invoice&.admin_fee || 0
+      subtotal_before_tax = seller_price_total + shipping_fee + admin_fee
+      tax_amount = (subtotal_before_tax * 0.1).round
+      subtotal_before_tax + tax_amount
+    end
+    
+    product_names = purchase.purchase_items.map { |item| "#{item.product.name} × #{item.quantity}" }.join('、')
+    
+    "ご注文の商品のご入金を確認いたしました。\n" \
+    "商品: #{product_names}\n" \
+    "金額: ¥#{number_with_delimiter(total_amount)}\n" \
+    "ありがとうございました。"
+  end
 
   def authenticate_purchase_creation
     authenticate_or_request_with_http_basic('購入情報作成') do |username, password|

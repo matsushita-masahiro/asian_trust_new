@@ -32,7 +32,7 @@
                     <th>数量</th>
                     <th>合計金額</th>
                     <th>状況</th>
-                    <th>クリニック予約</th>
+                    <th>状況</th>
                     <th>詳細</th>
                   </tr>
                 </thead>
@@ -133,7 +133,21 @@
                         <% end %>
                       </td>
                       <td>
-                        <% if purchase.purchase_invoice.present? %>
+                        <% if purchase.emergency_reservation_requested? %>
+                          <% if purchase.emergency_reservation_responded? %>
+                            <span class="badge bg-success">緊急予約回答済み</span>
+                            <div class="mt-2 p-2 border rounded bg-light" style="font-size: 0.8rem;">
+                              <strong>事務局からの回答:</strong><br>
+                              <%= simple_format(purchase.emergency_reservation_response) %>
+                              <small class="text-muted d-block mt-1">
+                                回答日: <%= purchase.emergency_reservation_responded_at.strftime('%Y/%m/%d %H:%M') %>
+                              </small>
+                            </div>
+                          <% else %>
+                            <span class="badge bg-warning">緊急予約依頼中</span>
+                            <small class="d-block mt-1 text-muted">事務局が確認中です</small>
+                          <% end %>
+                        <% elsif purchase.purchase_invoice.present? %>
                           <% case purchase.purchase_invoice.clinic_reservation_status %>
                           <% when :not_required %>
                             <span class="badge bg-secondary">予約不要</span>
@@ -146,8 +160,7 @@
                                   class: "btn btn-xs btn-outline-info", style: "font-size: 0.7rem; padding: 2px 6px;" %>
                             </div>
                           <% when :not_reserved %>
-                            <%= link_to "クリニック予約", new_purchase_clinic_reservation_path(purchase), 
-                                class: "btn btn-xs btn-primary", style: "font-size: 0.7rem; padding: 2px 6px;" %>
+                            <span class="text-primary fw-bold" style="font-size: 0.8rem;">要クリニック予約</span>
                           <% end %>
                         <% else %>
                           <span class="badge bg-secondary">請求書未作成</span>

@@ -25,7 +25,7 @@
   <!-- 基本情報・レベル別統計・売上情報 -->
   <div class="row mb-4 mobile-cards">
     <!-- 基本情報 -->
-    <div class="col-md-4">
+    <div class="<%= @user.level&.name.in?(['クリニック', 'サロン', 'お客様']) ? 'col-md-12' : 'col-md-4' %>">
       <div class="card">
         <div class="card-header">
           <h5 class="card-title mb-0">基本情報</h5>
@@ -184,93 +184,115 @@
       </div>
     </div>
 
-    <!-- レベル別統計 -->
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="fas fa-chart-bar me-2"></i>レベル別統計
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="level-stats-list">
-            <div class="level-stat-item mb-2">
-              <i class="fas fa-crown text-danger me-2"></i>
-              <span class="level-name">総代理店</span>
-              <span class="level-count"><%= @level_counts[:total_agents] %>名</span>
-            </div>
-            <div class="level-stat-item mb-2">
-              <i class="fas fa-user-tie text-warning me-2"></i>
-              <span class="level-name">代理店</span>
-              <span class="level-count"><%= @level_counts[:agents] %>名</span>
-            </div>
-            <div class="level-stat-item mb-2">
-              <i class="fas fa-user-graduate text-success me-2"></i>
-              <span class="level-name">アドバイザー</span>
-              <span class="level-count"><%= @level_counts[:advisors] %>名</span>
-            </div>
-            <div class="level-stat-item mb-2">
-              <i class="fas fa-spa text-info me-2"></i>
-              <span class="level-name">サロン</span>
-              <span class="level-count"><%= @level_counts[:salons] %>名</span>
-            </div>
-            <div class="level-stat-item mb-2">
-              <i class="fas fa-hospital text-primary me-2"></i>
-              <span class="level-name">クリニック</span>
-              <span class="level-count"><%= @level_counts[:clinics] %>名</span>
-            </div>
-            <div class="level-stat-item mb-2">
-              <i class="fas fa-users text-secondary me-2"></i>
-              <span class="level-name">お客様</span>
-              <span class="level-count"><%= @level_counts[:customers] %>名</span>
-            </div>
-            <hr class="my-2">
-            <div class="level-stat-item">
-              <i class="fas fa-chart-line text-primary me-2"></i>
-              <span class="level-name fw-bold">総計</span>
-              <span class="level-count fw-bold text-primary"><%= @user.descendants.count %>名</span>
-            </div>
+    <!-- レベル別統計（クリニック・サロン・お客様以外のみ表示） -->
+    <% unless @user.level&.name.in?(['クリニック', 'サロン', 'お客様']) %>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-chart-bar me-2"></i>レベル別統計
+            </h5>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 売上・インセンティブ情報 -->
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="fas fa-calendar-alt me-2"></i><%= @selected_month_display %>の実績
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <div class="stats-card bg-success bg-gradient text-white rounded-3 p-3 text-center">
-              <div class="stats-icon mb-2">
-                <i class="fas fa-yen-sign fa-2x"></i>
-              </div>
-              <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@total_sales_amount) %></div>
-              <div class="stats-label small">売上</div>
-              <div class="stats-breakdown mt-2" style="font-size: 0.75rem; opacity: 0.9;">
-                <div>本人: ¥<%= number_with_delimiter(@own_sales_amount) %></div>
-                <div>下位: ¥<%= number_with_delimiter(@descendant_sales_amount) %></div>
-              </div>
-            </div>
-          </div>
-          <div>
-            <%= link_to admin_user_bonuses_path(@user, month: @selected_month), class: "text-decoration-none" do %>
-              <div class="stats-card bg-warning bg-gradient text-white rounded-3 p-3 text-center clickable-card">
-                <div class="stats-icon mb-2">
-                  <i class="fas fa-gift fa-2x"></i>
+          <div class="card-body">
+            <div class="level-stats-list">
+              <% if @user.level&.name == 'サポーター' %>
+                <!-- サポーターの場合：クリニック・サロン・お客様のみ表示 -->
+                <div class="level-stat-item mb-2">
+                  <i class="fas fa-hospital text-primary me-2"></i>
+                  <span class="level-name">クリニック</span>
+                  <span class="level-count"><%= @level_counts[:clinics] %>名</span>
                 </div>
-                <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@incentive_summary[:total_incentive] || 0) %></div>
-                <div class="stats-label small">インセンティブ <i class="fas fa-external-link-alt fa-sm"></i></div>
+                <div class="level-stat-item mb-2">
+                  <i class="fas fa-spa text-info me-2"></i>
+                  <span class="level-name">サロン</span>
+                  <span class="level-count"><%= @level_counts[:salons] %>名</span>
+                </div>
+                <div class="level-stat-item mb-2">
+                  <i class="fas fa-users text-secondary me-2"></i>
+                  <span class="level-name">お客様</span>
+                  <span class="level-count"><%= @level_counts[:customers] %>名</span>
+                </div>
+              <% else %>
+                <!-- その他のレベルの場合：全レベル表示 -->
+                <div class="level-stat-item mb-2">
+                  <i class="fas fa-crown text-danger me-2"></i>
+                  <span class="level-name">総代理店</span>
+                  <span class="level-count"><%= @level_counts[:total_agents] %>名</span>
+                </div>
+                <div class="level-stat-item mb-2">
+                  <i class="fas fa-user-tie text-warning me-2"></i>
+                  <span class="level-name">代理店</span>
+                  <span class="level-count"><%= @level_counts[:agents] %>名</span>
+                </div>
+                <div class="level-stat-item mb-2">
+                  <i class="fas fa-user-graduate text-success me-2"></i>
+                  <span class="level-name">アドバイザー</span>
+                  <span class="level-count"><%= @level_counts[:advisors] %>名</span>
+                </div>
+                <div class="level-stat-item mb-2">
+                  <i class="fas fa-spa text-info me-2"></i>
+                  <span class="level-name">サロン</span>
+                  <span class="level-count"><%= @level_counts[:salons] %>名</span>
+                </div>
+                <div class="level-stat-item mb-2">
+                  <i class="fas fa-hospital text-primary me-2"></i>
+                  <span class="level-name">クリニック</span>
+                  <span class="level-count"><%= @level_counts[:clinics] %>名</span>
+                </div>
+                <div class="level-stat-item mb-2">
+                  <i class="fas fa-users text-secondary me-2"></i>
+                  <span class="level-name">お客様</span>
+                  <span class="level-count"><%= @level_counts[:customers] %>名</span>
+                </div>
+              <% end %>
+              <hr class="my-2">
+              <div class="level-stat-item">
+                <i class="fas fa-chart-line text-primary me-2"></i>
+                <span class="level-name fw-bold">総計</span>
+                <span class="level-count fw-bold text-primary"><%= @user.descendants.count %>名</span>
               </div>
-            <% end %>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- 売上・インセンティブ情報 -->
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-calendar-alt me-2"></i><%= @selected_month_display %>の実績
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <div class="stats-card bg-success bg-gradient text-white rounded-3 p-3 text-center">
+                <div class="stats-icon mb-2">
+                  <i class="fas fa-yen-sign fa-2x"></i>
+                </div>
+                <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@total_sales_amount) %></div>
+                <div class="stats-label small">売上</div>
+                <div class="stats-breakdown mt-2" style="font-size: 0.75rem; opacity: 0.9;">
+                  <div>本人: ¥<%= number_with_delimiter(@own_sales_amount) %></div>
+                  <div>下位: ¥<%= number_with_delimiter(@descendant_sales_amount) %></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <%= link_to admin_user_bonuses_path(@user, month: @selected_month), class: "text-decoration-none" do %>
+                <div class="stats-card bg-warning bg-gradient text-white rounded-3 p-3 text-center clickable-card">
+                  <div class="stats-icon mb-2">
+                    <i class="fas fa-gift fa-2x"></i>
+                  </div>
+                  <div class="stats-number h5 fw-bold">¥<%= number_with_delimiter(@incentive_summary[:total_incentive] || 0) %></div>
+                  <div class="stats-label small">インセンティブ <i class="fas fa-external-link-alt fa-sm"></i></div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
   </div>
 
   <!-- 購入履歴 -->

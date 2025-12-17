@@ -1,0 +1,31 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+lunch_break_clinic_one:
+  clinic_id: 1
+  weekday: 1
+  start_time: "12:00"
+  end_time: "13:00"
+
+lunch_break_tuesday_clinic_one:
+  clinic_id: 1
+  weekday: 2
+  start_time: "12:00"
+  end_time: "13:00"
+
+lunch_break_wednesday_clinic_one:
+  clinic_id: 1
+  weekday: 3
+  start_time: "12:00"
+  end_time: "13:00"
+
+lunch_break_thursday_clinic_one:
+  clinic_id: 1
+  weekday: 4
+  start_time: "12:00"
+  end_time: "13:00"
+
+lunch_break_friday_clinic_one:
+  clinic_id: 1
+  weekday: 5
+  start_time: "12:00"
+  end_time: "13:00"

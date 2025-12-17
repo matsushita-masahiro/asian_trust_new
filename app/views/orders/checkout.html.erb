@@ -19,17 +19,17 @@
     
     # クリニック配送先を追加
     clinic_ids.each do |clinic_id|
-      clinic = User.joins(:invoice_base).find_by(id: clinic_id)
-      if clinic&.invoice_base
+      clinic = Clinic.find_by(id: clinic_id)
+      if clinic
         items = @cart_items_with_delivery.select { |i| i[:clinic_id] == clinic_id }
         product_names = items.map { |i| i[:item].product.name }.join(', ')
         
         delivery_destinations << {
           title: "#{clinic.name}（クリニック配送）",
           icon: 'fas fa-hospital',
-          address: "〒#{clinic.invoice_base.postal_code}<br>#{clinic.invoice_base.address}".html_safe,
+          address: "クリニック配送",
           note: product_names,
-          phone: clinic.phone,
+          phone: clinic.user.phone,
           type: 'clinic'
         }
       end
@@ -135,16 +135,13 @@
                     </td>
                     <td>
                       <% if delivery_type == 'clinic' && clinic_id.present? %>
-                        <% clinic = User.joins(:invoice_base).find_by(id: clinic_id) %>
+                        <% clinic = Clinic.find_by(id: clinic_id) %>
                         <div class="small">
                           <i class="fas fa-hospital text-primary"></i>
                           <strong><%= clinic&.name || 'クリニック' %></strong>
-                          <% if clinic&.invoice_base %>
-                            <div class="text-muted" style="font-size: 0.85em;">
-                              〒<%= clinic.invoice_base.postal_code %><br>
-                              <%= clinic.invoice_base.address %>
-                            </div>
-                          <% end %>
+                          <div class="text-muted" style="font-size: 0.85em;">
+                            クリニック配送
+                          </div>
                         </div>
                       <% elsif delivery_type == 'other' %>
                         <div class="small">

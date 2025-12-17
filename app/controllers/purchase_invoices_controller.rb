@@ -178,6 +178,9 @@ class PurchaseInvoicesController < ApplicationController
       # 領収書発行完了ステータスに更新
       @purchase_invoice.receipt_sent!
       
+      # 領収書発行通知を作成
+      send_receipt_issued_notification(@purchase_invoice)
+      
       Rails.logger.info "Purchase receipt #{@purchase_invoice.id} generated successfully"
       redirect_to purchase_invoice_path(@purchase_invoice), notice: '領収書を発行しました。'
     rescue => e
@@ -217,6 +220,42 @@ class PurchaseInvoicesController < ApplicationController
   end
 
   private
+
+  def send_receipt_issued_notification(purchase_invoice)
+    # 領収書発行通知の送信
+    begin
+      Rails.logger.info "Creating receipt issued notification for user #{purchase_invoice.purchase.user.id}"
+      
+      # 通知レコードの作成
+      notification = Notification.create!(
+        user: purchase_invoice.purchase.user,
+        title: '領収書が発行されました',
+        message: build_receipt_issued_message(purchase_invoice),
+        notification_type: Notification::RECEIPT_ISSUED,
+        link_url: purchase_invoice_path(purchase_invoice)
+      )
+      
+      Rails.logger.info "Receipt issued notification created successfully: ID #{notification.id}, User: #{purchase_invoice.purchase.user.id}, Type: #{notification.notification_type}"
+    rescue => e
+      Rails.logger.error "Failed to send receipt issued notification: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+    end
+  end
+  
+  def build_receipt_issued_message(purchase_invoice)
+    begin
+      total_amount = purchase_invoice.total_with_tax || purchase_invoice.total_amount || 0
+      product_names = purchase_invoice.purchase.purchase_items.map { |item| "#{item.product.name} × #{item.quantity}" }.join('、')
+      
+      "ご注文の商品の領収書が発行されました。\n" \
+      "商品: #{product_names}\n" \
+      "金額: ¥#{ActionController::Base.helpers.number_with_delimiter(total_amount)}\n" \
+      "領収書は購入詳細ページからダウンロードできます。"
+    rescue => e
+      Rails.logger.error "Error building receipt message: #{e.message}"
+      "ご注文の商品の領収書が発行されました。詳細は購入詳細ページからご確認ください。"
+    end
+  end
 
   def set_purchase_invoice
     @purchase_invoice = PurchaseInvoice.find(params[:id])

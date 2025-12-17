@@ -6,6 +6,7 @@ import "jquery"
 import * as bootstrap from "bootstrap"
 window.bootstrap = bootstrap
 
+// 存在するファイルのみをインポート
 import "slider"
 import "fadein"
 import "flash"
@@ -13,6 +14,8 @@ import "admin_inquiries"
 import "users_show"
 import "incentive"
 import "order"
+import "clinic_reservations"
+import "admin_clinic_edit"
 
 // 機能別モジュールをインポート
 import CustomDropdown from "custom_dropdown"

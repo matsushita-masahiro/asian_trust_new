@@ -42,6 +42,9 @@ class User < ApplicationRecord
   has_many :notifications, dependent: :destroy
   has_many :inquiries, dependent: :destroy
   
+  # クリニック関連
+  has_one :clinic, dependent: :destroy
+  
   # カート機能
   has_one :cart, dependent: :destroy
   
@@ -832,6 +835,31 @@ class User < ApplicationRecord
   def wott_level_symbol
     wott_level&.symbol
   end 
+
+  # クリニック関連のヘルパーメソッド
+  def clinic?
+    level&.name&.include?('クリニック')
+  end
+  
+  def reservable_clinic?
+    clinic? && clinic&.reservable?
+  end
+  
+  # 予約権限チェック：骨髄幹細胞培養上清液の購入履歴があるかどうか
+  def has_valid_purchase_for_reservation?
+    # 支払い済み（paid）または予約完了（reserved）の購入があり、
+    # クリニック配送または複数配送が含まれている場合に予約権限あり
+    purchases.joins(:delivery_informations)
+             .where(status: ['paid', 'reserved'])
+             .where(delivery_informations: { delivery_type: ['clinic', 'multiple'] })
+             .exists?
+  end
+  
+  # 管理者権限チェック
+  def admin?
+    # 管理者レベル（アジアビジネストラスト）かどうかをチェック
+    level&.name == 'アジアビジネストラスト'
+  end
 
   # 自分と下位userのproduct.idが1,2,3,4,5の商品の総購入量（cc）を計算
   def total_purchase_volume_cc

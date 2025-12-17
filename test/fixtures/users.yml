@@ -1,6 +1,7 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  id: 1
   name: "テストユーザー1"
   email: "test1@example.com"
   encrypted_password: "$2a$12$K8gDKgF8hsKWXvyxpQy4/.VV.bVHdIlO8f5iF5iF5iF5iF5iF5iF5i" # password
@@ -8,8 +9,10 @@ one:
   admin: false
   level_id: 1
   status: "active"
+  phone: "090-1234-5678"
 
 two:
+  id: 2
   name: "テストユーザー2"
   email: "test2@example.com"
   encrypted_password: "$2a$12$K8gDKgF8hsKWXvyxpQy4/.VV.bVHdIlO8f5iF5iF5iF5iF5iF5iF5i" # password
@@ -17,3 +20,39 @@ two:
   admin: false
   level_id: 2
   status: "active"
+  phone: "090-2345-6789"
+
+admin:
+  id: 3
+  name: "管理者"
+  email: "admin@example.com"
+  encrypted_password: "$2a$12$K8gDKgF8hsKWXvyxpQy4/.VV.bVHdIlO8f5iF5iF5iF5iF5iF5iF5i" # password
+  confirmed_at: <%= 1.day.ago %>
+  admin: true
+  level_id: 1
+  status: "active"
+  phone: "090-0000-0000"
+
+clinic_user:
+  id: 4
+  name: "テストクリニック"
+  email: "clinic@example.com"
+  encrypted_password: "$2a$12$K8gDKgF8hsKWXvyxpQy4/.VV.bVHdIlO8f5iF5iF5iF5iF5iF5iF5i" # password
+  confirmed_at: <%= 1.day.ago %>
+  admin: false
+  level_id: 3
+  status: "active"
+  phone: "090-1111-1111"
+  wott_level_id: 1
+
+clinic_user_two:
+  id: 5
+  name: "テストクリニック2"
+  email: "clinic2@example.com"
+  encrypted_password: "$2a$12$K8gDKgF8hsKWXvyxpQy4/.VV.bVHdIlO8f5iF5iF5iF5iF5iF5iF5i" # password
+  confirmed_at: <%= 1.day.ago %>
+  admin: false
+  level_id: 3
+  status: "active"
+  phone: "090-2222-2222"
+  wott_level_id: 2

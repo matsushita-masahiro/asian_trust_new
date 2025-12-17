@@ -54,6 +54,12 @@
               未回答お問合せ: <strong><%= @unanswered_inquiries_count %>件</strong>
             <% end %>
           <% end %>
+          <% if @emergency_reservation_count > 0 %>
+            <%= link_to admin_clinic_reservations_path(emergency: 'true'), class: "alert alert-danger text-white mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer; background-color: #dc3545; border-color: #dc3545;" do %>
+              <i class="fas fa-exclamation-triangle"></i>
+              緊急予約依頼: <strong><%= @emergency_reservation_count %>件</strong>
+            <% end %>
+          <% end %>
 
           <div class="text-muted">
             <%= Time.current.strftime("%Y/%m/%d") %> (<%= %w[日 月 火 水 木 金 土][Time.current.wday] %>)
@@ -167,6 +173,7 @@
         <div class="card-body">
           <div class="d-grid gap-2">
             <%= link_to "クリニック予約管理", admin_clinic_reservations_path, class: "btn btn-outline-primary" %>
+            <%= link_to "クリニック管理", admin_clinics_path, class: "btn btn-outline-primary" %>
             <%= link_to "ユーザー管理", admin_users_path, class: "btn btn-outline-primary" %>
             <%= link_to "購入履歴", admin_purchases_path, class: "btn btn-outline-secondary" %>
             <%= link_to "購入請求書管理", admin_purchase_invoices_path, class: "btn btn-outline-info" %>

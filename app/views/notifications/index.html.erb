@@ -28,6 +28,10 @@
                         <i class="fas fa-check-circle me-1 text-success"></i>
                       <% elsif notification.notification_type == Notification::RECEIPT_ISSUED %>
                         <i class="fas fa-receipt me-1 text-warning"></i>
+                      <% elsif notification.notification_type == Notification::RECEIPT_REQUEST %>
+                        <i class="fas fa-file-invoice me-1 text-warning"></i>
+                      <% elsif notification.notification_type == Notification::INCENTIVE_PAYMENT_COMPLETED %>
+                        <i class="fas fa-money-bill-wave me-1 text-success"></i>
                       <% elsif notification.notification_type == Notification::EMERGENCY_RESERVATION_REQUESTED %>
                         <i class="fas fa-exclamation-triangle me-1 text-danger"></i>
                       <% else %>

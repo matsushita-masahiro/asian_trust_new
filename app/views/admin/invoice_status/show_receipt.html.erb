@@ -196,7 +196,7 @@
               </div>
               <div class="col-6 text-end">
                 <p class="mb-1">領収書番号</p>
-                <p class="fw-bold">REC-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+                <p class="fw-bold">REC-<%= @invoice.invoice_number.gsub('INV-', '') %></p>
               </div>
             </div>
           </div>

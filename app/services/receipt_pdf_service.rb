@@ -2,6 +2,7 @@ class ReceiptPdfService
   include ApplicationHelper
   require 'digest'
   require 'set'
+  require 'tempfile'
   
   def initialize(invoice)
     @invoice = invoice
@@ -97,29 +98,22 @@ class ReceiptPdfService
         
         Rails.logger.info "ReceiptPdfService: Uploading to bucket: #{bucket_name}, key: #{key}"
         
-        # S3に直接アップロード
-        s3_client.put_object(
-          bucket: bucket_name,
-          key: key,
-          body: pdf_content,
-          content_type: 'application/pdf',
-          server_side_encryption: 'AES256'
-        )
+        # Active Storageを使用してS3にアップロード
+        # 一時ファイルを作成
+        temp_file = Tempfile.new([filename.gsub('.pdf', ''), '.pdf'])
+        temp_file.binmode
+        temp_file.write(pdf_content)
+        temp_file.rewind
         
-        Rails.logger.info "ReceiptPdfService: Direct S3 upload completed to #{bucket_name}"
-        
-        # Active Storageのblobを作成
-        blob = ActiveStorage::Blob.create!(
-          key: key,
+        # Active Storageを使用してアップロード
+        @invoice.receipt_file.attach(
+          io: temp_file,
           filename: filename,
-          content_type: 'application/pdf',
-          byte_size: pdf_content.bytesize,
-          checksum: Digest::MD5.base64digest(pdf_content),
-          service_name: 's3_receipts'
+          content_type: 'application/pdf'
         )
         
-        # Invoiceに添付
-        @invoice.receipt_file.attach(blob)
+        temp_file.close
+        temp_file.unlink
         
         Rails.logger.info "ReceiptPdfService: PDF uploaded to receipts bucket successfully: #{filename}"
       else

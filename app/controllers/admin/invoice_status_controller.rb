@@ -1,6 +1,9 @@
 class Admin::InvoiceStatusController < Admin::BaseController
   def index
     @selected_status = params[:status].presence || 'sent'
+    @search_invoice_number = params[:search_invoice_number]
+    @search_user_name = params[:search_user_name]
+    @search_target_month = params[:search_target_month]
     
     status_value = case @selected_status
                   when 'sent' then Invoice::SENT
@@ -13,7 +16,23 @@ class Admin::InvoiceStatusController < Admin::BaseController
     
     @invoices = Invoice.includes(:user, :invoice_recipient)
                       .where(status: status_value)
-                      .order(created_at: :desc)
+    
+    # 請求書番号での検索（一部一致）
+    if @search_invoice_number.present?
+      @invoices = @invoices.where("invoice_number LIKE ?", "%#{@search_invoice_number}%")
+    end
+    
+    # 請求者名での検索（一部一致）
+    if @search_user_name.present?
+      @invoices = @invoices.joins(:user).where("users.name LIKE ? OR users.email LIKE ?", "%#{@search_user_name}%", "%#{@search_user_name}%")
+    end
+    
+    # 対象年月での検索（完全一致または部分一致）
+    if @search_target_month.present?
+      @invoices = @invoices.where("target_month LIKE ?", "%#{@search_target_month}%")
+    end
+    
+    @invoices = @invoices.order(created_at: :desc)
   end
 
   def show_receipt
@@ -87,6 +106,56 @@ class Admin::InvoiceStatusController < Admin::BaseController
                   end
     
     if @invoice.update(status: status_value)
+      # 振込完了時にメール送信と通知作成
+      if params[:status] == 'confirmed'
+        begin
+          # メール送信
+          InvoiceMailer.payment_completed(@invoice).deliver_now
+          Rails.logger.info "振込完了メール送信成功: #{@invoice.invoice_number} to #{@invoice.user.email}"
+          
+          # 通知作成
+          @invoice.user.notifications.create!(
+            notification_type: Notification::INCENTIVE_PAYMENT_COMPLETED,
+            title: 'インセンティブ振込完了',
+            message: "請求書#{@invoice.invoice_number}のインセンティブが振込まれました。金額: ¥#{ActionController::Base.helpers.number_with_delimiter(@invoice.total_amount)}",
+            link_url: Rails.application.routes.url_helpers.history_invoices_path
+          )
+          Rails.logger.info "振込完了通知作成成功: #{@invoice.invoice_number} for user #{@invoice.user.id}"
+        rescue => e
+          Rails.logger.error "振込完了処理エラー: #{e.message}"
+        end
+      end
+      
+      # 領収書発行依頼時にメール送信と通知作成
+      if params[:status] == 'receipt_requested'
+        begin
+          # メール送信
+          InvoiceMailer.receipt_request(@invoice).deliver_now
+          Rails.logger.info "領収書発行依頼メール送信成功: #{@invoice.invoice_number} to #{@invoice.user.email}"
+          
+          # 同じ請求書に対する領収書発行依頼通知が既に存在するかチェック
+          existing_notification = @invoice.user.notifications.find_by(
+            notification_type: Notification::RECEIPT_REQUEST,
+            message: "請求書#{@invoice.invoice_number}の領収書発行手続きをお願いします。"
+          )
+          
+          # 既存の通知がない場合のみ新しい通知を作成
+          unless existing_notification
+            @invoice.user.notifications.create!(
+              notification_type: Notification::RECEIPT_REQUEST,
+              title: '領収書発行依頼',
+              message: "請求書#{@invoice.invoice_number}の領収書発行手続きをお願いします。",
+              link_url: Rails.application.routes.url_helpers.history_invoices_path
+            )
+            Rails.logger.info "領収書発行依頼通知作成成功: #{@invoice.invoice_number} for user #{@invoice.user.id}"
+          else
+            Rails.logger.info "領収書発行依頼通知は既に存在: #{@invoice.invoice_number} for user #{@invoice.user.id}"
+          end
+        rescue => e
+          Rails.logger.error "領収書発行依頼処理エラー: #{e.message}"
+        end
+      end
+      
       status_text = case params[:status]
                    when 'sent' then '送付済み'
                    when 'confirmed' then '振込確認済み'
@@ -97,8 +166,17 @@ class Admin::InvoiceStatusController < Admin::BaseController
                    end
       # 元のフィルター状態を保持してリダイレクト
       original_status = params[:original_status] || 'sent'
+      
+      notice_message = if params[:status] == 'confirmed'
+        "請求書#{@invoice.invoice_number}のステータスを#{status_text}に更新し、振込完了メールを送信しました。"
+      elsif params[:status] == 'receipt_requested'
+        "請求書#{@invoice.invoice_number}のステータスを#{status_text}に更新し、領収書発行依頼メールを送信しました。"
+      else
+        "請求書#{@invoice.invoice_number}のステータスを#{status_text}に更新しました。"
+      end
+      
       redirect_to admin_invoice_status_index_path(status: original_status), 
-                  notice: "請求書INV-#{@invoice.id.to_s.rjust(6, '0')}のステータスを#{status_text}に更新しました。"
+                  notice: notice_message
     else
       redirect_to admin_invoice_status_index_path, 
                   alert: 'ステータスの更新に失敗しました。'

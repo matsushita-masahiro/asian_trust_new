@@ -31,6 +31,11 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  # Deviseのログアウト後のリダイレクト先
+  def after_sign_out_path_for(resource_or_scope)
+    new_user_session_path
+  end
+
   # 管理者権限の判定（複合的なチェック）
   def is_admin_user?(user)
     return false unless user&.admin?

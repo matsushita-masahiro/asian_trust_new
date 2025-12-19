@@ -21,6 +21,10 @@ module AsiaTrust
     config.time_zone = 'Asia/Tokyo'
     config.active_record.default_timezone = :utc
     
+    # 日本語化設定
+    config.i18n.default_locale = :ja
+    config.i18n.available_locales = [:ja, :en]
+    
     # Active Storage configuration
     config.active_storage.variant_processor = :mini_magick
 

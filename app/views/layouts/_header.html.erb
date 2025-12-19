@@ -31,8 +31,8 @@
                 インセンティブ <i class="fas fa-chevron-down ms-1"></i>
               </a>
               <ul class="custom-dropdown-menu" id="incentiveDropdownMenu">
-                <li><%= link_to "インセンティブ", incentives_path, class: "custom-dropdown-item" %></li>
-                <li><%= link_to "請求書管理", invoices_path, class: "custom-dropdown-item" %></li>
+                <li><%= link_to "インセンティブ詳細", incentives_path, class: "custom-dropdown-item", style: "white-space: nowrap;" %></li>
+                <li><%= link_to "請求書管理", invoices_path, class: "custom-dropdown-item", style: "white-space: nowrap;" %></li>
               </ul>
             </li>
           <% end %>
@@ -72,12 +72,14 @@
             </ul>
           </li>
           <li class="nav-item">
-            <%= link_to "ログアウト", destroy_user_session_path, 
+            <%= button_to "ログアウト", destroy_user_session_path, 
+                method: :delete,
                 data: { 
-                  turbo_method: :delete,
-                  turbo_confirm: "ログアウトしますか？"
+                  confirm: "ログアウトしますか？",
+                  turbo: false
                 }, 
-                class: "nav-link",
+                class: "btn nav-link border-0 bg-transparent text-white",
+                style: "padding: 0.5rem 1rem;",
                 id: "logout-link" %>
           </li>
           <% if current_user.admin? || current_user.level&.value == 0 %>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>インセンティブ振込完了通知</title>
+  <style>
+    body {
+      font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .email-card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      overflow: hidden;
+      margin: 20px 0;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    
+    .header .icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+      display: block;
+    }
+    
+    .content {
+      padding: 40px 30px;
+    }
+    
+    .greeting {
+      font-size: 18px;
+      margin-bottom: 25px;
+      color: #2c3e50;
+    }
+    
+    .message {
+      background: #f8f9fa;
+      border-left: 4px solid #28a745;
+      padding: 20px;
+      margin: 25px 0;
+      border-radius: 5px;
+    }
+    
+    .invoice-details {
+      background: #e8f5e8;
+      border-radius: 10px;
+      padding: 25px;
+      margin: 25px 0;
+    }
+    
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #d4edda;
+    }
+    
+    .detail-row:last-child {
+      border-bottom: none;
+      font-weight: bold;
+      font-size: 18px;
+      color: #28a745;
+    }
+    
+    .detail-label {
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .detail-value {
+      color: #2c3e50;
+    }
+    
+    .footer {
+      background: #f8f9fa;
+      padding: 25px 30px;
+      text-align: center;
+      border-top: 1px solid #e9ecef;
+    }
+    
+    .company-info {
+      color: #6c757d;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .note {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      color: #856404;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        background: #f8f9fa;
+      }
+      
+      .container {
+        padding: 10px;
+      }
+      
+      .content {
+        padding: 25px 20px;
+      }
+      
+      .header {
+        padding: 25px 20px;
+      }
+      
+      .header h1 {
+        font-size: 20px;
+      }
+      
+      .header .icon {
+        font-size: 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="email-card">
+      <div class="header">
+        <span class="icon">💰</span>
+        <h1>インセンティブ振込完了通知</h1>
+      </div>
+      
+      <div class="content">
+        <div class="greeting">
+          <%= @user.name.presence || @user.email %>様
+        </div>
+        
+        <div class="message">
+          <p>いつもお世話になっております。</p>
+          <p>この度、下記インセンティブ請求書に対する振込手続きが完了いたしましたので、ご連絡申し上げます。</p>
+        </div>
+        
+        <div class="invoice-details">
+          <h3 style="margin-top: 0; color: #28a745; text-align: center;">📋 振込完了詳細</h3>
+          
+          <div class="detail-row">
+            <span class="detail-label">請求書番号:</span>
+            <span class="detail-value"><strong><%= @invoice.invoice_number %></strong></span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="detail-label">対象月:</span>
+            <span class="detail-value"><%= @invoice.target_month_display %></span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="detail-label">請求日:</span>
+            <span class="detail-value"><%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %></span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="detail-label">振込金額:</span>
+            <span class="detail-value">¥<%= number_with_delimiter(@invoice.total_amount) %></span>
+          </div>
+        </div>
+        
+        <div class="note">
+          <strong>📌 ご確認ください</strong><br>
+          振込は通常、営業日の15時までに処理されます。お客様の口座への反映は、金融機関により異なりますが、通常1〜2営業日程度かかる場合がございます。
+        </div>
+        
+        <p>今後ともどうぞよろしくお願いいたします。</p>
+      </div>
+      
+      <div class="footer">
+        <div class="company-info">
+          <strong><%= @invoice_recipient.name %></strong><br>
+          〒<%= @invoice_recipient.postal_code %> <%= @invoice_recipient.address %><br>
+          TEL: <%= @invoice_recipient.tel %><br>
+          Email: <%= ENV['ADMIN_EMAIL'] || 'info@abt-saisei.com' %>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

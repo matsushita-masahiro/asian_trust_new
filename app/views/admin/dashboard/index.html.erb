@@ -48,6 +48,12 @@
               領収書発行依頼有り: <strong><%= @receipt_requests_count %>件</strong>
             <% end %>
           <% end %>
+          <% if @receipt_received_count > 0 %>
+            <%= link_to admin_invoice_status_index_path(status: 'receipt_sent'), class: "alert alert-success text-white mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer; background-color: #28a745; border-color: #28a745;" do %>
+              <i class="fas fa-receipt"></i>
+              領収書を受信: <strong><%= @receipt_received_count %>件</strong>
+            <% end %>
+          <% end %>
           <% if @unanswered_inquiries_count > 0 %>
             <%= link_to admin_inquiries_path, class: "alert alert-warning text-dark mb-0 py-1 px-2 text-decoration-none d-flex align-items-center gap-1", style: "font-size: 0.8rem; cursor: pointer;" do %>
               <i class="fas fa-envelope"></i>

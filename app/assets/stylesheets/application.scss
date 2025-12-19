@@ -33,6 +33,7 @@
 @use "purchase_invoices";
 @use "header";
 @use "postal_code_auto_fill";
+@use "devise";
 
 /* 全体のフォント設定 */
 body {

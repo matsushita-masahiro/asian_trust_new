@@ -2,7 +2,7 @@
 
 下記のとおり、領収書を発行いたしました。
 
-領収書番号: REC-<%= @invoice.id.to_s.rjust(6, '0') %>
+領収書番号: REC-<%= @invoice.invoice_number.gsub('INV-', '') %>
 発行日: <%= Date.current.strftime("%Y年%m月%d日") %>
 請求書番号: INV-<%= @invoice.id.to_s.rjust(6, '0') %>
 宛先: <%= @invoice.invoice_recipient.name %>

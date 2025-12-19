@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="text-primary">📋 請求書状況</h4>
+        <h4 class="text-primary">📋 インセンティブ請求書状況</h4>
         <% confirmed_invoices_count = Invoice.where(status: Invoice::CONFIRMED).count %>
         <% if confirmed_invoices_count > 0 %>
           <div class="badge bg-success fs-6 px-3 py-2">
@@ -14,14 +14,15 @@
     </div>
   </div>
 
-  <!-- ステータス選択 -->
+  <!-- ステータス選択と検索 -->
   <div class="row mb-4">
     <div class="col-12">
       <div class="card">
         <div class="card-body">
-          <div class="d-flex align-items-center">
-            <label class="form-label me-3 mb-0">表示ステータス:</label>
-            <%= form_with url: admin_invoice_status_index_path, method: :get, local: true, class: "d-flex align-items-center" do |f| %>
+          <%= form_with url: admin_invoice_status_index_path, method: :get, local: true, class: "row g-3 align-items-end" do |f| %>
+            <!-- ステータス選択 -->
+            <div class="col-md-3">
+              <label class="form-label">表示ステータス</label>
               <%= f.select :status, 
                   options_for_select([
                     ['請求書受信済', 'sent'],
@@ -30,9 +31,49 @@
                     ['領収書発行完了', 'receipt_sent']
                   ], @selected_status), 
                   {}, 
-                  { class: "form-select me-2", style: "width: 200px;", onchange: "this.form.submit();" } %>
+                  { class: "form-select" } %>
+            </div>
+            
+            <!-- 請求書番号検索 -->
+            <div class="col-md-3">
+              <label class="form-label">請求書番号</label>
+              <%= f.text_field :search_invoice_number, 
+                  value: @search_invoice_number,
+                  class: "form-control" %>
+            </div>
+            
+            <!-- 請求者名検索 -->
+            <div class="col-md-2">
+              <label class="form-label">請求者名</label>
+              <%= f.text_field :search_user_name, 
+                  value: @search_user_name,
+                  class: "form-control", 
+                  placeholder: "名前またはメール" %>
+            </div>
+            
+            <!-- 対象年月検索 -->
+            <div class="col-md-2">
+              <label class="form-label">対象年月</label>
+              <%= f.text_field :search_target_month, 
+                  value: @search_target_month,
+                  class: "form-control", 
+                  placeholder: "2025-11 または 2025" %>
+            </div>
+            
+            <!-- 検索ボタン -->
+            <div class="col-md-3">
+              <div class="d-flex gap-2">
+                <%= f.submit "検索", class: "btn btn-primary" %>
+                <%= link_to "クリア", admin_invoice_status_index_path(status: @selected_status), class: "btn btn-outline-secondary" %>
+              </div>
+            </div>
+          <% end %>
+          
+          <div class="mt-2">
+            <span class="badge bg-info"><%= @invoices.count %>件</span>
+            <% if @search_invoice_number.present? || @search_user_name.present? || @search_target_month.present? %>
+              <span class="badge bg-warning ms-2">検索結果</span>
             <% end %>
-            <span class="badge bg-info ms-2"><%= @invoices.count %>件</span>
           </div>
         </div>
       </div>
@@ -64,7 +105,7 @@
                   <tr>
                     <th>請求書番号</th>
                     <th>請求者</th>
-                    <th>請求先</th>
+                    <th>対象年月</th>
                     <th>請求金額</th>
                     <th>発行日</th>
                     <th>支払期限</th>
@@ -83,7 +124,7 @@
                         <%= invoice.user.name.presence || invoice.user.email %>
                       </td>
                       <td>
-                        <%= invoice.invoice_recipient.name %>
+                        <%= invoice.target_month_display %>
                       </td>
                       <td class="text-end">
                         <strong>¥<%= number_with_delimiter(invoice.total_amount) %></strong>

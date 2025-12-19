@@ -48,6 +48,8 @@
             <% end %>
           <% end %>
           
+
+          
           <% # カートから遷移した場合のカートに戻るボタン %>
           <% if request.referer&.include?('/cart') || params[:from] == 'cart' %>
             <%= link_to cart_path, class: "btn btn-info me-2" do %>

@@ -1,7 +1,254 @@
-<p>Hello <%= @resource.email %>!</p>
-
-<p>Your account has been locked due to an excessive number of unsuccessful sign in attempts.</p>
-
-<p>Click the link below to unlock your account:</p>
-
-<p><%= link_to 'Unlock my account', unlock_url(@resource, unlock_token: @token) %></p>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アカウントロック解除のご案内</title>
+  <style>
+    body {
+      font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background: #f8f9fa;
+    }
+    
+    .email-container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .header-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+      display: block;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .content {
+      padding: 40px 30px;
+    }
+    
+    .greeting {
+      font-size: 16px;
+      margin-bottom: 25px;
+      color: #555;
+    }
+    
+    .message {
+      font-size: 15px;
+      line-height: 1.7;
+      margin-bottom: 30px;
+      color: #666;
+    }
+    
+    .alert-box {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 25px 0;
+      border-left: 4px solid #ff6b6b;
+    }
+    
+    .alert-title {
+      font-weight: 600;
+      color: #856404;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .alert-content {
+      font-size: 14px;
+      color: #856404;
+      line-height: 1.6;
+    }
+    
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      color: white !important;
+      text-decoration: none;
+      padding: 15px 30px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      text-align: center;
+      margin: 20px 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    }
+    
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+      text-decoration: none;
+      color: white !important;
+    }
+    
+    .security-tips {
+      background: #e8f4fd;
+      border: 1px solid #bee5eb;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+    
+    .security-title {
+      font-weight: 600;
+      color: #0c5460;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .security-content {
+      font-size: 14px;
+      color: #0c5460;
+      line-height: 1.6;
+    }
+    
+    .security-content ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .security-content li {
+      margin-bottom: 5px;
+    }
+    
+    .footer {
+      background: #f8f9fa;
+      padding: 25px 30px;
+      text-align: center;
+      border-top: 1px solid #e9ecef;
+    }
+    
+    .company-info {
+      font-size: 13px;
+      color: #6c757d;
+      line-height: 1.5;
+    }
+    
+    .company-name {
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 5px;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        background: #ffffff;
+      }
+      
+      .email-container {
+        margin: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      
+      .header, .content, .footer {
+        padding: 25px 20px;
+      }
+      
+      .header h1 {
+        font-size: 20px;
+      }
+      
+      .cta-button {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <span class="header-icon">🔓</span>
+      <h1>アカウントロック解除のご案内</h1>
+    </div>
+    
+    <div class="content">
+      <div class="greeting">
+        <strong><%= @resource.email %></strong> 様
+      </div>
+      
+      <div class="alert-box">
+        <div class="alert-title">
+          ⚠️ アカウントがロックされました
+        </div>
+        <div class="alert-content">
+          セキュリティ保護のため、複数回のログイン失敗によりアカウントがロックされました。
+        </div>
+      </div>
+      
+      <div class="message">
+        アカウントのロックを解除するには、下記のボタンをクリックしてください。
+      </div>
+      
+      <div style="text-align: center;">
+        <%= link_to 'アカウントのロックを解除する', unlock_url(@resource, unlock_token: @token), class: 'cta-button' %>
+      </div>
+      
+      <div class="security-tips">
+        <div class="security-title">
+          🛡️ セキュリティのヒント
+        </div>
+        <div class="security-content">
+          今後のアカウントロックを防ぐために：
+          <ul>
+            <li>正しいメールアドレスとパスワードを確認してください</li>
+            <li>パスワードを忘れた場合は「パスワードを忘れた方」をご利用ください</li>
+            <li>定期的にパスワードを変更することをお勧めします</li>
+            <li>他人とパスワードを共有しないでください</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="message" style="font-size: 14px; color: #888; margin-top: 30px;">
+        このメールにお心当たりがない場合は、このメールを無視してください。<br>
+        第三者による不正アクセスの可能性がある場合は、すぐにサポートまでご連絡ください。
+      </div>
+    </div>
+    
+    <div class="footer">
+      <% if defined?(InvoiceRecipient) && InvoiceRecipient.first %>
+        <% company = InvoiceRecipient.first %>
+        <div class="company-info">
+          <div class="company-name"><%= company.name %></div>
+          <div><%= company.address %></div>
+          <% if company.tel.present? %>
+            <div>TEL: <%= company.tel %></div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="company-info">
+          <div class="company-name">アジアビジネストラスト株式会社</div>
+          <div>東京都中央区銀座1-1-1</div>
+          <div>TEL: 03-1234-5678</div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</body>
+</html>

@@ -27,12 +27,36 @@ class InvoiceMailer < ApplicationMailer
       )
     end
 
-    attachments["請求書_INV-#{@invoice.id.to_s.rjust(6, '0')}.pdf"] = pdf
+    attachments["請求書_#{@invoice.invoice_number}.pdf"] = pdf
 
     mail(
-      from: ENV['ADMIN_EMAIL'] || 'admin@example.com',
-      to:   @invoice_recipient.email,
-      subject: "【請求書送付】INV-#{@invoice.id.to_s.rjust(6, '0')} - #{@user.name || @user.email}様より"
+      from: ENV['ADMIN_EMAIL'] || 'info@abt-saisei.com',
+      to:   ENV['ADMIN_EMAIL'] || 'info@abt-saisei.com',
+      subject: "【請求書送付】#{@invoice.invoice_number} - #{@user.name || @user.email}様より"
+    )
+  end
+
+  def payment_completed(invoice)
+    @invoice = invoice
+    @user = invoice.user
+    @invoice_recipient = invoice.invoice_recipient
+
+    mail(
+      from: ENV['ADMIN_EMAIL'] || 'info@abt-saisei.com',
+      to: @user.email,
+      subject: "【振込完了通知】#{@invoice.invoice_number} - インセンティブ振込が完了しました"
+    )
+  end
+
+  def receipt_request(invoice)
+    @invoice = invoice
+    @user = invoice.user
+    @invoice_recipient = invoice.invoice_recipient
+
+    mail(
+      from: ENV['ADMIN_EMAIL'] || 'info@abt-saisei.com',
+      to: @user.email,
+      subject: "【領収書発行依頼】#{@invoice.invoice_number} - 領収書発行のお手続きについて"
     )
   end
 

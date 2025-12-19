@@ -1,0 +1,33 @@
+【インセンティブ振込完了通知】
+
+<%= @user.name.presence || @user.email %>様
+
+いつもお世話になっております。
+
+この度、下記インセンティブ請求書に対する振込手続きが完了いたしましたので、
+ご連絡申し上げます。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+振込完了詳細
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+請求書番号: <%= @invoice.invoice_number %>
+対象月: <%= @invoice.target_month_display %>
+請求日: <%= @invoice.invoice_date&.strftime("%Y年%m月%d日") %>
+振込金額: ¥<%= number_with_delimiter(@invoice.total_amount) %>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+【ご確認ください】
+振込は通常、営業日の15時までに処理されます。
+お客様の口座への反映は、金融機関により異なりますが、
+通常1〜2営業日程度かかる場合がございます。
+
+今後ともどうぞよろしくお願いいたします。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<%= @invoice_recipient.name %>
+〒<%= @invoice_recipient.postal_code %> <%= @invoice_recipient.address %>
+TEL: <%= @invoice_recipient.tel %>
+Email: <%= ENV['ADMIN_EMAIL'] || 'info@abt-saisei.com' %>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

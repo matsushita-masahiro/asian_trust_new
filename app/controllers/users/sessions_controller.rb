@@ -15,6 +15,12 @@ class Users::SessionsController < Devise::SessionsController
     end
   end
 
+  # DELETE /resource/sign_out
+  def destroy
+    Rails.logger.info "User #{current_user&.email} logging out from IP: #{request.remote_ip}"
+    super
+  end
+
   protected
 
   # IPアドレスベースの制限チェック

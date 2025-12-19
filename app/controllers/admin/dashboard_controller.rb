@@ -21,6 +21,9 @@ class Admin::DashboardController < Admin::BaseController
     # 領収書発行依頼件数を取得（status = 4: RECEIPT_REQUESTED）
     @receipt_requests_count = PurchaseInvoice.where(status: PurchaseInvoice::RECEIPT_REQUESTED).count
     
+    # 領収書受信件数を取得（インセンティブ請求書で領収書発行完了）
+    @receipt_received_count = Invoice.where(status: Invoice::RECEIPT_SENT).count
+    
     # 未回答のお問合せ件数を取得
     @unanswered_inquiries_count = Inquiry.left_joins(:answers).where(answers: { id: nil }).count
     

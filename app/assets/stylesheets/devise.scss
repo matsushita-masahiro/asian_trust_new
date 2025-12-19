@@ -1,0 +1,82 @@
+// Devise Password Reset Styles
+
+.devise-password-card {
+  border: none;
+  transition: transform 0.3s ease;
+  border-radius: 12px;
+  
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
+.devise-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  font-weight: 600;
+  padding: 12px;
+  
+  &:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+}
+
+.devise-btn-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border: none;
+  font-weight: 600;
+  padding: 12px;
+  
+  &:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea080 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+  }
+}
+
+.devise-input-group {
+  .input-group-text {
+    border-right: none;
+    background-color: #f8f9fa;
+  }
+  
+  .form-control {
+    border-left: none;
+    
+    &:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+  }
+  
+  &.success-focus {
+    .form-control:focus {
+      border-color: #28a745;
+      box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+  }
+  
+  .btn-outline-secondary {
+    border-left: none;
+  }
+}
+
+.devise-password-edit {
+  .devise-input-group .form-control {
+    border-right: none;
+  }
+}
+
+.devise-icon {
+  font-size: 48px;
+  
+  &.primary {
+    color: #667eea;
+  }
+  
+  &.success {
+    color: #28a745;
+  }
+}

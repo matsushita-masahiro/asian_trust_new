@@ -62,12 +62,12 @@
   <div class="attachment-notice">
     <h3>📎 添付ファイル</h3>
     <p><strong>領収書PDF</strong>が添付されています。</p>
-    <p>ファイル名: 領収書_REC-<%= @invoice.id.to_s.rjust(6, '0') %>.pdf</p>
+    <p>ファイル名: 領収書_REC-<%= @invoice.invoice_number.gsub('INV-', '') %>.pdf</p>
   </div>
 
   <div class="receipt-info">
     <h3>領収書情報</h3>
-    <p><strong>領収書番号:</strong> REC-<%= @invoice.id.to_s.rjust(6, '0') %></p>
+    <p><strong>領収書番号:</strong> REC-<%= @invoice.invoice_number.gsub('INV-', '') %></p>
     <p><strong>発行日:</strong> <%= Date.current.strftime("%Y年%m月%d日") %></p>
     <p><strong>請求書番号:</strong> INV-<%= @invoice.id.to_s.rjust(6, '0') %></p>
     <p><strong>宛先:</strong> <%= @invoice.invoice_recipient.name %></p>

@@ -116,7 +116,7 @@ class Invoice < ApplicationRecord
   # 対象年月の表示名を取得
   def target_month_display
     return '' if target_month.blank?
-    Date.strptime(target_month, "%Y-%m").strftime("%Y年%m月")
+    Date.strptime(target_month, "%Y-%m").strftime("%Y/%m")
   end
   
   # 対象年月の売上データを取得

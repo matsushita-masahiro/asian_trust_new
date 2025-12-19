@@ -1,19 +1,36 @@
-<div class="container d-flex align-items-center justify-content-center mt-5" style="min-height: 90vh;">
-  <div class="card shadow p-4" style="max-width: 420px; width: 100%;">
-    <h4 class="mb-4 text-center text-primary">パスワード再設定</h4>
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+  <div class="card shadow-lg p-4 devise-password-card" style="max-width: 480px; width: 100%;">
+    <div class="text-center mb-4">
+      <div class="mb-3">
+        <i class="fas fa-envelope-open-text devise-icon primary"></i>
+      </div>
+      <h4 class="text-primary mb-2">パスワードをお忘れですか？</h4>
+      <p class="text-muted small">登録済みのメールアドレスを入力してください。<br>パスワード再設定用のリンクをお送りします。</p>
+    </div>
 
     <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
       <%= render "users/shared/error_messages", resource: resource %>
 
-      <div class="mb-3">
-        <%= f.label :email, "メールアドレス", class: "form-label" %>
-        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
+      <div class="mb-4">
+        <%= f.label :email, "メールアドレス", class: "form-label fw-bold" %>
+        <div class="input-group devise-input-group">
+          <span class="input-group-text bg-light">
+            <i class="fas fa-envelope text-muted"></i>
+          </span>
+          <%= f.email_field :email, 
+              autofocus: true, 
+              autocomplete: "email", 
+              class: "form-control",
+              placeholder: "example@email.com" %>
+        </div>
       </div>
 
       <div class="d-grid mb-3">
-        <%= f.submit "パスワード再設定メールを送信", class: "btn btn-primary" %>
+        <%= f.submit "パスワード再設定メールを送信", class: "btn btn-primary btn-lg devise-btn-primary" %>
       </div>
     <% end %>
+
+    <hr class="my-3">
 
     <%= render "users/shared/links" %>
   </div>
